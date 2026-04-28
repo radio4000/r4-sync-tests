@@ -50,6 +50,8 @@
 		let map = null
 		let debounce
 		let themeObserver = null
+		let resizeObserver = null
+		let resizeFrame = 0
 
 		const lat = latitude ?? (syncUrl ? Number(page.url.searchParams.get('latitude')) || 20 : 20)
 		const lng = longitude ?? (syncUrl ? Number(page.url.searchParams.get('longitude')) || 0 : 0)
@@ -71,9 +73,22 @@
 			map.addControl(new maplibregl.AttributionControl({compact: true}), 'bottom-right')
 
 			const m = map
+			function resizeMap() {
+				if (disposed || !map) return
+				cancelAnimationFrame(resizeFrame)
+				resizeFrame = requestAnimationFrame(() => {
+					if (!disposed) map?.resize()
+				})
+			}
+
+			resizeObserver = new ResizeObserver(resizeMap)
+			resizeObserver.observe(node)
+			resizeMap()
+
 			m.on('load', () => {
 				if (disposed) return
 				m.setProjection({type: projection})
+				m.resize()
 				onready?.(m)
 			})
 
@@ -123,6 +138,8 @@
 		return () => {
 			disposed = true
 			themeObserver?.disconnect()
+			resizeObserver?.disconnect()
+			cancelAnimationFrame(resizeFrame)
 			clearTimeout(debounce)
 			map?.remove()
 		}
