@@ -207,6 +207,10 @@
 		return channelsRaw
 	})
 	const hasMore = $derived(filter !== 'featured' && !isPaged && channelsRaw.length >= queryLimit)
+
+	// Server-side total count for pagination (N/M display)
+	let serverCount = $state(0)
+	const totalCount = $derived(localIdFilters[filter]?.().length ?? serverCount)
 	const hasPaginatedMore = $derived(
 		isPaged &&
 			filter !== 'featured' &&
@@ -214,9 +218,6 @@
 				? totalCount > (currentPage + extraPages) * pageSize
 				: channelsRaw.length >= (currentPage + extraPages) * pageSize)
 	)
-
-	// Server-side total count for pagination (N/M display)
-	let serverCount = $state(0)
 	$effect(() => {
 		if (!isPaged || filter === 'featured' || filter in localIdFilters) {
 			serverCount = 0
@@ -234,7 +235,6 @@
 			})
 			.catch(() => {})
 	})
-	const totalCount = $derived(localIdFilters[filter]?.().length ?? serverCount)
 
 	// Restore imported channels into the collection on filter activation.
 	// appState.local_channels is the durable source — persisted in localStorage.

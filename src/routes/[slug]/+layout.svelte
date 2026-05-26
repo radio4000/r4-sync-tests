@@ -5,7 +5,7 @@
 	import {untrack} from 'svelte'
 	import {setChannelCtx, setTracksQueryCtx, setChannelNavCtx} from '$lib/contexts'
 	import type {Snippet} from 'svelte'
-	import {eq} from '@tanstack/db'
+	import {eq, inArray} from '@tanstack/db'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {joinBroadcast, leaveBroadcast, startBroadcast, stopBroadcast} from '$lib/broadcast'
 	import PresenceCount from '$lib/components/presence-count.svelte'
@@ -31,6 +31,7 @@
 	import ChannelSectionMenu from '$lib/components/channel-section-menu.svelte'
 	import * as m from '$lib/paraglide/messages'
 	import {watchPresence, unwatchPresence, channelPresence} from '$lib/presence.svelte'
+	import {pickRouteChannel, updateStableChannelId} from '$lib/channel-route'
 
 	// --- Props & route params ---
 
@@ -59,30 +60,35 @@
 			.findOne()
 	)
 	let channelId = $state('')
-	$effect(() => {
-		const found = /** @type {import('$lib/types').Channel | undefined} */ (
+	let channelIdSourceSlug = $state('')
+	let channelFromSlug = $derived(
+		/** @type {import('$lib/types').Channel | undefined} */ (
 			/** @type {unknown} */ (channelBySlugQuery.data)
 		)
-		if (found?.id && found.id !== channelId) channelId = found.id
+	)
+	$effect(() => {
+		const next = updateStableChannelId(slug, channelId, channelIdSourceSlug, channelFromSlug)
+		if (next.channelId !== channelId) channelId = next.channelId
+		if (next.channelIdSourceSlug !== channelIdSourceSlug) channelIdSourceSlug = next.channelIdSourceSlug
 	})
 
-	// Reactive query by stable ID — survives slug changes
+	const stableChannelId = $derived(channelIdSourceSlug === slug ? channelId : '')
+
+	// Reactive query by stable ID — survives slug changes for the same route target
 	const channelByIdQuery = useLiveQuery((q) =>
-		channelId
+		stableChannelId
 			? q
 					.from({channels: channelsCollection})
-					.where(({channels}) => eq(channels.id, channelId))
+					.where(({channels}) => inArray(channels.id, [stableChannelId]))
 					.findOne()
-			: q
-					.from({channels: channelsCollection})
-					.orderBy(({channels}) => channels.id, 'asc')
-					.limit(0)
+			: null
 	)
-	let channel = $derived(
+	let channelFromId = $derived(
 		/** @type {import('$lib/types').Channel | undefined} */ (
-			/** @type {unknown} */ (channelByIdQuery.data ?? channelBySlugQuery.data)
+			/** @type {unknown} */ (channelByIdQuery.data)
 		)
 	)
+	let channel = $derived(pickRouteChannel(slug, channelFromSlug, channelFromId))
 	let channelIsLoading = $derived(
 		!channel && (channelBySlugQuery.isLoading || (Boolean(channelId) && channelByIdQuery.isLoading))
 	)

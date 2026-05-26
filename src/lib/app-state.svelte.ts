@@ -1,6 +1,69 @@
 import type {AppState, Deck} from './types.ts'
 import {logger} from '$lib/logger'
 import {LOCAL_STORAGE_KEYS} from '$lib/storage-keys'
+
+function resetTransientDeckState(deck: Deck): Deck {
+	deck.is_playing = false
+	deck.broadcasting_channel_id = undefined
+	deck.listening_to_channel_id = undefined
+	deck.auto_radio_drifted = undefined
+	deck.listening_drifted = undefined
+	deck.play_id = undefined
+	deck.track_played_at = undefined
+	deck.seeked_at = undefined
+	deck.seek_position = undefined
+	deck.media_current_time = undefined
+	deck.media_duration = undefined
+	return deck
+}
+
+export function normalizeLoadedDeck(id: number, deck?: Partial<Deck>): Deck {
+	return resetTransientDeckState({...createDefaultDeck(id), ...(deck as Deck | undefined)})
+}
+
+export function serializeAppStateForStorage(state: AppState): Record<string, unknown> {
+	const persistedState = {...state} as Record<string, unknown>
+	const decks: Record<number, Partial<Deck>> = {}
+
+	for (const [id, deck] of Object.entries(state.decks)) {
+		if (deck.listening_to_channel_id) continue
+		decks[Number(id)] = {
+			id: deck.id,
+			playlist_title: deck.playlist_title,
+			playlist_slug: deck.playlist_slug,
+			playlist_track: deck.playlist_track,
+			shuffle: deck.shuffle,
+			volume: deck.volume,
+			muted: deck.muted,
+			hide_video_player: deck.hide_video_player,
+			video_mix: deck.video_mix,
+			compact: deck.compact,
+			expanded: deck.expanded,
+			hide_queue_panel: deck.hide_queue_panel,
+			queue_panel_width: deck.queue_panel_width,
+			auto_radio: deck.auto_radio,
+			view: deck.view,
+			auto_radio_rotation_start: deck.auto_radio_rotation_start,
+			speed: deck.speed
+		}
+	}
+
+	persistedState.decks = decks
+	return persistedState
+}
+
+export function serializeQueuesForStorage(decks: AppState['decks']) {
+	const queues: Record<number, {playlist_tracks: string[]; playlist_tracks_shuffled: string[]}> = {}
+	for (const [id, deck] of Object.entries(decks)) {
+		if (deck.listening_to_channel_id) continue
+		queues[Number(id)] = {
+			playlist_tracks: deck.playlist_tracks,
+			playlist_tracks_shuffled: deck.playlist_tracks_shuffled
+		}
+	}
+	return queues
+}
+
 export function createDefaultDeck(id: number): Deck {
 	return {
 		id,
@@ -88,7 +151,7 @@ function loadState(): AppState {
 			const parsed = JSON.parse(storedState)
 			state = {...state, ...parsed}
 			for (const [id, deck] of Object.entries(state.decks)) {
-				state.decks[Number(id)] = {...createDefaultDeck(Number(id)), ...(deck as Deck)}
+				state.decks[Number(id)] = normalizeLoadedDeck(Number(id), deck as Deck)
 			}
 		}
 		// Queue arrays are stored separately to avoid serializing them on every small state change
@@ -112,8 +175,7 @@ function loadState(): AppState {
 
 	// Always reset transient state on all decks
 	for (const deck of Object.values(state.decks)) {
-		deck.is_playing = false
-		deck.listening_to_channel_id = undefined
+		resetTransientDeckState(deck)
 	}
 
 	const deckIds = Object.keys(state.decks)
@@ -196,28 +258,9 @@ export function removeDeck(deckId: number): void {
 // QUEUE_KEY: just the queue arrays per deck
 $effect.root(() => {
 	$effect(() => {
-		const state = {...appState} as Record<string, unknown>
-		const decks: Record<number, Partial<Deck>> = {}
-		for (const [id, deck] of Object.entries(appState.decks)) {
-			if (deck.listening_to_channel_id) continue
-			const d = {...deck} as Partial<Deck>
-			delete d.playlist_tracks
-			delete d.playlist_tracks_shuffled
-			decks[Number(id)] = d
-		}
-		state.decks = decks
-		localStorage.setItem(STATE_KEY, JSON.stringify(state))
+		localStorage.setItem(STATE_KEY, JSON.stringify(serializeAppStateForStorage(appState)))
 	})
 	$effect(() => {
-		const queues: Record<number, {playlist_tracks: string[]; playlist_tracks_shuffled: string[]}> =
-			{}
-		for (const [id, deck] of Object.entries(appState.decks)) {
-			if (deck.listening_to_channel_id) continue
-			queues[Number(id)] = {
-				playlist_tracks: deck.playlist_tracks,
-				playlist_tracks_shuffled: deck.playlist_tracks_shuffled
-			}
-		}
-		localStorage.setItem(QUEUE_KEY, JSON.stringify(queues))
+		localStorage.setItem(QUEUE_KEY, JSON.stringify(serializeQueuesForStorage(appState.decks)))
 	})
 })

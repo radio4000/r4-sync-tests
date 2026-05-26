@@ -1,4 +1,5 @@
 <script>
+	import {onMount} from 'svelte'
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {appState} from '$lib/app-state.svelte'
@@ -18,7 +19,6 @@
 	import {sdk} from '@radio4000/sdk'
 	import ChannelCard from '$lib/components/channel-card.svelte'
 	import MyChannelControls from '$lib/components/my-channel-controls.svelte'
-	import MapChannels from '$lib/components/map-channels.svelte'
 	import {not, isNull} from '@tanstack/db'
 	import Icon from '$lib/components/icon.svelte'
 	import PageHeader from '$lib/components/page-header.svelte'
@@ -182,9 +182,43 @@
 	const showFavoriteBroadcastWidget = $derived(favoriteBroadcastCount > 0)
 	const showBroadcastCountWidget = $derived(broadcastCount > 0 && !userChannelIsBroadcasting)
 
+	let homeMapSection = $state(/** @type {HTMLDivElement | undefined} */ (undefined))
+	let homeMapVisible = $state(false)
+	let HomeMapChannels = $state(
+		/** @type {typeof import('$lib/components/map-channels.svelte').default | null} */ (null)
+	)
+
+	onMount(() => {
+		const section = homeMapSection
+		if (!section || homeMapVisible) return
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (!entries.some((entry) => entry.isIntersecting)) return
+				homeMapVisible = true
+				observer.disconnect()
+			},
+			{rootMargin: '400px 0px'}
+		)
+
+		observer.observe(section)
+		return () => observer.disconnect()
+	})
+
+	$effect(() => {
+		if (!homeMapVisible || HomeMapChannels) return
+		void import('$lib/components/map-channels.svelte').then((module) => {
+			HomeMapChannels = module.default
+		})
+	})
+
+	const shouldLoadHomeMapData = $derived(homeMapVisible)
+
 	// Globe channels — all synced channels with coordinates
 	const globeChannelsQuery = useLiveQuery((q) =>
-		q.from({ch: channelsCollection}).where(({ch}) => not(isNull(ch.latitude)))
+		shouldLoadHomeMapData
+			? q.from({ch: channelsCollection}).where(({ch}) => not(isNull(ch.latitude)))
+			: null
 	)
 	const globeChannels = $derived(
 		(globeChannelsQuery.data ?? []).filter((ch) => (ch.track_count ?? 0) > 10)
@@ -383,14 +417,18 @@
 		</section>
 
 		<section class="section section--globe">
-			<div class="globe">
-				<MapChannels
-					channels={mapChannels}
-					globeMode={true}
-					zoom={1}
-					syncUrl={false}
-					showControls={false}
-				/>
+			<div class="globe" bind:this={homeMapSection}>
+				{#if HomeMapChannels && homeMapVisible}
+					<HomeMapChannels
+						channels={mapChannels}
+						globeMode={true}
+						zoom={1}
+						syncUrl={false}
+						showControls={false}
+					/>
+				{:else}
+					<div class="globe-placeholder" aria-hidden="true"></div>
+				{/if}
 				<a href={mapOverlayHref} class="btn map-overlay-btn" aria-label={m.nav_map()}>
 					<Icon icon="fullscreen" size={14} />
 				</a>
@@ -547,14 +585,18 @@
 		</div>
 
 		<section class="section section--globe section--globe--loggedout">
-			<div class="globe">
-				<MapChannels
-					channels={globeChannels}
-					globeMode={true}
-					zoom={1.5}
-					syncUrl={false}
-					showControls={false}
-				/>
+			<div class="globe" bind:this={homeMapSection}>
+				{#if HomeMapChannels && homeMapVisible}
+					<HomeMapChannels
+						channels={globeChannels}
+						globeMode={true}
+						zoom={1.5}
+						syncUrl={false}
+						showControls={false}
+					/>
+				{:else}
+					<div class="globe-placeholder" aria-hidden="true"></div>
+				{/if}
 				<a
 					href={resolve('/channels/all') + '?display=map'}
 					class="btn map-overlay-btn"
@@ -918,6 +960,14 @@
 		:global(article .description) {
 			display: none;
 		}
+	}
+
+	.globe-placeholder {
+		flex: 1;
+		min-height: 50dvh;
+		background:
+			radial-gradient(circle at 50% 42%, rgb(105 160 255 / 0.22), transparent 18%),
+			radial-gradient(circle at 50% 50%, rgb(36 72 126 / 0.85), rgb(9 15 24 / 0.95) 72%);
 	}
 
 	.map-overlay-btn {

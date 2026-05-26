@@ -2,7 +2,7 @@
 	import PageHeader from './page-header.svelte'
 	import ExploreSectionMenu from './explore-section-menu.svelte'
 
-	const {children, filterChips} = $props()
+	const {children, filterChips = undefined} = $props()
 </script>
 
 <PageHeader wrap>

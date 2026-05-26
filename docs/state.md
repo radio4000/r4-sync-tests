@@ -10,6 +10,8 @@ Supabase PostgreSQL is the source of truth. Access via [`@radio4000/sdk`](radio4
 
 Persistence is split into two localStorage keys: one for general state, one for queue arrays (to avoid serializing large arrays on every small change).
 
+Transient deck runtime fields are intentionally excluded from persistence: media progress (`media_current_time`, `media_duration`), live/broadcast listening flags, drift flags, and play/seek timestamps reset on reload.
+
 ## Local sync and persistence
 
 Data flows from remote to components through a caching layer:

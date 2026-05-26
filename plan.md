@@ -2,7 +2,13 @@
 
 Possible improvements. Roughly by priority. Verify before implementing.
 
-Last update (2026-04-15): migrated browse routes to canonical `/explore/*` paths (with legacy redirects), added Explore app-nav entry, and simplified homepage top navigation.
+Last update (2026-05-26): hotfixed app-state deck persistence to exclude transient runtime fields, lazy-loaded the homepage globe/map, and cleared current typecheck blockers.
+
+## Done (2026-05-26)
+
+- Deck persistence now excludes transient runtime fields like media progress, live/listening flags, drift flags, and play/seek timestamps, reducing localStorage churn during playback.
+- Homepage globe/map now lazy-loads near viewport instead of importing the heavy map path on initial route load.
+- Current `bun run types` blockers fixed: homepage sort comparator typing, `channels.svelte` declaration order, and optional `filterChips` in explore header.
 
 ## Done (2026-04-15)
 
@@ -42,6 +48,7 @@ Last update (2026-04-15): migrated browse routes to canonical `/explore/*` paths
 
 - Test RTL support
 - `TrackCard` parses `track.description` with LinkEntities on every render. Consider a DB trigger or cache.
+- Large list/card surfaces still scan `appState.decks` per item (`TrackCard`, `ChannelCard`, tags, layout). Follow up with deck-scoped selectors or shared derived state.
 - Media Session API — lock screen and notification controls (play/pause/skip/artwork). Needs research: YouTube/SoundCloud iframes set their own `mediaSession`, may conflict. Our next/prev/seek would work (we proxy via iframe APIs), but play/pause and metadata could fight the iframe.
 - Duplicate track detection — warn when adding a URL that already exists in the channel. Could also surface in batch-edit (group by URL or `media_id`).
 - Musicbrainz/discogs auto-matching has a high error rate. Let users mark metadata as wrong, or show an "unverified" badge.
