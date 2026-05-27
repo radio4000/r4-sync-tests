@@ -24,6 +24,7 @@ Last update (2026-05-27): cleared done sections — see CHANGELOG.md for user-fa
 - Musicbrainz/discogs auto-matching has a high error rate. Let users mark metadata as wrong, or show an "unverified" badge.
 - `src/lib/metadata/discogs-core.js` — in-memory fetch cache grows unbounded. 5-min TTL but no eviction. Long sessions accumulate entries. Could move to a db collection.
 - Play history threshold: a track is recorded the moment it starts playing. Should count only after enough listening: full track if under 2 min, half the duration (max 4 min) otherwise. Open questions: accumulate actual play time vs. furthest position? What about pause/resume? Should skipped tracks get a `skipped` flag or disappear? Currently `capture('player:track_play')` fires in `playTrack()` (api.ts); would move to `player.svelte` using `timeupdate`. Needs `getPlayCountThreshold(durationSec)` helper and a way to pass `reason_start` to the player.
+
 ## Needs research
 
 - Broadcast hard-fail cleanup — current auto-stop is client-side (idle/no-deck monitor). Consider server-side TTL/heartbeat expiry for cases like sudden process kill or network drop during tab close.

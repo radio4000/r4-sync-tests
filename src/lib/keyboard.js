@@ -101,23 +101,30 @@ function onKeyDown(event) {
 
 export function initializeKeyboardShortcuts() {
 	const keyBindings = {...DEFAULT_KEY_BINDINGS, ...appState.shortcuts}
+	const bindings = Object.fromEntries(
+		Object.entries(keyBindings).flatMap(([key, actionName]) => {
+			const action = SHORTCUT_ACTIONS[actionName]
+			if (!action) return []
 
-	const bindings = {}
-	for (const [key, actionName] of Object.entries(keyBindings)) {
-		const action = SHORTCUT_ACTIONS[actionName]
-		if (!action) continue
-		bindings[key] = (event) => {
-			if (
-				event.target instanceof HTMLInputElement ||
-				event.target instanceof HTMLTextAreaElement ||
-				event.target instanceof HTMLSelectElement ||
-				event.target.tagName === 'DATALIST'
-			) {
-				return
-			}
-			action.run(event)
-		}
-	}
+			return [
+				[
+					key,
+					(event) => {
+						const target = event.target
+						if (
+							target instanceof HTMLInputElement ||
+							target instanceof HTMLTextAreaElement ||
+							target instanceof HTMLSelectElement ||
+							(target instanceof HTMLElement && target.tagName === 'DATALIST')
+						) {
+							return
+						}
+						action.run(event)
+					}
+				]
+			]
+		})
+	)
 
 	currentHandler = createKeybindingsHandler(bindings)
 
