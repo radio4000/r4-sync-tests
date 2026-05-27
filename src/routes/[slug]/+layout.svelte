@@ -62,9 +62,7 @@
 	let channelId = $state('')
 	let channelIdSourceSlug = $state('')
 	let channelFromSlug = $derived(
-		/** @type {import('$lib/types').Channel | undefined} */ (
-			/** @type {unknown} */ (channelBySlugQuery.data)
-		)
+		/** @type {import('$lib/types').Channel | undefined} */ /** @type {unknown} */ channelBySlugQuery.data
 	)
 	$effect(() => {
 		const next = updateStableChannelId(slug, channelId, channelIdSourceSlug, channelFromSlug)
@@ -85,9 +83,7 @@
 			: null
 	)
 	let channelFromId = $derived(
-		/** @type {import('$lib/types').Channel | undefined} */ (
-			/** @type {unknown} */ (channelByIdQuery.data)
-		)
+		/** @type {import('$lib/types').Channel | undefined} */ /** @type {unknown} */ channelByIdQuery.data
 	)
 	let channel = $derived(pickRouteChannel(slug, channelFromSlug, channelFromId))
 	let channelIsLoading = $derived(
@@ -176,6 +172,7 @@
 	// Redirect when the channel's slug drifts from the URL (e.g. after editing)
 	$effect(() => {
 		if (channel?.slug && channel.slug !== slug) {
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local URL parsing for navigation, not reactive state
 			const url = new URL(page.url)
 			url.pathname = page.url.pathname.replace(`/${slug}`, resolve('/[slug]', {slug: channel.slug}))
 			goto(`${url.pathname}${url.search}${url.hash}`, {replaceState: true})

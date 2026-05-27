@@ -18,7 +18,7 @@
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import {addToPlaylist, joinAutoRadio, loadDeckView, playTrack, setPlaylist} from '$lib/api'
 	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
-	import {getChannelTags, seededRandom, shuffleSeed} from '$lib/utils'
+	import {getChannelTags, HASH_PREFIX_REGEX, seededRandom, shuffleSeed} from '$lib/utils'
 	import {processViewTracks, getAutoDecksForView} from '$lib/views.svelte'
 	import type {Track} from '$lib/types'
 	import type {View} from '$lib/views'
@@ -217,7 +217,7 @@
 	let isFilteredAutoPlaying = $derived(filteredAutoDecks.some((d) => d.is_playing))
 	let isFilteredAutoDrifted = $derived(filteredAutoDecks.some((d) => d.auto_radio_drifted))
 	let targetTrackId = $derived.by(() => {
-		const hash = decodeURIComponent(page.url.hash.replace(/^#/, ''))
+		const hash = decodeURIComponent(page.url.hash.replace(HASH_PREFIX_REGEX, ''))
 		if (!hash) return null
 		return hash.startsWith('track-') ? hash.slice('track-'.length) : hash
 	})

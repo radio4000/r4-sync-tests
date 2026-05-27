@@ -47,7 +47,4 @@
 	menu:first-of-type {
 		margin-bottom: 0;
 	}
-	menu a small {
-		display: block;
-	}
 </style>

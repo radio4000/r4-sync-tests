@@ -219,8 +219,7 @@
 	}
 
 	.card input,
-	.card textarea,
-	.card select {
+	.card textarea {
 		background: var(--gray-3);
 	}
 

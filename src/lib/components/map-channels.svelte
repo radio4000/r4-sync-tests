@@ -1,6 +1,7 @@
 <script module>
 	export {
 		MAP_TILE_STYLES as TILE_STYLES,
+		// eslint-disable-next-line no-import-assign -- false positive on re-export with rename
 		DEFAULT_MAP_TILE_STYLE as TILE_SATELLITE
 	} from '$lib/config'
 </script>

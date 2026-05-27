@@ -118,8 +118,12 @@
 	let channelFollowing = $state<import('$lib/types').Channel[]>([])
 	let ownChannelFollowers = $state<import('$lib/types').Channel[]>([])
 
-	function normalizeChannels(rows: any[]): import('$lib/types').Channel[] {
-		return rows.filter((c) => typeof c?.id === 'string' && typeof c?.slug === 'string')
+	function normalizeChannels(rows: unknown[]): import('$lib/types').Channel[] {
+		return rows.filter(
+			(c): c is import('$lib/types').Channel =>
+				typeof (c as {id?: unknown})?.id === 'string' &&
+				typeof (c as {slug?: unknown})?.slug === 'string'
+		)
 	}
 
 	function compactOverlapText(items: import('$lib/types').Channel[]) {
@@ -154,7 +158,7 @@
 						.from('channels_with_tracks')
 						.select('*')
 						.in('id', ids)
-					return normalizeChannels(dedupeById((enriched || data) as any[]))
+					return normalizeChannels(dedupeById((enriched || data) as Array<{id: string | null}>))
 				},
 				staleTime: 5 * 60 * 1000
 			}),
@@ -168,7 +172,7 @@
 						.from('channels_with_tracks')
 						.select('*')
 						.in('id', ids)
-					return normalizeChannels(dedupeById((enriched || data) as any[]))
+					return normalizeChannels(dedupeById((enriched || data) as Array<{id: string | null}>))
 				},
 				staleTime: 5 * 60 * 1000
 			})
@@ -207,7 +211,7 @@
 						.from('channels_with_tracks')
 						.select('*')
 						.in('id', ids)
-					return normalizeChannels(dedupeById((enriched || data) as any[]))
+					return normalizeChannels(dedupeById((enriched || data) as Array<{id: string | null}>))
 				},
 				staleTime: 5 * 60 * 1000
 			})

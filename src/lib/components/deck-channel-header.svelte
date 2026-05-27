@@ -5,7 +5,7 @@
 	import Tag from '$lib/components/tag.svelte'
 	import PresenceCount from '$lib/components/presence-count.svelte'
 	import {deckTitle} from '$lib/deck'
-	import {extractHashtags} from '$lib/utils'
+	import {extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
 	import * as m from '$lib/paraglide/messages'
 
 	/** @typedef {import('$lib/types').Deck} Deck */
@@ -64,13 +64,16 @@
 		listeningWhomSlug ? resolve('/[slug]', {slug: listeningWhomSlug}) : undefined
 	)
 	const derivedTags = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local dedupe, not reactive state
 		const tags = new Set(
-			extractHashtags(deck?.playlist_title ?? '').map((tag) => tag.replace(/^#/, '').toLowerCase())
+			extractHashtags(deck?.playlist_title ?? '').map((tag) =>
+				tag.replace(HASH_PREFIX_REGEX, '').toLowerCase()
+			)
 		)
 		for (const source of deck?.view?.sources ?? []) {
 			for (const tag of source?.tags ?? []) tags.add(tag.toLowerCase())
 		}
-		return [...tags].map((value) => ({
+		return Array.from(tags, (value) => ({
 			label: `#${value}`,
 			href: slug
 				? `${resolve('/[slug]/tracks', {slug})}?tags=${encodeURIComponent(value)}`

@@ -1,9 +1,9 @@
 <script>
-	const {wrap = false} = $props()
+	const {wrap = false, children} = $props()
 </script>
 
 <menu class="page-header" class:page-header--wrap={wrap}>
-	<slot />
+	{@render children?.()}
 </menu>
 
 <style>

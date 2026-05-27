@@ -18,7 +18,6 @@
 		// Clean up previous target
 		if (currentTarget && currentTarget.id !== tooltipState.targetId) {
 			currentTarget.removeAttribute('aria-describedby')
-			// @ts-expect-error - CSS Anchor Positioning API
 			currentTarget.style.anchorName = ''
 		}
 
@@ -37,9 +36,7 @@
 		const anchorName = `--anchor-${tooltipState.targetId}`
 
 		target.setAttribute('aria-describedby', id)
-		// @ts-expect-error - CSS Anchor Positioning API
 		target.style.anchorName = anchorName
-		// @ts-expect-error - CSS Anchor Positioning API
 		tooltipElement.style.positionAnchor = anchorName
 
 		tooltipElement.showPopover()

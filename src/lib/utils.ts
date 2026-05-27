@@ -79,6 +79,8 @@ export function seededRandom(seed: string): () => number {
 export const ENTITY_REGEX =
 	/(^|\s)([#﹟＃@][\p{XID_Continue}\p{Extended_Pictographic}\p{Emoji_Component}_+-]+)/giu
 
+export const HASH_PREFIX_REGEX = /^#/
+
 /**
  * Parse text for entities (hashtags and mentions)
  */

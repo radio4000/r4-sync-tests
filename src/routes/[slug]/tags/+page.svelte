@@ -46,6 +46,7 @@
 		[() => matchingSlug]
 	)
 	let matchingTags = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local dedupe, not reactive state
 		const set = new Set()
 		for (const track of matchingTracksQuery.data ?? []) {
 			for (const tag of track.tags ?? []) set.add(tag.toLowerCase())

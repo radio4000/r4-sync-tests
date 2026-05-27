@@ -62,7 +62,7 @@
 
 	/** @param {KeyboardEvent} event */
 	function handleKeyDown(event) {
-		const target = /** @type {HTMLElement | null} */ (event.target)
+		const target = /** @type {HTMLElement | null} */ event.target
 		if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') return
 		if (event.key === 'c' && !event.metaKey && !event.ctrlKey) {
 			event.preventDefault()

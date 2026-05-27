@@ -43,7 +43,7 @@
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {eq} from '@tanstack/svelte-db'
-	import {isDbId, trackImageUrl, extractHashtags} from '$lib/utils'
+	import {isDbId, trackImageUrl, extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
 	import Tag from '$lib/components/tag.svelte'
 	import TrackCard from '$lib/components/track-card.svelte'
@@ -199,13 +199,16 @@
 	})
 
 	const headerTags = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local dedupe, not reactive state
 		const tags = new Set(
-			extractHashtags(deck?.playlist_title ?? '').map((tag) => tag.replace(/^#/, '').toLowerCase())
+			extractHashtags(deck?.playlist_title ?? '').map((tag) =>
+				tag.replace(HASH_PREFIX_REGEX, '').toLowerCase()
+			)
 		)
 		for (const source of deck?.view?.sources ?? []) {
 			for (const tag of source?.tags ?? []) tags.add(tag.toLowerCase())
 		}
-		return [...tags].map((value) => ({
+		return Array.from(tags, (value) => ({
 			value: `#${value}`,
 			href: deck?.playlist_slug
 				? `/${deck.playlist_slug}/tracks?tags=${encodeURIComponent(value)}`
