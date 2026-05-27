@@ -6,7 +6,6 @@
 	import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {eq} from '@tanstack/db'
-	import {parseUrl} from 'media-now'
 	import Tracklist from '$lib/components/tracklist.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
 	import Subpage from '$lib/components/subpage.svelte'
@@ -18,7 +17,7 @@
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import {addToPlaylist, joinAutoRadio, loadDeckView, playTrack, setPlaylist} from '$lib/api'
 	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
-	import {getChannelTags, HASH_PREFIX_REGEX, seededRandom, shuffleSeed} from '$lib/utils'
+	import {canonicalTrackKey, getChannelTags, HASH_PREFIX_REGEX, seededRandom, shuffleSeed} from '$lib/utils'
 	import {processViewTracks, getAutoDecksForView} from '$lib/views.svelte'
 	import type {Track} from '$lib/types'
 	import type {View} from '$lib/views'
@@ -61,24 +60,6 @@
 		{value: 'count' as const, icon: 'hash' as const, label: () => m.tags_sort_count()},
 		{value: 'alpha' as const, icon: 'sort' as const, label: () => m.tags_sort_alpha()}
 	]
-
-	function getCanonicalUrlKey(track: Track): string | null {
-		let parsed = {} as {provider?: string; media_id?: string; mediaId?: string}
-		try {
-			parsed = (parseUrl(track.url || '') || {}) as {
-				provider?: string
-				media_id?: string
-				mediaId?: string
-			}
-		} catch {
-			parsed = {}
-		}
-		const provider = track.provider || parsed.provider
-		const mediaId = track.media_id || parsed.media_id || parsed.mediaId
-		if (provider && mediaId) return `${provider}:${mediaId}`
-		const url = track.url?.trim().toLowerCase()
-		return url || null
-	}
 
 	// Sync search input → URL (debounced by SearchInput)
 	$effect(() => {
@@ -140,7 +121,7 @@
 	)
 	let matchingTracks = $derived((matchingTracksQuery.data ?? []) as Track[])
 	let matchingTrackKeys = $derived.by(
-		() => new Set(matchingTracks.map(getCanonicalUrlKey).filter((v): v is string => Boolean(v)))
+		() => new Set(matchingTracks.map(canonicalTrackKey).filter((v): v is string => Boolean(v)))
 	)
 	let allTracks = $derived(tracksQuery.data || [])
 	let canEdit = $derived(canEditChannel(channel?.id))
@@ -167,34 +148,32 @@
 			return base * direction
 		})
 	})
-	let filteredTracks = $derived(
-		(() => {
-			// Force recomputation when user explicitly reshuffles.
-			if (order === 'shuffle') void reshuffleKey
-			return processViewTracks(
-				allTracks,
-				{
-					sources: [
-						{
-							tags: selectedTags.length ? selectedTags : undefined,
-							tagsMode: 'all',
-							search: searchValue || undefined
-						}
-					],
-					order: isSorting ? order : undefined,
-					direction: isSorting ? direction : undefined
-				},
-				order === 'shuffle' ? {shuffleRand: seededRandom(randomSeed || 'default-seed')} : undefined
-			)
-		})()
-	)
+	let filteredTracks = $derived.by(() => {
+		// Force recomputation when user explicitly reshuffles.
+		if (order === 'shuffle') void reshuffleKey
+		return processViewTracks(
+			allTracks,
+			{
+				sources: [
+					{
+						tags: selectedTags.length ? selectedTags : undefined,
+						tagsMode: 'all',
+						search: searchValue || undefined
+					}
+				],
+				order: isSorting ? order : undefined,
+				direction: isSorting ? direction : undefined
+			},
+			order === 'shuffle' ? {shuffleRand: seededRandom(randomSeed || 'default-seed')} : undefined
+		)
+	})
 	let baseVisibleTracks = $derived(isFiltering ? filteredTracks : allTracks)
 	let visibleTracks = $derived.by(() => {
 		if (!matchingSlug) return baseVisibleTracks
 		if (matchingSlug === slug) return baseVisibleTracks
 		if (matchingTrackKeys.size === 0) return []
 		return baseVisibleTracks.filter((track) => {
-			const key = getCanonicalUrlKey(track)
+			const key = canonicalTrackKey(track)
 			return Boolean(key && matchingTrackKeys.has(key))
 		})
 	})
@@ -237,17 +216,15 @@
 	})
 
 	$effect(() => {
+		const trackId = targetTrackId
 		const elementId = targetTrackElementId
-		if (!elementId || !tracksQuery.isReady || !visibleTracks.length) return
+		if (!trackId || !elementId || !tracksQuery.isReady || !visibleTracks.length) return
 		if (scrolledTrackElementId === elementId) return
-		if (!visibleTracks.some((track) => track.id === targetTrackId)) return
-
-		const target = document.getElementById(elementId)
-		if (!target) return
+		if (!visibleTracks.some((track) => track.id === trackId)) return
 
 		scrolledTrackElementId = elementId
 		requestAnimationFrame(() => {
-			target.scrollIntoView({block: 'center'})
+			document.getElementById(elementId)?.scrollIntoView({block: 'center'})
 		})
 	})
 
@@ -453,7 +430,7 @@
 		{#snippet emptyChildren()}
 			<p>{m.channel_no_tracks()}</p>
 		{/snippet}
-		<section>
+		<section class="tracks-page">
 			<header>
 				{#if isFiltering && (selectedTags.length > 0 || matchingSlug)}
 					<menu class="row filter-tags">
@@ -501,6 +478,13 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.35rem;
+	}
+
+	.tracks-page {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-height: 0;
 	}
 
 	.filter-toggle {

@@ -3,6 +3,7 @@
 ## May 2026
 
 - Add N+P shortcuts for next/prev track (can be customized)
+- #Perf It's now faster to change track
 - #Perf Cut playback churn — deck persistence no longer writes transient runtime fields (media progress, drift flags) on every tick
 - #Perf Homepage globe lazy-loads near viewport instead of importing on initial route
 

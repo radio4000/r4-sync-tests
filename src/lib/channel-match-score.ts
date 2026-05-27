@@ -1,4 +1,4 @@
-import {parseUrl} from 'media-now'
+import {canonicalTrackKey} from '$lib/utils'
 import type {Track} from '$lib/types'
 
 export const CHANNEL_MATCH_WEIGHTS = {
@@ -38,23 +38,6 @@ function normalizeText(input?: string | null) {
 		.replace(RE_NOISE, ' ')
 		.replace(RE_SPACE, ' ')
 		.trim()
-}
-
-function getCanonicalUrlKey(track: Track): string | null {
-	const parsed = parseUrl(track.url ?? '')
-	const provider = track.provider ?? parsed?.provider ?? null
-	const mediaId = track.media_id ?? parsed?.id ?? null
-	if (provider && mediaId) return `${provider}:${mediaId}`
-
-	const raw = (track.url ?? '').trim()
-	if (!raw) return null
-	try {
-		const u = new URL(raw)
-		u.hash = ''
-		return `${u.origin}${u.pathname}${u.search}`.toLowerCase()
-	} catch {
-		return raw.toLowerCase()
-	}
 }
 
 function getArtistTitleKey(track: Track): string | null {
@@ -117,8 +100,8 @@ export function computeChannelMatchScore(
 	myTracks: Track[],
 	targetTracks: Track[]
 ): ChannelMatchScore {
-	const myUrlSet = buildSet(myTracks, getCanonicalUrlKey)
-	const targetUrlSet = buildSet(targetTracks, getCanonicalUrlKey)
+	const myUrlSet = buildSet(myTracks, canonicalTrackKey)
+	const targetUrlSet = buildSet(targetTracks, canonicalTrackKey)
 	const myTagSet = buildTagSet(myTracks)
 	const targetTagSet = buildTagSet(targetTracks)
 	const myArtistTitleSet = buildSet(myTracks, getArtistTitleKey)

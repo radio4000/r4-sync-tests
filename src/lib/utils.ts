@@ -1,4 +1,5 @@
 import fuzzysort from 'fuzzysort'
+import {parseUrl} from 'media-now'
 import {appCloudinaryUrl} from '$lib/config'
 import * as m from '$lib/paraglide/messages'
 
@@ -16,6 +17,33 @@ const RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /** Returns true if the string is a valid UUID (i.e. a real DB-persisted record ID, not an ephemeral one). */
 export function isDbId(id: string | null | undefined): boolean {
 	return Boolean(id && RE_UUID.test(id))
+}
+
+export function canonicalTrackKey(track: {
+	provider?: string | null
+	media_id?: string | null
+	url?: string | null
+}): string | null {
+	if (track.provider && track.media_id) return `${track.provider}:${track.media_id}`
+
+	try {
+		const parsed = parseUrl(track.url ?? '')
+		const provider = parsed?.provider ?? null
+		const mediaId = parsed?.id ?? null
+		if (provider && mediaId) return `${provider}:${mediaId}`
+	} catch {
+		// Fall back to normalized raw URL below.
+	}
+
+	const raw = (track.url ?? '').trim()
+	if (!raw) return null
+	try {
+		const url = new URL(raw)
+		url.hash = ''
+		return `${url.origin}${url.pathname}${url.search}`.toLowerCase()
+	} catch {
+		return raw.toLowerCase()
+	}
 }
 
 const RE_DIACRITICS = /[\u0300-\u036f]/g

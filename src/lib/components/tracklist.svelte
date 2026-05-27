@@ -47,6 +47,9 @@
 	} = $props()
 	let internalSelectedTrackId = $state(/** @type {string | null} */ (null))
 	const selectedTrackId = $derived(selectedTrackIdProp ?? internalSelectedTrackId)
+	const contextTracks = $derived(playlistTracks ?? tracks)
+	const contextTrackIds = $derived(contextTracks.map((track) => track.id))
+	const contextPlaylistTitle = $derived(playlistTitle?.trim() || undefined)
 
 	const selectTrackFromEvent = (event, trackId) => {
 		const target = /** @type {HTMLElement} */ (event.target)
@@ -60,13 +63,8 @@
 
 	const playFromList = (trackId) => {
 		const targetDeck = deckId ?? appState.active_deck_id
-		const contextTracks = playlistTracks ?? tracks
-		if (playContext && contextTracks.length) {
-			setPlaylist(
-				targetDeck,
-				contextTracks.map((track) => track.id),
-				{title: playlistTitle}
-			)
+		if (playContext && contextTrackIds.length) {
+			setPlaylist(targetDeck, contextTrackIds, {title: contextPlaylistTitle})
 		}
 		playTrack(targetDeck, trackId, null, 'user_click_track')
 	}
@@ -91,8 +89,10 @@
 		virtualList?.scroll({index, smoothScroll: true, shouldThrowOnBounds: false})
 	}
 
-	// Cache key to avoid recomputing when tracks haven't changed
-	let cacheKey = $derived(`${tracks.length}-${tracks[0]?.id}-${tracks.at(-1)?.id}`)
+	// Cache key to avoid recomputing when tracks/render mode haven't changed
+	let cacheKey = $derived(
+		`${grouped}-${virtual}-${tracks.length}-${tracks[0]?.id}-${tracks.at(-1)?.id}`
+	)
 
 	/** @type {{key: string, items: FlatItem[], groups: SvelteMap<string, SvelteMap<string, IndexedTrack[]>>}} */
 	let cache = {key: '', items: [], groups: new SvelteMap()}
@@ -194,6 +194,8 @@
 							role="option"
 							tabindex="-1"
 							aria-selected={selectedTrackId === item.track?.id}
+							id="track-{item.track.id}"
+							data-track-id={item.track.id}
 							onclick={(event) => selectTrackFromEvent(event, item.track?.id)}
 						>
 							<TrackCard

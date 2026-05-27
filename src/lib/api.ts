@@ -50,6 +50,10 @@ function isNormalPlayStart(startReason: PlayStartReason): boolean {
 	)
 }
 
+function sameStringArray(a: string[], b: string[]): boolean {
+	return a === b || (a.length === b.length && a.every((value, index) => value === b[index]))
+}
+
 /** Notify broadcast listeners if currently broadcasting */
 function maybeBroadcastNotify() {
 	const broadcastingChannelId = getBroadcastingChannelId()
@@ -209,13 +213,6 @@ export async function playTrack(
 		}
 	}
 
-	// Build playlist from tracks already loaded in collection (same channel/slug)
-	// Skip for ephemeral tracks — caller manages the playlist via setPlaylist()
-	const channelTracks = isEphemeral
-		? []
-		: [...tracksCollection.state.values()].filter((t) => t?.slug === track.slug).sort(sortByNewest)
-	const ids = channelTracks.map((t) => t.id)
-
 	// Record play history (skip for ephemeral tracks — no channel/slug)
 	const previousTrackId = deck.playlist_track
 	const previousPlayId = deck.play_id
@@ -254,8 +251,17 @@ export async function playTrack(
 		deck.seeked_at = deck.track_played_at
 		deck.seek_position = 0
 	}
-	if (!isEphemeral && (!deck.playlist_tracks.length || !deck.playlist_tracks.includes(id)))
-		await setPlaylist(deckId, ids)
+	if (!isEphemeral && (!deck.playlist_tracks.length || !deck.playlist_tracks.includes(id))) {
+		// Build playlist from tracks already loaded in collection (same channel/slug) only when needed.
+		// Channel-page playback usually set this context already; rebuilding it on every click is slow.
+		const channelTracks = [...tracksCollection.state.values()]
+			.filter((t) => t?.slug === track.slug)
+			.sort(sortByNewest)
+		setPlaylist(
+			deckId,
+			channelTracks.map((t) => t.id)
+		)
+	}
 	// Ensure ephemeral track is included in the current playlist
 	if (isEphemeral && !deck.playlist_tracks.includes(id)) {
 		deck.playlist_tracks = [...deck.playlist_tracks, id]
@@ -375,7 +381,7 @@ export async function shufflePlayChannel(deckId, {id, slug}) {
 	await playTrack(deckId, ids[randomIndex], null, 'play_channel')
 }
 
-/** Low-level queue setter. Always clears deck.view — callers that need
+/** Low-level queue setter. Clears deck.view when queue identity changes — callers that need
  *  view-backed queues should use loadDeckView() instead. */
 export function setPlaylist(
 	deckId: number,
@@ -384,12 +390,20 @@ export function setPlaylist(
 ) {
 	const deck = getDeck(deckId)
 	if (!deck) return
-	deck.playlist_tracks = trackIds
-	deck.playlist_tracks_shuffled = shuffleArray(trackIds)
-	const nextTitle = options.title?.trim()
-	deck.playlist_title = nextTitle || undefined
-	if (options.slug !== undefined) deck.playlist_slug = options.slug || undefined
-	deck.view = undefined
+	const nextTitle = options.title?.trim() || undefined
+	const nextSlug = options.slug !== undefined ? options.slug || undefined : deck.playlist_slug
+	const tracksChanged = !sameStringArray(deck.playlist_tracks, trackIds)
+	const titleChanged = deck.playlist_title !== nextTitle
+	const slugChanged = options.slug !== undefined && deck.playlist_slug !== nextSlug
+	const changed = tracksChanged || titleChanged || slugChanged
+
+	if (tracksChanged) {
+		deck.playlist_tracks = trackIds
+		deck.playlist_tracks_shuffled = shuffleArray(trackIds)
+	}
+	if (titleChanged) deck.playlist_title = nextTitle
+	if (slugChanged) deck.playlist_slug = nextSlug
+	if (changed && deck.view !== undefined) deck.view = undefined
 }
 
 /** Load a queue into a deck from an explicit View.
