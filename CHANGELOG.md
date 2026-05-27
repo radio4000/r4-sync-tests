@@ -1,10 +1,90 @@
 # Changelog
 
+## May 2026
+
+- Add N+P shortcuts for next/prev track (can be customized)
+- #Perf Cut playback churn — deck persistence no longer writes transient runtime fields (media progress, drift flags) on every tick
+- #Perf Homepage globe lazy-loads near viewport instead of importing on initial route
+
+## April 2026
+
+- #Economy `/about/economy` — interactive patronage dashboard backed by a pure math library for simulating the funding model
+- #Routes `/explore` is now canonical for browsing; legacy `/channels/*`, `/tracks/*`, `/tags/*`, and `/feed` redirect there
+- #Routes New `/broadcast` route for live listening, replacing the old auto-radio button
+- #Header Draggable compact/extended nav — resize between icon-only, icon+label-below, and icon+label-right modes
+- #Header Unified page headers behind a shared `PageHeader` component, sticky on focused pages
+- #Mobile Bottom nav hides when a deck is open, restores when no deck is open
+- #Matching Directional 100-point channel overlap score with transparent breakdown — shown next to the follow button with tracks/tags/follows-you context
+- #Matching In-common overlap views and common-following previews on channel pages
+- #Channels Tags dropdown on `/[slug]/tracks` replaced with a full modal filter dialog (tags, sort, result count)
+- #Channels URL-shareable deterministic shuffle on track lists via `order=shuffle&seed=...`
+- #Channels Load-more button at the bottom of paged grid/list views
+- #Channels Dblclick or avatar-click on a live channel joins the broadcast
+- #Map Distinct 3D-like broadcast markers for favorites; broadcasting channels visually distinct with a halo
+- #Map Non-edit maps default to satellite tiles; channel map defaults to globe overview
+- #Player Media Session API — lock-screen / notification metadata and next/prev controls for the active deck
+- #Player Auto-radio disables progress seeking and tints the icon when synced
+- #Player Remaining time shows in the final 10% of a track
+- #Deck Video mix — stack multiple listening videos in a shared stage with a menu toggle
+- #Deck Compact deck and broadcast listener controls unified; micro channel cards on compact slots
+- #Deck Fullscreen button moved into the deck context menu
+- #Broadcast Liveness auto-stop — stale broadcasts shut down on the client when idle
+- #Broadcast Listener decks close cleanly when a live broadcast ends
+- #Tracks Track context menu is now vertical with clearer groupings; artwork is a one-click play/pause with centered overlay
+- #Tracks Track-card delete uses a modal dialog with a track preview
+- #Tracks Track detail page has a sticky header with back-link and chip-tabs navigation
+- #Tracks Channel micro-card renders on the right of track rows, outside the track card
+- #Home Logged-out homepage: sticky map (50dvh), slideshow moved to `/about`, search moved from app menu into the homepage header
+- #Home Logged-in homepage: refined tags row, onboarding moved to info-panel style
+- #Home Per-deck current/next widgets removed; live-count link surfaces for signed-in users
+- #Auth Password reset pages rewritten; forgot-password link added on login
+- #UI Flat gray-3 button backgrounds, no shadow, no accent borders; forms use gray-1 inputs with no borders
+- #UI Dialogs are mobile-responsive with keyboard-safe layout
+- #UI Loader logo animates color while startup progress is visible
+- #UI Clear visual hierarchy for normal/active/selected/playing tag states
+- #Track-add "Add" button moved to dialog sticky footer; recently saved tracks shown as a track-card list
+- #Track-add Discogs URLs route to the `discogs_url` field; metadata pane gets quick "play" and "add to channel" actions
+
 ## March 2026
 
-- #Map New globe view with day/night overlay, graticule lines, tile switching, and animated broadcast rings on channels
-- #Channels Standalone mode — import channels and tracks from local files and browse them alongside the main database
+- #Map New globe view — MapLibre replacing Leaflet — with day/night overlay, graticule lines, tile switching, and animated WebGL broadcast rings (OGL custom layer) on channels
+- #Channels Standalone mode — import channels and tracks from local files (folder, M3U, backup, or URL) and browse them alongside the main database; build with `adapter-static` and `PUBLIC_APP_MODE`
+- #Home New personalized homepage with stats, featured tracks, live broadcasting section, and Home/Feed filter tabs
+- #Routes `/explore` restructured into `channels` / `tracks` / `tags` subroutes with tabs and URL-reflected filters
+- #Routes New `/feed` route with date-range filtering
+- #Routes New `/search/channels` and `/search/tracks` subroutes
+- #Routes Removed `/mix` and `/broadcasts` — superseded by multi-deck + views and the homepage broadcasting section
+- #Routes New `/embed` route and unified `EMBED_MODE` locking UI to deck interactions
+- #Routes New `/apps` page with mobile / web app install guides
+- #PWA Offline support via `@vite-pwa/sveltekit` — runtime page caching for SSR, 24h cache
+- #Analytics Opt-in PostHog analytics
+- #Tags New chain view — plain HTML tag selection with play/view actions, branch filtering, and URL-persisted chain state
+- #Tags New cloud view, tag search, and grouped controls
+- #Tags Clicking a tag inside a deck tracklist now filters inline
+- #History Redesigned with play/queue buttons, track-card UI, day grouping, relative timestamps, and a separate `/history/stats` page
+- #Views Pure view functions extracted to `views.ts` with tests; `queryViewTracks()` renamed to `queryView()`
+- #Views View pagination
+- #Queue Shuffle button now toggles on/off with active state; queue displays tracks in active queue order
+- #Player Cover flip v2 — refined feel
+- #Player Progress bar moved to the bottom across all deck modes, thinner and accent-colored
+- #Tuner Spectrum scanner reworked to navigate by channel index
+- #Tracks `/bookmarklet` page with drag-to-bookmark UX
+- #Tracks Add-track dialog links its title to `/add` and lists recently added tracks
+- #Channels Channel creation simplified — slug disclosure, no more logo step, updated copy
+- #Settings Reorganized — grouped account actions, danger zone, back-link header, log-out button
+- #Settings Account delete with email confirmation
+- #Settings New `/settings/import` feature; shared `Dropzone` component across import pages
+- #About Redesigned with interleaved images, channel row, and a back-link header
+- #Welcome Copy rewritten and translated across 20 languages
+- #Routing All hrefs use SvelteKit `resolve()` and base-aware APIs — fixes broken links under subpaths
+- #SEO Shared `SEO` component across pages; service URLs (player, cloudinary, legal, chat) moved into app config
+- #UI R5 version name removed from titles and webmanifest; app branding parameterized for i18n
+- #UI Splash layout for vertically centered pages (auth, welcome)
+- #i18n English UI copy extracted into messages; unused keys pruned; translations refreshed across all 20+ languages
+- #Cache Query cache `maxAge` extended from 1h to 7d
+- #Import Detect dead blob URLs and prompt to re-open folder; folder import supports `download.json` and plain audio folders
 
+## February 2026
 ## February 2026
 
 - #Broadcast Listener presence — live counts per channel, per deck, and app-wide, with opt-in sharing in settings
