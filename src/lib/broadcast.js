@@ -16,6 +16,7 @@ import {channelsCollection} from '$lib/collections/channels'
 import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 import {isDbId} from '$lib/utils'
 import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
+import {packEphemeralTrack, unpackEphemeralTrack} from '$lib/player/broadcast-payload'
 export {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
 import {capture} from '$lib/analytics'
 
@@ -23,8 +24,6 @@ import {capture} from '$lib/analytics'
 /** @typedef {import('$lib/types').BroadcastDeckState} BroadcastDeckState */
 
 const log = logger.ns('broadcast').seal()
-const RE_YT_PARAM = /[?&]v=([^&]+)/
-const RE_YT_SHORT = /youtu\.be\/([^?]+)/
 const BROADCAST_IDLE_STOP_MS = 10000
 const BROADCAST_LIVENESS_INTERVAL_MS = 1000
 
@@ -389,25 +388,11 @@ async function playBroadcastTrack(deckId, broadcast) {
 	/** @type {import('$lib/types').Track | undefined} */
 	let track = tracksCollection.get(track_id)
 	if (!track) {
-		if (broadcast.track_url) {
-			const uri = broadcast.track_url
-			const ytId =
-				uri.match(RE_YT_PARAM)?.[1] ??
-				uri.match(RE_YT_SHORT)?.[1] ??
-				broadcast.track_media_id ??
-				null
-			const now = new Date().toISOString()
-			track = /** @type {import('$lib/types').Track} */ ({
-				id: track_id,
-				url: uri,
-				title: broadcast.track_title ?? track_id,
-				media_id: ytId,
-				created_at: now,
-				updated_at: now,
-				slug: null
-			})
+		const ephemeral = unpackEphemeralTrack(track_id, broadcast)
+		if (ephemeral) {
+			track = ephemeral
 			tracksCollection.utils.writeUpsert(track)
-			log.log('play_broadcast_ephemeral', {track_id, url: uri})
+			log.log('play_broadcast_ephemeral', {track_id, url: track.url})
 		} else {
 			// Track not loaded - fetch it directly by ID
 			try {
@@ -553,7 +538,6 @@ function getBroadcastDeckState() {
 	return ids.map((id, index) => {
 		const deck = appState.decks[id]
 		const trackId = deck?.playlist_track ?? null
-		// Include non-DB track data so listeners can reconstruct tracks not in the DB
 		const nonDbTrack = trackId && !isDbId(trackId) ? tracksCollection.get(trackId) : null
 		return {
 			index,
@@ -565,10 +549,7 @@ function getBroadcastDeckState() {
 			volume: deck?.volume ?? 0,
 			muted: deck?.muted ?? false,
 			speed: deck?.speed ?? 1,
-			// Extra fields for non-DB tracks (Discogs videos, etc.)
-			track_url: nonDbTrack?.url ?? null,
-			track_title: nonDbTrack?.title ?? null,
-			track_media_id: nonDbTrack?.media_id ?? null
+			...packEphemeralTrack(nonDbTrack)
 		}
 	})
 }

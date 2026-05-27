@@ -28,6 +28,7 @@
 		notifyBroadcastState
 	} from '$lib/broadcast.js'
 	import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
+	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
 	import {appState, canEditChannel, removeDeck, deckAccent} from '$lib/app-state.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import Icon from '$lib/components/icon.svelte'
@@ -41,8 +42,6 @@
 	import {tracksCollection, updateTrack} from '$lib/collections/tracks'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
-	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {eq} from '@tanstack/svelte-db'
 	import {isDbId, trackImageUrl, extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
 	import Tag from '$lib/components/tag.svelte'
@@ -89,32 +88,11 @@
 	let soundcloudPlayer = $state()
 	let audioPlayer = $state()
 
-	// Reactive track lookup - re-derive when playlist_track or collection changes
-	let track = $derived.by(() => {
-		const id = deck?.playlist_track
-		if (!id) return undefined
-		void tracksCollection.state.size // subscribe to collection changes
-		return tracksCollection.state.get(id)
-	})
-
-	// Reactive channel lookup via live query — uses deck.playlist_slug (persisted signal)
-	// so it works on reload before tracks are loaded
-	const channelQuery = useLiveQuery((q) =>
-		q.from({ch: channelsCollection}).where(({ch}) => eq(ch.slug, deck?.playlist_slug ?? ''))
-	)
-	let channel = $derived(channelQuery.data?.[0])
-	let lastTrack = $state()
-	let lastChannel = $state()
-	$effect(() => {
-		if (track) lastTrack = track
-		else if (!deck?.playlist_track) lastTrack = undefined
-	})
-	$effect(() => {
-		if (channel) lastChannel = channel
-		else if (!deck?.playlist_track) lastChannel = undefined
-	})
-	let displayTrack = $derived(track ?? lastTrack)
-	let displayChannel = $derived(channel ?? lastChannel)
+	const display = createDeckDisplay(deckId)
+	const track = $derived(display.track)
+	const channel = $derived(display.channel)
+	const displayTrack = $derived(display.displayTrack)
+	const displayChannel = $derived(display.displayChannel)
 
 	let src = $derived(track?.url)
 	let provider = $derived(
@@ -181,22 +159,9 @@
 			: undefined
 	)
 
-	// The channel that is broadcasting (the DJ), looked up by ID
-	let broadcastingChannel = $derived.by(() => {
-		const id = deck?.listening_to_channel_id
-		if (!id) return undefined
-		return untrack(() => channelsCollection.state.get(id))
-	})
-	let headerChannel = $derived(
-		isListeningToBroadcast ? (broadcastingChannel ?? displayChannel) : displayChannel
-	)
-	let secondaryHeaderChannel = $derived.by(() => {
-		if (!isListeningToBroadcast || !headerChannel || !displayChannel) return undefined
-		const same =
-			(headerChannel.id && displayChannel.id && headerChannel.id === displayChannel.id) ||
-			(headerChannel.slug && displayChannel.slug && headerChannel.slug === displayChannel.slug)
-		return same ? undefined : displayChannel
-	})
+	const broadcastingChannel = $derived(display.broadcasterChannel)
+	const headerChannel = $derived(display.headerChannel)
+	const secondaryHeaderChannel = $derived(display.secondaryHeaderChannel)
 
 	const headerTags = $derived.by(() => {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local dedupe, not reactive state

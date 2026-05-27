@@ -1,10 +1,8 @@
 <script>
-	import {eq} from '@tanstack/svelte-db'
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {appState, canEditChannel, removeDeck} from '$lib/app-state.svelte'
 	import {channelsCollection} from '$lib/collections/channels'
-	import {tracksCollection} from '$lib/collections/tracks'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {
 		togglePlayPause,
@@ -16,6 +14,7 @@
 		toggleDeckCompact
 	} from '$lib/api'
 	import {getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast'
+	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {parseUrl} from 'media-now/parse-url'
 	import * as m from '$lib/paraglide/messages'
@@ -27,7 +26,6 @@
 	import PresenceCount from '$lib/components/presence-count.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
-	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {channelPresence} from '$lib/presence.svelte'
 	import {viewLabel} from '$lib/views'
 
@@ -46,80 +44,12 @@
 		!deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
 	)
 
-	let track = $derived.by(() => {
-		const id = deck?.playlist_track
-		if (!id) return undefined
-		void tracksCollection.state.size
-		return tracksCollection.state.get(id)
-	})
-	let listeningBroadcastDeck = $derived.by(() => {
-		const channelId = deck?.listening_to_channel_id
-		if (!channelId) return undefined
-		const trackId = deck?.playlist_track
-		void broadcastsCollection.state.size
-		const states = broadcastsCollection.state.get(channelId)?.decks
-		if (!Array.isArray(states) || !states.length) return undefined
-		return (trackId && states.find((state) => state?.track_id === trackId)) || states[0]
-	})
-	let broadcastTrack = $derived.by(() => {
-		const state = listeningBroadcastDeck
-		if (!state?.track_id) return undefined
-		void tracksCollection.state.size
-		const loaded = tracksCollection.state.get(state.track_id)
-		if (loaded) return loaded
-		if (!state.track_url) return undefined
-		const parsed = parseUrl(state.track_url)
-		const now = new Date().toISOString()
-		return {
-			id: state.track_id,
-			url: state.track_url,
-			title: state.track_title ?? state.track_id,
-			media_id: state.track_media_id ?? null,
-			provider: parsed?.provider ?? null,
-			created_at: now,
-			updated_at: now,
-			slug: null
-		}
-	})
-
-	const channelQuery = useLiveQuery((q) =>
-		q.from({ch: channelsCollection}).where(({ch}) => eq(ch.slug, deck?.playlist_slug ?? ''))
-	)
-	let channel = $derived(channelQuery.data?.[0])
-
-	let lastTrack = $state()
-	let lastChannel = $state()
-	let shouldResetFallbackState = $derived(
-		!deck || (!deck.playlist_track && (deck.playlist_tracks?.length ?? 0) === 0)
-	)
-	$effect.pre(() => {
-		const currentTrack = track ?? broadcastTrack
-		if (currentTrack) lastTrack = currentTrack
-		else if (shouldResetFallbackState) lastTrack = undefined
-	})
-	$effect.pre(() => {
-		if (channel) lastChannel = channel
-		else if (shouldResetFallbackState) lastChannel = undefined
-	})
-
-	let displayTrack = $derived(track ?? broadcastTrack ?? lastTrack)
-	let displayChannel = $derived(channel ?? lastChannel)
-	let broadcasterChannel = $derived.by(() => {
-		const channelId = deck?.listening_to_channel_id
-		if (!channelId) return undefined
-		void channelsCollection.state.size
-		return channelsCollection.state.get(channelId)
-	})
-	let headerChannel = $derived(
-		deck?.listening_to_channel_id ? (broadcasterChannel ?? displayChannel) : displayChannel
-	)
-	let secondaryChannel = $derived.by(() => {
-		if (!deck?.listening_to_channel_id || !headerChannel || !displayChannel) return undefined
-		const same =
-			(headerChannel.id && displayChannel.id && headerChannel.id === displayChannel.id) ||
-			(headerChannel.slug && displayChannel.slug && headerChannel.slug === displayChannel.slug)
-		return same ? undefined : displayChannel
-	})
+	const display = createDeckDisplay(deckId)
+	const track = $derived(display.track)
+	const displayTrack = $derived(display.displayTrack)
+	const displayChannel = $derived(display.displayChannel)
+	const headerChannel = $derived(display.headerChannel)
+	const secondaryChannel = $derived(display.secondaryHeaderChannel)
 	const listenSlug = $derived(
 		deck?.listening_to_channel_id
 			? (channelsCollection.state.get(deck.listening_to_channel_id)?.slug ??

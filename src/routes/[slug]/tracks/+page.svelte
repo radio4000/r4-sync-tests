@@ -17,7 +17,13 @@
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import {addToPlaylist, joinAutoRadio, loadDeckView, playTrack, setPlaylist} from '$lib/api'
 	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
-	import {canonicalTrackKey, getChannelTags, HASH_PREFIX_REGEX, seededRandom, shuffleSeed} from '$lib/utils'
+	import {
+		canonicalTrackKey,
+		getChannelTags,
+		HASH_PREFIX_REGEX,
+		seededRandom,
+		shuffleSeed
+	} from '$lib/utils'
 	import {processViewTracks, getAutoDecksForView} from '$lib/views.svelte'
 	import type {Track} from '$lib/types'
 	import type {View} from '$lib/views'
