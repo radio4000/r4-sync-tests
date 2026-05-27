@@ -18,6 +18,7 @@
 - #Matching In-common overlap views and common-following previews on channel pages
 - #Channels Tags dropdown on `/[slug]/tracks` replaced with a full modal filter dialog (tags, sort, result count)
 - #Channels URL-shareable deterministic shuffle on track lists via `order=shuffle&seed=...`
+- #Search Featured suggestion chips (channels + tags) randomize from the featured pool on each page load
 - #Channels Load-more button at the bottom of paged grid/list views
 - #Channels Dblclick or avatar-click on a live channel joins the broadcast
 - #Map Distinct 3D-like broadcast markers for favorites; broadcasting channels visually distinct with a halo
