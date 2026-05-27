@@ -2,26 +2,12 @@
 	import {resolve} from '$app/paths'
 	import {appState} from '$lib/app-state.svelte'
 	import Dialog from '$lib/components/dialog.svelte'
-	import {DEFAULT_KEY_BINDINGS} from '$lib/keyboard'
+	import {DEFAULT_KEY_BINDINGS, getActionLabel} from '$lib/keyboard'
 	import * as m from '$lib/paraglide/messages'
 
 	let showModal = $state(false)
 
 	const keyBindings = $derived({...DEFAULT_KEY_BINDINGS, ...appState.shortcuts})
-
-	const actionLabelMap = {
-		openSearch: () => m.shortcuts_action_openSearch(),
-		togglePlayPause: () => m.shortcuts_action_togglePlayPause(),
-		toggleShuffle: () => m.shortcuts_action_toggleShuffle(),
-		gotoHome: () => m.shortcuts_action_gotoHome(),
-		gotoSettings: () => m.shortcuts_action_gotoSettings(),
-		gotoDocs: () => m.shortcuts_action_gotoDocs(),
-		showShortcutsHelp: () => m.shortcuts_action_showShortcutsHelp()
-	}
-
-	function getActionLabel(name) {
-		return actionLabelMap[name]?.() ?? name
-	}
 
 	$effect(() => {
 		if (appState.modal_shortcuts) {

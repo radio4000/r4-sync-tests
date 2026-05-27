@@ -13,7 +13,9 @@ beforeAll(() => {
 
 describe('app state persistence', () => {
 	test('omits transient deck runtime fields from persisted state', async () => {
-		const {createDefaultDeck, defaultAppState, serializeAppStateForStorage} = await import('./app-state.svelte')
+		const {createDefaultDeck, defaultAppState, serializeAppStateForStorage} = await import(
+			'./app-state.svelte'
+		)
 		const deck = {
 			...createDefaultDeck(1),
 			playlist_slug: 'radio',

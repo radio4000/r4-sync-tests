@@ -69,7 +69,8 @@
 	$effect(() => {
 		const next = updateStableChannelId(slug, channelId, channelIdSourceSlug, channelFromSlug)
 		if (next.channelId !== channelId) channelId = next.channelId
-		if (next.channelIdSourceSlug !== channelIdSourceSlug) channelIdSourceSlug = next.channelIdSourceSlug
+		if (next.channelIdSourceSlug !== channelIdSourceSlug)
+			channelIdSourceSlug = next.channelIdSourceSlug
 	})
 
 	const stableChannelId = $derived(channelIdSourceSlug === slug ? channelId : '')

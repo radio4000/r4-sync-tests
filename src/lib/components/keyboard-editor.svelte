@@ -1,7 +1,12 @@
 <script>
 	import {appState} from '$lib/app-state.svelte'
 	import Icon from '$lib/components/icon.svelte'
-	import {DEFAULT_KEY_BINDINGS, initializeKeyboardShortcuts} from '$lib/keyboard'
+	import {
+		DEFAULT_KEY_BINDINGS,
+		SHORTCUT_ACTIONS,
+		getActionLabel,
+		initializeKeyboardShortcuts
+	} from '$lib/keyboard'
 	import * as m from '$lib/paraglide/messages'
 
 	const uid = $props.id()
@@ -12,31 +17,7 @@
 		return appState.shortcuts || DEFAULT_KEY_BINDINGS
 	})
 
-	const shortcutActions = [
-		'openSearch',
-		'togglePlayPause',
-		'toggleShuffle',
-		'toggleCompactDeck',
-		'gotoHome',
-		'gotoSettings',
-		'gotoDocs',
-		'showShortcutsHelp'
-	]
-
-	const actionLabelMap = {
-		openSearch: () => m.shortcuts_action_openSearch(),
-		togglePlayPause: () => m.shortcuts_action_togglePlayPause(),
-		toggleShuffle: () => m.shortcuts_action_toggleShuffle(),
-		toggleCompactDeck: () => m.shortcuts_action_toggleCompactDeck(),
-		gotoHome: () => m.shortcuts_action_gotoHome(),
-		gotoSettings: () => m.shortcuts_action_gotoSettings(),
-		gotoDocs: () => m.shortcuts_action_gotoDocs(),
-		showShortcutsHelp: () => m.shortcuts_action_showShortcutsHelp()
-	}
-
-	function getActionLabel(name) {
-		return actionLabelMap[name]?.() ?? name
-	}
+	const shortcutActions = Object.keys(SHORTCUT_ACTIONS)
 
 	function handleDone() {
 		editing = false
