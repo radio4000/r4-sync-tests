@@ -98,9 +98,12 @@ function parseChannelParams(opts: Parameters<typeof parseLoadSubsetOptions>[0]) 
 export const channelsCollection = createCollection<Channel, string>({
 	...queryCollectionOptions({
 		queryKey: (opts) => {
+			// Base key probe: TanStack calls queryKey({}) once to derive the prefix
+			// that all other keys must extend.
+			if (!opts || Object.keys(opts).length === 0) return ['channels']
 			const {slug, idIn, trackCountGte, imageNotNull, coordinatesNotNull, sortKey, offset} =
 				parseChannelParams(opts)
-			if (slug) return ['channels', slug]
+			if (slug) return ['channels', 'slug', slug]
 			if (idIn) return ['channels', 'ids', ...idIn.toSorted()]
 			// Include limit+offset so different pages get separate cache entries.
 			// With a function queryKey, on-demand mode does NOT auto-append
