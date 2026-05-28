@@ -2,16 +2,112 @@
 	import Icon from '$lib/components/icon.svelte'
 	import ButtonFeedback from '$lib/components/button-feedback.svelte'
 	import Tag from '$lib/components/tag.svelte'
+	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 
 	let active = $state(false)
 </script>
 
 <svelte:head>
-	<title>Buttons — r5 docs</title>
+	<title>Buttons & inputs — r5 docs</title>
 </svelte:head>
 
-<h1>Buttons</h1>
-<p><small>All button variants from <code>buttons.css</code></small></p>
+<h1>Buttons & inputs</h1>
+<p>
+	<small
+		>Controls from <code>buttons.css</code> and <code>forms.css</code>. Compare surface, border,
+		height and focus across both families.</small
+	>
+</p>
+
+<section>
+	<h2>Buttons + inputs together</h2>
+	<p>
+		<small
+			>Same row, <code>align-items: center</code> — check heights, surfaces and edges line up.</small
+		>
+	</p>
+	<div class="row pair">
+		<button>Button</button>
+		<input type="text" value="Text input" />
+		<select>
+			<option>Select</option>
+			<option>Option B</option>
+			<option>Option C</option>
+			<option>Option D</option>
+		</select>
+		<button class="primary">Primary</button>
+	</div>
+	<div class="row pair">
+		<input type="search" placeholder="Search…" />
+		<button><Icon icon="search" /></button>
+		<button>Go</button>
+	</div>
+	<div class="row pair">
+		<input type="text" value="With submit" />
+		<button type="submit">Submit</button>
+	</div>
+	<div class="row pair">
+		<input type="text" disabled value="Disabled field" />
+		<button disabled>Disabled</button>
+		<select disabled>
+			<option>Disabled select</option>
+			<option>Option B</option>
+			<option>Option C</option>
+		</select>
+	</div>
+	<p>
+		<small
+			>Watch the surface, border and horizontal padding — they should read as one family at the same
+			height.</small
+		>
+	</p>
+</section>
+
+<section>
+	<h2>Inputs</h2>
+	<form class="form" onsubmit={(e) => e.preventDefault()}>
+		<fieldset>
+			<label for="i-text">Text</label>
+			<input id="i-text" type="text" placeholder="Placeholder text" />
+		</fieldset>
+		<fieldset>
+			<label for="i-search">Search</label>
+			<input id="i-search" type="search" placeholder="Search…" />
+		</fieldset>
+		<fieldset>
+			<label for="i-number">Number</label>
+			<input id="i-number" type="number" value="42" />
+		</fieldset>
+		<fieldset>
+			<label for="i-textarea">Textarea</label>
+			<textarea id="i-textarea" rows="2" placeholder="Write something…"></textarea>
+		</fieldset>
+		<fieldset>
+			<label for="i-select">Select</label>
+			<select id="i-select">
+				<option>Option A</option>
+				<option>Option B</option>
+			</select>
+		</fieldset>
+		<fieldset class="row">
+			<label><input type="checkbox" checked /> Checkbox</label>
+			<label><input type="radio" name="ir" checked /> Radio A</label>
+			<label><input type="radio" name="ir" /> Radio B</label>
+		</fieldset>
+		<fieldset>
+			<label for="i-range">Range</label>
+			<input id="i-range" type="range" min="0" max="100" value="40" />
+		</fieldset>
+		<fieldset>
+			<label for="i-disabled">Disabled</label>
+			<input id="i-disabled" type="text" disabled value="Disabled input" />
+		</fieldset>
+	</form>
+	<p>
+		<small>Click a field to see the focus ring (<code>2px accent-9</code>) — same as buttons.</small
+		>
+	</p>
+</section>
 
 <section>
 	<h2>Base</h2>
@@ -60,13 +156,20 @@
 </section>
 
 <section>
-	<h2>Icon button</h2>
+	<h2>Icon-only</h2>
+	<p>
+		<small
+			>No special class — a bare <code>button</code> with just an <code>&lt;Icon&gt;</code> is
+			square by default (<code>min-width</code>/<code>min-height: 2rem</code>). Use
+			<code>.ghost</code> to drop the background.</small
+		>
+	</p>
 	<div class="row">
-		<button class="icon-btn"><Icon icon="close" /></button>
-		<button class="icon-btn"><Icon icon="search" /></button>
-		<button class="icon-btn"><Icon icon="settings" /></button>
-		<button class="icon-btn"><Icon icon="options-horizontal" /></button>
-		<button class="icon-btn" disabled><Icon icon="delete" /></button>
+		<button><Icon icon="close" /></button>
+		<button><Icon icon="search" /></button>
+		<button class="ghost"><Icon icon="settings" /></button>
+		<button class="ghost"><Icon icon="options-horizontal" /></button>
+		<button disabled><Icon icon="delete" /></button>
 	</div>
 </section>
 
@@ -75,6 +178,26 @@
 	<div class="row">
 		<button data-loading="true" disabled>Loading…</button>
 	</div>
+</section>
+
+<section>
+	<h2>Auto radio (<code>&lt;AutoRadioButton&gt;</code> / <code>.auto-live-btn</code>)</h2>
+	<p>
+		<small
+			>Infinite icon whose stroke uses an animated gradient. Idle is a plain button; when
+			<code>synced</code> it goes <code>.ghost</code> and the stroke animates.</small
+		>
+	</p>
+	<div class="row">
+		<AutoRadioButton title="Idle" />
+		<AutoRadioButton synced title="Synced (animated)" />
+		<button class="auto-live-btn active"><Icon icon="infinite" size={16} /></button>
+	</div>
+	<p>
+		<small
+			>Last one: <code>.auto-live-btn.active</code> (drifted) — solid accent stroke, no animation.</small
+		>
+	</p>
 </section>
 
 <section>
@@ -135,6 +258,16 @@
 	</div>
 	<p>
 		<small
+			>As link (<code>a.btn.chip</code>) — the nav pattern in channel/explore/search/track tabs</small
+		>
+	</p>
+	<div class="row">
+		<a href="#a" class="btn chip">all</a>
+		<a href="#b" class="btn chip active">channels</a>
+		<a href="#c" class="btn chip">tracks</a>
+	</div>
+	<p>
+		<small
 			>With delete — label as toggle (<code>button.chip</code> + <code>.chip-delete</code>)</small
 		>
 	</p>
@@ -168,12 +301,130 @@
 </section>
 
 <section>
+	<h2>Mode actions (channel header — <code>.mode-action</code>)</h2>
+	<p>
+		<small
+			>The three channel-engagement buttons from <code>[slug]/+layout.svelte</code>: <b>live</b>
+			(broadcast/listen), <b>auto</b> (auto-radio), <b>play</b> (playback). Styled globally in
+			<code>buttons.css</code>. The global <code>button.active</code> rules also apply.</small
+		>
+	</p>
+
+	<p><small>Every mode × every state — hover the middle column manually:</small></p>
+	<table>
+		<thead>
+			<tr>
+				<th>Mode</th>
+				<th>Idle</th>
+				<th>Hover/focus</th>
+				<th>Active</th>
+				<th>Drifted</th>
+				<th>Disabled</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td><code>.live</code></td>
+				<td>
+					<button class="mode-action live"
+						><Icon icon="signal" size={14} /> <span>Live</span></button
+					>
+				</td>
+				<td><small>hover →</small></td>
+				<td>
+					<button class="mode-action live active"
+						><Icon icon="signal" size={14} /> <span>Live</span></button
+					>
+				</td>
+				<td>—</td>
+				<td>
+					<button class="mode-action live" disabled
+						><Icon icon="signal" size={14} /> <span>Live</span></button
+					>
+				</td>
+			</tr>
+			<tr>
+				<td><code>.auto</code></td>
+				<td>
+					<button class="mode-action auto"
+						><Icon icon="infinite" size={14} /> <span>Auto</span></button
+					>
+				</td>
+				<td><small>hover →</small></td>
+				<td>
+					<button class="mode-action auto active"
+						><Icon icon="infinite" size={14} /> <span>Auto</span></button
+					>
+				</td>
+				<td>
+					<button class="mode-action auto active drifted"
+						><Icon icon="infinite" size={14} /> <span>Auto</span></button
+					>
+				</td>
+				<td>
+					<button class="mode-action auto" disabled
+						><Icon icon="infinite" size={14} /> <span>Auto</span></button
+					>
+				</td>
+			</tr>
+			<tr>
+				<td><code>.play</code></td>
+				<td>
+					<button class="mode-action play"
+						><Icon icon="play-fill" size={14} /> <span>Play</span></button
+					>
+				</td>
+				<td><small>hover →</small></td>
+				<td>
+					<button class="mode-action play active"
+						><Icon icon="pause" size={14} /> <span>Pause</span></button
+					>
+				</td>
+				<td>—</td>
+				<td>
+					<button class="mode-action play" disabled
+						><Icon icon="play-fill" size={14} /> <span>Play</span></button
+					>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<p>
+		<small
+			>Direct comparison — <code>.mode-action.play.active</code> vs <code>.btn.chip.active</code>.
+			Note (1) play's active fill is the same <code>--accent-4</code> as its hover, and (2) play's
+			icon is <code>--accent-9</code> (from global <code>button.active svg</code>) while its text is
+			<code>--accent-11</code>:</small
+		>
+	</p>
+	<div class="row">
+		<button class="mode-action play active"
+			><Icon icon="pause" size={14} /> <span>Pause</span></button
+		>
+		<button class="chip active"><Icon icon="tag" /> Chip active</button>
+	</div>
+</section>
+
+<section>
 	<h2>Tags (<code>&lt;Tag&gt;</code>)</h2>
 	<div class="row">
 		<Tag href="#tag">#dub</Tag>
 		<Tag href="#tag">#reggae</Tag>
 		<Tag href="#tag">#electronic</Tag>
 		<Tag onclick={() => {}}>clickable tag</Tag>
+	</div>
+	<p>
+		<small
+			>States are auto-derived: <code>playing</code> when a deck plays a matching tag,
+			<code>filtered</code> when it's in the URL <code>?tags=</code>. Shown here forced via props.</small
+		>
+	</p>
+	<div class="row">
+		<Tag href="#tag" playing>#playing</Tag>
+		<Tag href="#tag" filtered>#filtered</Tag>
+		<Tag onclick={() => {}} playing>#playing</Tag>
+		<Tag onclick={() => {}} filtered>#filtered</Tag>
 	</div>
 </section>
 
@@ -269,14 +520,6 @@
 				<td><button class="chip" disabled>Label</button></td>
 				<td><button class="chip"><Icon icon="tag" /> Label</button></td>
 			</tr>
-			<tr>
-				<td><code>.icon-btn</code></td>
-				<td><button class="icon-btn"><Icon icon="search" /></button></td>
-				<td><small>hover me →</small></td>
-				<td>—</td>
-				<td><button class="icon-btn" disabled><Icon icon="search" /></button></td>
-				<td>—</td>
-			</tr>
 		</tbody>
 	</table>
 </section>
@@ -286,5 +529,8 @@
 		gap: 0.5rem;
 		flex-wrap: wrap;
 		margin-block: 0.5rem;
+	}
+	.pair {
+		align-items: center;
 	}
 </style>

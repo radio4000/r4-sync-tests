@@ -23,7 +23,6 @@
 	import TrackCard from '$lib/components/track-card.svelte'
 	import SpeedControl from '$lib/components/speed-control.svelte'
 	import VolumeControl from '$lib/components/volume-control.svelte'
-	import PresenceCount from '$lib/components/presence-count.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
 	import {channelPresence} from '$lib/presence.svelte'

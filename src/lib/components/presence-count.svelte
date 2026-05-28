@@ -15,12 +15,6 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.2em;
-		font-size: var(--font-1);
 		color: var(--gray-11);
-	}
-
-	.icon {
-		font-size: 0.6em;
-		color: var(--accent-9);
 	}
 </style>

@@ -89,6 +89,7 @@ a {
 	text-decoration-skip-ink: auto;
 	hyphens: auto;
 	transition: text-decoration-color 150ms;
+	cursor: var(--interactive-cursor, pointer);
 }
 
 a,
@@ -149,6 +150,12 @@ a.slug-link,
 	min-height: unset;
 	min-width: unset;
 	box-shadow: none;
+}
+
+.channel-badge:has(.icon) {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.2rem;
 }
 
 button.channel-badge:hover {

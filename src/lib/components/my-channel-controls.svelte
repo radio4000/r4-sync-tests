@@ -138,7 +138,7 @@
 	</button>
 
 	<a
-		class="channel-link"
+		class="btn ghost channel-link"
 		href={resolve('/[slug]', {slug: channel.slug})}
 		{@attach tooltip({content: `@${channel.slug}`})}
 	>
@@ -152,7 +152,11 @@
 <style>
 	.my-channel-controls {
 		margin: 0 0 0 auto;
-		gap: 0.1rem;
+		gap: 0.2rem;
+		:global(.icon svg) {
+			width: 18px;
+			height: 18px;
+		}
 	}
 
 	.my-channel-controls button {
@@ -165,12 +169,7 @@
 	}
 
 	.channel-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-		padding: 0.2rem 0.45rem;
-		min-height: 2rem;
-		text-decoration: none;
+		gap: 0.2rem;
 	}
 
 	.avatar {

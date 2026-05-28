@@ -355,7 +355,7 @@
 					class="btn chip"
 					class:active={filter === 'broadcasting'}
 					onclick={() => setFilter('broadcasting')}
-					>{m.channels_filter_option_broadcasting()}<span class="channel-badge live-pill"
+					>{m.channels_filter_option_broadcasting()}<span class="channel-badge"
 						>{broadcastsCollection.state.size}</span
 					></button
 				>

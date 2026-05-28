@@ -21,12 +21,7 @@
 	} from '$lib/api'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {playbackState, toAutoTracks} from '$lib/player/auto-radio'
-	import {
-		joinBroadcast,
-		leaveBroadcast,
-		getBroadcastingChannelId,
-		notifyBroadcastState
-	} from '$lib/broadcast.js'
+	import {leaveBroadcast, getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast.js'
 	import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
 	import {appState, canEditChannel, removeDeck, deckAccent} from '$lib/app-state.svelte'
@@ -138,14 +133,6 @@
 	const isListeningToBroadcast = $derived(Boolean(deck?.listening_to_channel_id))
 	const isSyncedListeningMode = $derived(Boolean(isListeningToBroadcast || deck?.auto_radio))
 	let showDeckActions = $derived(!isListeningToBroadcast || isListeningGroupControlDeck)
-	let hasActiveDeckContextMenu = $derived(
-		Boolean(
-			deck?.hide_video_player ||
-			deck?.expanded ||
-			(!isListeningToBroadcast && deck?.hide_queue_panel) ||
-			(isListeningToBroadcast && hasListeningMultiDeck && listeningVideoMixActive)
-		)
-	)
 
 	const listenSlug = $derived(
 		deck?.listening_to_channel_id
@@ -565,11 +552,7 @@
 					</button>
 				{/if}
 				{#if showDeckActions}
-					<PopoverMenu
-						align="right"
-						closeOnClick={false}
-						btnClass={hasActiveDeckContextMenu ? 'active' : undefined}
-					>
+					<PopoverMenu align="right" closeOnClick={false}>
 						{#snippet trigger()}
 							<Icon icon="options-horizontal" />
 						{/snippet}

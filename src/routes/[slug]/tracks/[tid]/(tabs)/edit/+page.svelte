@@ -22,7 +22,7 @@
 {#if !track || !channel}
 	<p>{m.track_not_found()}</p>
 {:else if canEdit}
-	<div class="card">
+	<div class="box">
 		<TrackForm
 			mode="edit"
 			channel={{id: channel.id, slug: channel.slug}}
@@ -40,11 +40,3 @@
 	<p>{m.track_edit_no_permission()}</p>
 {/if}
 
-<style>
-	.card {
-		background: var(--color-interface-elevated);
-		border: 1px solid var(--color-interface-border);
-		border-radius: var(--border-radius);
-		padding: 1.25rem;
-	}
-</style>

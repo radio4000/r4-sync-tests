@@ -98,7 +98,7 @@
 
 <article>
 	{#if canEdit && channel}
-		<div class="card">
+		<div class="box">
 			{#if error}
 				<p class="error" role="alert">{m.common_error()}: {error}</p>
 			{/if}
@@ -209,19 +209,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
-	}
-
-	.card {
-		background: var(--color-interface-elevated);
-		border: 1px solid var(--color-interface-border);
-		border-radius: var(--border-radius);
-		padding: 1.25rem;
-	}
-
-	.card input,
-	.card textarea {
-		background: var(--gray-3);
-	}
+	}	
 
 	.form {
 		gap: 1.25rem;

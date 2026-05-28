@@ -2,21 +2,23 @@
 	import {appState} from '$lib/app-state.svelte'
 	import {page} from '$app/state'
 
-	/** @type {{href?: string, onclick?: () => void, value?: string, children: import('svelte').Snippet}} */
-	const {href, onclick, value, children} = $props()
+	/** @type {{href?: string, onclick?: () => void, value?: string, playing?: boolean, filtered?: boolean, children: import('svelte').Snippet}} */
+	const {href, onclick, value, playing, filtered, children} = $props()
 
 	const splitRe = /\s+/
 
 	const isPlaying = $derived(
-		Boolean(
-			value &&
-			Object.values(appState.decks).some((d) =>
-				d.playlist_title?.toLowerCase().split(splitRe).includes(value.toLowerCase())
+		playing ??
+			Boolean(
+				value &&
+				Object.values(appState.decks).some((d) =>
+					d.playlist_title?.toLowerCase().split(splitRe).includes(value.toLowerCase())
+				)
 			)
-		)
 	)
 
 	const isFiltered = $derived.by(() => {
+		if (filtered !== undefined) return filtered
 		if (!value) return false
 		const urlTags = page.url.searchParams.get('tags')?.split(',').filter(Boolean) ?? []
 		return urlTags.some((t) => `#${t.toLowerCase()}` === value.toLowerCase())

@@ -345,6 +345,8 @@
 		min-width: 0;
 		color: inherit;
 		cursor: var(--interactive-cursor, pointer);
+		background: none;
+		border: 0;
 	}
 
 	.artwork {

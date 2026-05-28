@@ -22,6 +22,7 @@
 		footer?: (props: {track: Track}) => any,
 		grouped?: boolean,
 		canEdit?: boolean,
+		canEditTrack?: (track: Track) => boolean,
 		virtual?: boolean,
 		playContext?: boolean,
 		showSlug?: boolean,
@@ -38,6 +39,7 @@
 		footer,
 		grouped = false,
 		canEdit = false,
+		canEditTrack,
 		virtual = false,
 		playContext = false,
 		showSlug = false,
@@ -50,6 +52,7 @@
 	const contextTracks = $derived(playlistTracks ?? tracks)
 	const contextTrackIds = $derived(contextTracks.map((track) => track.id))
 	const contextPlaylistTitle = $derived(playlistTitle?.trim() || undefined)
+	const canEditItem = (track) => canEditTrack?.(track) ?? canEdit
 
 	const selectTrackFromEvent = (event, trackId) => {
 		const target = /** @type {HTMLElement} */ (event.target)
@@ -204,7 +207,7 @@
 								{deckId}
 								selected={selectedTrackId === item.track?.id}
 								onPlay={playContext ? playFromList : undefined}
-								{canEdit}
+								canEdit={canEditItem(item.track)}
 								showSlug={false}
 								{onTagClick}
 							/>
@@ -254,7 +257,7 @@
 										{deckId}
 										selected={selectedTrackId === track.id}
 										onPlay={playContext ? playFromList : undefined}
-										{canEdit}
+										canEdit={canEditItem(track)}
 										showSlug={false}
 										{onTagClick}
 									/>
@@ -299,7 +302,7 @@
 						{deckId}
 						selected={selectedTrackId === track.id}
 						onPlay={playContext ? playFromList : undefined}
-						{canEdit}
+						canEdit={canEditItem(track)}
 						showSlug={false}
 						{onTagClick}
 					/>

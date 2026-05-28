@@ -258,7 +258,7 @@ menu {
 			font-size: var(--font-4);
 			border-right: 1px solid var(--gray-6);
 		}
-		a:last-child {
+		a:not(.btn):last-child {
 			border-right: none;
 		}
 		a:hover {
@@ -418,3 +418,18 @@ dl.meta {
 		color: var(--gray-9);
 	}
 }
+
+.box {
+	background: var(--color-interface-elevated);
+	border: 1px solid var(--color-interface-border);
+	border-radius: var(--border-radius);
+	padding: 1.25rem;
+
+	input[type="url"],
+	input[type="number"],
+	input[type="text"],
+	textarea {
+		background: var(--gray-3);
+	}
+}
+

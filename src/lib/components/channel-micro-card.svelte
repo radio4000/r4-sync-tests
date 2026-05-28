@@ -48,8 +48,8 @@
 	}
 
 	.avatar {
-		width: 1.2rem;
-		height: 1.2rem;
+		width: var(--track-artwork-size);
+		height: var(--track-artwork-size);
 		flex-shrink: 0;
 
 		:global(img, svg) {

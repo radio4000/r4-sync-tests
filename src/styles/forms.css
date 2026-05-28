@@ -63,7 +63,7 @@ input[type='range'] {
 		height: 0.2rem;
 		background: linear-gradient(
 			to right,
-			var(--range-track-color, var(--accent-4)) var(--range-fill, 0%),
+			var(--range-track-color, var(--gray-4)) var(--range-fill, 0%),
 			var(--gray-4) var(--range-fill, 0%)
 		);
 	}
@@ -71,7 +71,7 @@ input[type='range'] {
 	&::-webkit-slider-thumb {
 		background: var(--range-color, var(--accent-9));
 		position: relative;
-		top: -0.4rem;
+		top: -0.35rem;
 	}
 
 	&::-moz-range-thumb {

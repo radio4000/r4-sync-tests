@@ -31,7 +31,7 @@
 {#if isLive}
 	<div class="broadcast-live-controls">
 		<PresenceCount count={presenceCount} />
-		<span class="channel-badge live-pill">
+		<span class="channel-badge">
 			<Icon icon="signal" size={12} />
 			{m.status_live_short()}
 		</span>
@@ -68,11 +68,5 @@
 		flex-wrap: wrap;
 		gap: 0.25rem;
 		width: 100%;
-	}
-
-	.live-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.2rem;
 	}
 </style>

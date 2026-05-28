@@ -82,7 +82,7 @@
 
 <article>
 	{#if canDelete && channel}
-		<div class="card">
+		<div class="box">
 			<header>
 				<h1>
 					{m.channel_delete_heading()}
@@ -132,11 +132,7 @@
 		gap: 1rem;
 	}
 
-	.card {
-		background: var(--color-interface-elevated);
-		border: 1px solid var(--color-interface-border);
-		border-radius: var(--border-radius);
-		padding: 1.25rem;
+	.box {
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;

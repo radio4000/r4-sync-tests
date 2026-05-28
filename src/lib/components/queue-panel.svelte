@@ -2,8 +2,9 @@
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {inArray} from '@tanstack/db'
 	import {fuzzySearch} from '$lib/utils'
-	import {appState} from '$lib/app-state.svelte'
+	import {appState, canEditChannel} from '$lib/app-state.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
+	import {channelsCollection} from '$lib/collections/channels'
 	import {tracksCollection} from '$lib/collections/tracks'
 	import {toggleShuffle, clearQueue, clearAllQueue} from '$lib/api'
 	import {getActiveQueue} from '$lib/player/queue'
@@ -63,6 +64,12 @@
 		searchQuery = searchQuery === query ? '' : query
 	}
 
+	/** @param {import('$lib/types').Track} track */
+	function canEditTrack(track) {
+		const channel = [...channelsCollection.state.values()].find((ch) => ch.slug === track.slug)
+		return canEditChannel(channel?.id)
+	}
+
 	function handleClearQueue() {
 		if (deck?.is_playing) {
 			clearQueue(deckId)
@@ -116,6 +123,7 @@
 				{deckId}
 				virtual={true}
 				{selectedTrackId}
+				{canEditTrack}
 				onSelectTrack={(trackId) => (selectedTrackId = trackId)}
 				onTagClick={toggleTag}
 			/>

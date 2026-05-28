@@ -81,7 +81,7 @@
 					{channel.name}
 				</a>
 				{#if isBroadcasting}
-					<span class="channel-badge live-pill">
+					<span class="channel-badge">
 						<Icon icon="signal" size={12} />
 						{m.status_live_short()}
 					</span>
@@ -364,10 +364,7 @@
 		margin-left: 0;
 	}
 
-	.live-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.2rem;
+	.info h3 :global(.channel-badge) {
 		margin-left: auto;
 		flex-shrink: 0;
 	}

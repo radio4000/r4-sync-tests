@@ -62,7 +62,6 @@
 	.channel-section-menu {
 		display: flex;
 		flex-wrap: nowrap;
-		gap: 0.5rem;
 		width: 100%;
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;

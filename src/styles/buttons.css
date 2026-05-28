@@ -36,7 +36,7 @@ button,
 	/* 	inset 0 0.5px 1px 0.5px rgba(255, 255, 255, 0.16), 0 2px 3px 0 rgba(0, 0, 0, 0.3), */
 	/* 	0 1px 1.5px 0 rgba(0, 0, 0, 0.2), 0 1px 2px 0 rgba(0, 0, 0, 0.4), 0 0 0 0 transparent; */
 
-	transition-property: border, background-color, color, opacity, transform;
+	transition-property: border, background-color, color, opacity, transform, outline;
 	transition-duration: 150ms;
 	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -53,13 +53,6 @@ button:focus,
 	outline: 2px solid var(--accent-9);
 	outline-offset: -2px;
 }
-
-/* button:active, */
-/* .btn:active { */
-/* 	i { */
-/* 		transform: scaleX(0.97) scaleY(0.97) rotate(0.02deg); */
-/* 	} */
-/* } */
 
 button:disabled,
 .btn:disabled {
@@ -80,10 +73,11 @@ a.active {
 
 button.active,
 .btn.active {
-	background-color: var(--accent-3);
+	background: var(--accent-7);
 
-	svg {
-		color: var(--accent-9);
+	svg,
+	.icon {
+		color: var(--accent-10);
 	}
 }
 
@@ -221,7 +215,12 @@ button.chip.active,
 	svg {
 		color: inherit;
 	}
+
+	&:hover {
+		background: var(--accent-8);
+	}
 }
+
 
 .chip-group > :not(button) {
 	display: inline-flex;
@@ -236,11 +235,6 @@ button.chip.active,
 		background: var(--accent-8);
 		border-color: var(--accent-9);
 	}
-}
-
-button.chip.active:hover,
-.btn.chip.active:hover {
-	background: var(--accent-9);
 }
 
 .btn.icon-label-below,
@@ -295,6 +289,15 @@ button.icon-label-right {
 .chip-delete:hover,
 .chip.active + .chip-delete:hover {
 	background: var(--color-red);
+}
+
+/* Channel header mode buttons: live / auto / play (see [slug]/+layout.svelte) */
+.mode-action {
+	gap: 0.4rem;
+}
+
+.mode-action.auto.drifted {
+	color: var(--orange-9);
 }
 
 /* Select: use normal text color and no border (styled via forms.css) */

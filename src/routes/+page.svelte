@@ -338,15 +338,13 @@
 					<div class="dashboard-grid dashboard-grid--scroll">
 						{#if tagsLoading}
 							<div
-								class="dashboard-card dashboard-card--row dashboard-card--tag dashboard-card--pill loading-placeholder"
+								class="dashboard-card dashboard-card--row dashboard-card--pill loading-placeholder"
 							>
 								<small>…</small>
 							</div>
 						{/if}
 						{#each userChannelTopTags as { value, count } (value)}
-							<div
-								class="dashboard-card dashboard-card--row dashboard-card--tag dashboard-card--pill"
-							>
+							<div class="dashboard-card dashboard-card--row dashboard-card--pill">
 								<button
 									class="btn ghost tag-pill-action"
 									onclick={() => playChannelTag(value)}
@@ -466,7 +464,7 @@
 					<h2 class="section-title">{m.home_featured()}</h2>
 					<menu>
 						{#if featuredFirst}
-							<button type="button" class="play" onclick={toggleFeaturedPlay}>
+							<button type="button" onclick={toggleFeaturedPlay}>
 								<Icon icon={featuredIsPlaying ? 'pause' : 'play-fill'} />
 							</button>
 						{/if}
@@ -545,7 +543,7 @@
 							</h2>
 							<menu>
 								{#if featuredFirst}
-									<button type="button" class="play" onclick={toggleFeaturedPlay}>
+									<button type="button" onclick={toggleFeaturedPlay}>
 										<Icon icon={featuredIsPlaying ? 'pause' : 'play-fill'} />
 									</button>
 								{/if}
@@ -787,6 +785,7 @@
 		border-radius: var(--border-radius);
 		background: light-dark(var(--gray-1), var(--gray-2));
 		min-width: 0;
+		min-height: 2rem;
 	}
 
 	.dashboard-card--row {
@@ -796,19 +795,22 @@
 	}
 
 	.dashboard-card--pill {
-		padding: 0.22rem 0.38rem;
+		padding: 0rem 0.5rem;
 		border-radius: 999px;
-		gap: 0.28rem;
+		gap: 0.3rem;
 		background: var(--color-interface-elevated);
 	}
 
-	.dashboard-card--tag {
-		min-height: 2rem;
-	}
+	.dashboard-card--link {
+		text-decoration: none;
+		transition: all 0.1s;
+		padding-inline: 1rem;
 
-	.dashboard-card--pill :global(svg) {
-		width: 0.92rem;
-		height: 0.92rem;
+		&:hover,
+		&:focus-visible {
+			background: var(--gray-3);
+			outline: none;
+		}
 	}
 
 	.dashboard-card--row > span:not(.channel-widget-avatar):not(.tag-count):not(.audience-counts) {
@@ -816,7 +818,6 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		min-width: 0;
-		font-size: var(--font-2);
 	}
 
 	.dashboard-card--row > a.dashboard-label--tag {
@@ -839,6 +840,10 @@
 		}
 	}
 
+	.dashboard-card:has(.dashboard-label--tag:hover) {
+		background: var(--gray-3);
+	}
+
 	.tag-count {
 		font-size: var(--font-2);
 		color: light-dark(var(--gray-9), var(--gray-8));
@@ -851,24 +856,6 @@
 
 	.tag-pill-action {
 		flex: 0 0 auto;
-		padding-inline: 0.28rem;
-		min-height: 1.4rem;
-		min-width: 1.4rem;
-	}
-
-	.dashboard-card--link {
-		color: inherit;
-		text-align: left;
-		text-decoration: none;
-		transition:
-			background 0.1s,
-			border-color 0.1s;
-
-		&:hover,
-		&:focus-visible {
-			background: var(--gray-2);
-			outline: none;
-		}
 	}
 
 	.dashboard-value {
@@ -881,7 +868,8 @@
 	.broadcast-count {
 		margin-left: auto;
 		font-size: var(--font-2);
-		font-weight: 700;
+		font-weight: 400;
+		color: var(--gray-9);
 		display: inline-flex;
 		align-items: center;
 		line-height: 1;
@@ -900,14 +888,6 @@
 		menu {
 			display: flex;
 			gap: 0.1rem;
-
-			button.play {
-				background: var(--accent-3);
-				color: var(--accent-11);
-				&:hover {
-					background: var(--accent-4);
-				}
-			}
 		}
 	}
 

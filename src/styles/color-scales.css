@@ -146,7 +146,7 @@
 	);
 	--gray-11: light-dark(
 		oklch(from var(--gray-light) 0.54 calc(c * 1.5) h),
-		oklch(from var(--gray-dark) 0.94 calc(c * 0.6) h)
+		oklch(from var(--gray-dark) 0.9 calc(c * 0.6) h)
 	);
 	--gray-12: light-dark(
 		oklch(from var(--gray-light) 0.2 calc(c * 1.6) h),
