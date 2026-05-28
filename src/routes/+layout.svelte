@@ -81,8 +81,7 @@
 		return total
 	})
 
-	/** @param {Element} _node */
-	function compactDeckTransition(_node) {
+	function compactDeckTransition() {
 		return {
 			duration: 0
 		}

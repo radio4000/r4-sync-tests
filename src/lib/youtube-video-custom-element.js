@@ -285,7 +285,7 @@ class YouTube2Element extends HTMLElement {
 	}
 
 	get volume() {
-		if (!this.api || !this.api.getVolume) return 1
+		if (!this.api?.getVolume) return 1
 		return this.api.getVolume() / 100
 	}
 
@@ -301,7 +301,7 @@ class YouTube2Element extends HTMLElement {
 	}
 
 	get muted() {
-		if (!this.api || !this.api.isMuted) return false
+		if (!this.api?.isMuted) return false
 		return this.api.isMuted()
 	}
 

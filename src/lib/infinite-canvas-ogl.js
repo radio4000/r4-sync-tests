@@ -437,7 +437,7 @@ export class InfiniteCanvasOGL {
 			powerPreference: 'high-performance'
 		})
 		this.gl = this.renderer.gl
-		if (!this.gl || !this.gl.canvas) throw new Error('Failed to initialize WebGL')
+		if (!this.gl?.canvas) throw new Error('Failed to initialize WebGL')
 		this.container.appendChild(this.gl.canvas)
 
 		// Set canvas size (CSS sizing handled by parent)

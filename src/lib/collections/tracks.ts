@@ -6,7 +6,7 @@ import {parseUrl} from 'media-now'
 import {uuid} from '$lib/utils'
 import {queryClient} from './query-client'
 import {channelsCollection, type Channel} from './channels'
-import {trackMetaCollection, trackMetaKey, type TrackMeta} from './track-meta'
+import {trackMetaCollection, trackMetaKey} from './track-meta'
 import {logger} from '$lib/logger'
 import {getErrorMessage} from './utils'
 

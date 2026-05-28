@@ -20,7 +20,7 @@ const EMPTY = {track_url: null, track_title: null, track_media_id: null}
  * @returns {EphemeralPayload}
  */
 export function packEphemeralTrack(track) {
-	if (!track || !track.id || isDbId(track.id)) return EMPTY
+	if (!track?.id || isDbId(track.id)) return EMPTY
 	return {
 		track_url: track.url ?? null,
 		track_title: track.title ?? null,

@@ -41,7 +41,6 @@
 	let following = $state([])
 	let featuredChannels = $state([])
 	let loading = $state(true)
-	let featuredLoading = $state(false)
 
 	const matches = (/** @type {any} */ c, /** @type {string} */ query) =>
 		!query ||
@@ -120,22 +119,18 @@
 		const slugs = featuredMentions
 		if (!slugs.length) {
 			featuredChannels = []
-			featuredLoading = false
 			return
 		}
 
-		featuredLoading = true
 		let stale = false
 		Promise.all(slugs.map(findChannelBySlug))
 			.then((results) => {
 				if (stale) return
 				featuredChannels = dedupeById(results.filter((c) => c !== undefined))
-				featuredLoading = false
 			})
 			.catch(() => {
 				if (stale) return
 				featuredChannels = []
-				featuredLoading = false
 			})
 
 		return () => {
