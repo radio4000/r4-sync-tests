@@ -6,6 +6,7 @@ import {
 	clearQueue,
 	toggleShuffle,
 	toggleDeckCompact,
+	toggleTheme,
 	next,
 	previous
 } from '$lib/api'
@@ -55,6 +56,10 @@ export const SHORTCUT_ACTIONS = {
 	},
 	clearQueue: {
 		run: () => clearQueue(appState.active_deck_id)
+	},
+	toggleTheme: {
+		default: 't',
+		run: () => toggleTheme()
 	},
 	gotoHome: {
 		default: 'g h',
