@@ -161,12 +161,18 @@ rest/v1/followers              × 2
   <p class="where">Root cause: <code>src/routes/[slug]/+layout.svelte</code> resolves the channel in two
      <code>useLiveQuery</code> stages (by slug, then by stable id), and tracks/followers each trigger their own
      query — keys aren’t deduped, so <code>channels_with_tracks</code> is requested 4×.</p>
-  <p class="fix"><b>Fix:</b> collapse the 2-stage channel resolution into one stable query key; gate
-     followers/tracks behind the resolved channel id. Goal: 1× channels, 1× tracks, 1× followers per visit.</p>
+  <p class="fix"><b>Fix shipped:</b> the collection’s <code>idIn</code> queryFn now serves channels already
+     in the collection from cache and fetches only the missing ids
+     (<code>src/lib/collections/channels.ts</code>). This kills the by-id re-fetch of the channel we just
+     loaded by slug, and shrinks follower/following hydration to only the channels we don’t already have.</p>
   <div class="ba">
-    <div class="box"><div class="t">Before</div>channels ×4 · tracks ×2 · followers ×2</div>
-    <div class="box"><div class="t">After</div><span class="pending">pending fix</span></div>
+    <div class="box"><div class="t">Before</div>channels_with_tracks <b>×4</b> on every visit<br>(by-slug + redundant by-id + 2 batches)</div>
+    <div class="box"><div class="t">After ✓ measured</div>cold visit <b>×3</b> (by-id self-fetch gone)<br>warm revisit <b>×0</b> — fully cache-served</div>
   </div>
+  <p class="legend">Same channel switching still resolves correctly (Radio Oskar → Nomads Radio, full track
+     counts, no errors). <code>tracks ×2</code> stays — one full load + one cheap freshness probe
+     (<code>select=updated_at&amp;limit=1</code>); intentional. <code>followers ×2</code> are embedded-join
+     reads, not channel fetches; deferring them off the home tab is a separate follow-up.</p>
 </div>
 
 <!-- F2 -->
