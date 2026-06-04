@@ -181,19 +181,32 @@ rest/v1/followers              × 2
     <h3>2 · Homepage layout shift (CLS 0.16)</h3>
     <span class="badge b-warn">medium</span>
     <span class="badge b-bad">reproduces in prod</span>
+    <span class="badge b-info">root cause found · needs design call</span>
   </div>
-  <p>The homepage shifts as featured channels and their artwork load. CLS 0.16 in both environments;
-     biggest single shift 0.14 at ~550 ms.</p>
-  <div class="ev">cls.score = 0.16   (target &lt; 0.10)
-largest shift: value 0.1415 @ startTime 551 ms
-LCP element: featured channel &lt;img&gt; (cloudinary thumb)</div>
-  <p class="where">Root cause: featured-channel cards / artwork render without reserved space, so later content
-     pushes layout down.</p>
-  <p class="fix"><b>Fix:</b> reserve space with explicit <code>width</code>/<code>height</code> or an
-     <code>aspect-ratio</code> box on artwork and card slots so images paint into a fixed footprint.</p>
+  <p>The logged-out homepage shifts ~0.14 as content settles. The LCP <code>&lt;img&gt;</code> was a red herring —
+     instrumenting the layout-shift <i>sources</i> and tracking element positions over the load pinned the real
+     cause: the <b>featured hero column pops in from 0 → ~450–570px</b> at ~700 ms and shoves everything below
+     (footer + globe) down.</p>
+  <div class="ev">// layout-shift sources at the big shift:
+[ div.globe , footer.stats.footer-stats ]   value 0.1415
+
+// element positions over load (.globe top):
+t=229ms  featured absent   globe.top = 470
+t=723ms  featured = 634px  globe.top = 1104   ← +634px push</div>
+  <p class="where">Root cause: <code>src/routes/+page.svelte</code> — the featured grid is gated on
+     <code>{#if featuredChannels.length}</code> (absent until data loads), and its cards use
+     <code>grid-template-rows: 1fr</code> (<code>src/styles/layout.css:110</code>), so the row height is
+     <b>fluid and non-deterministic</b> — I measured 446px and 566px on different random featured sets.</p>
+  <p class="fix"><b>Not shipped — deliberately.</b> Because the hero card height is fluid + clipped by
+     <code>overflow:hidden</code>, a fixed/<code>dvh</code> space reservation either under-reserves (residual
+     shift) or <b>clips the hero cards</b>. A clean fix needs a design decision: (a) give the logged-out
+     featured cards a <b>deterministic height</b> (swap <code>1fr</code> for a fixed row height) and reserve it,
+     or (b) render a <b>matched skeleton</b> with the same internal structure so the slot height is stable before
+     data. Both change how the hero looks — owner’s call. Shipping a CSS hack here would risk regressing the
+     marketing page across viewports.</p>
   <div class="ba">
-    <div class="box"><div class="t">Before</div>CLS 0.16</div>
-    <div class="box"><div class="t">After</div><span class="pending">pending fix</span></div>
+    <div class="box"><div class="t">Before</div>CLS 0.16 · featured pops in +634px</div>
+    <div class="box"><div class="t">After</div><span class="pending">awaiting design call (a or b)</span></div>
   </div>
 </div>
 
