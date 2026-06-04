@@ -107,10 +107,26 @@
     <div class="kpi" style="color:var(--good)">0.16 → ~0</div>
     <div class="legend">fixed via featured skeleton · all viewports &lt; 0.1</div>
   </div>
+  <div class="card">
+    <div class="kpi-label">Worst interaction · “see all tracks”</div>
+    <div class="kpi" style="color:var(--bad)">~1.7<small> s frozen</small></div>
+    <div class="legend">single long task · 2 582 nodes · PR + prod · finding #6 (open)</div>
+  </div>
+  <div class="card">
+    <div class="kpi-label">Press play on a big channel</div>
+    <div class="kpi" style="color:var(--good)">1.2 s → 0</div>
+    <div class="legend">fixed · hidden queue panel fetched whole playlist · finding #7</div>
+  </div>
 </div>
-<p>Bottom line: <b>rendering and scrolling are not the problem</b> — they’re solid. The friction is in
-<b>data loading on first navigation</b> (redundant fetches, empty-state flashes) and a
-<b>layout shift on the homepage</b>. All network-/state-shaped — exactly the TanStack-DB territory worth tuning.</p>
+<p>Bottom line: <b>scrolling and ordinary navigation are solid</b> — home, menu, explore, settings and channel
+revisits all settle fast with no long tasks. Two kinds of friction remain: <b>data loading on first navigation</b>
+(redundant fetches, empty-state flashes — mostly fixed) and a <b>homepage layout shift</b> (fixed). The
+transition-profiling round then surfaced one outlier that dwarfs the rest: <b>“see all tracks” on a big channel
+freezes the main thread for ~1.7 s</b> (finding #6) — the single worst interaction in the app.</p>
+<p class="legend"><b>Transitions checked this round (PR + prod):</b> home ⇄ channel ⇄ channel, open/reopen menu,
+explore, settings/keyboard, and small vs heavy channels. All clean (settle &lt; 300 ms, 0–1 sub-100 ms tasks)
+<i>except</i>: heavy-channel landing carries a ~60–80 ms task that scales with track count (TanStack live-query
+rebuild over all rows — acceptable), and <code>/[slug]/tracks</code> freezes ~1.7 s (finding #6).</p>
 
 <!-- ============================ CORE VITALS ============================ -->
 <h2>Core Web Vitals — homepage</h2>
@@ -144,6 +160,87 @@ The single biggest shift (0.14) lands at ~550 ms as featured content settles in.
 <!-- ============================ FINDINGS ============================ -->
 <h2>Findings &amp; proposed fixes</h2>
 <p class="legend">Ordered by leverage. “Before” is measured; “After” fills in as fixes land.</p>
+
+<!-- F6 — headline from the transition-profiling round -->
+<div class="finding">
+  <div class="top">
+    <h3>6 · “See all tracks” freezes the main thread ~1.7 s</h3>
+    <span class="badge b-bad">severe</span>
+    <span class="badge b-bad">reproduces in prod</span>
+    <span class="badge b-info">newly found</span>
+  </div>
+  <p>Opening a big channel’s full track list (<code>/[slug]/tracks</code>) blocks the main thread in a
+     <b>single ~1.7 s long task</b> — the tab is frozen (no scroll, no clicks) for that whole time. Dead
+     consistent across reps and <b>identical on the PR and on radio4000.com</b>, so it’s pre-existing, not
+     introduced by this branch. The channel <i>landing</i> page is fine because it only renders a 50-track
+     preview; the freeze is specific to the “see all” route.</p>
+  <div class="ev">// SPA nav home → /oskar/tracks (2 582 tracks), worst single long task:
+PR  (less-queries.workers.dev)   1 758 / 1 752 / 1 767 ms   (3 reps)
+prod (radio4000.com)             1 520 ms
+DOM nodes rendered               2 582  (one full TrackCard subtree each)
+
+// main-thread self-time during the freeze (prod CPU profile):
+824 ms  (program / native layout)      470 ms  document.cookie reads
+588 ms  TrackCard render (app chunk)   457 ms  insertBefore   56 ms cloneNode</div>
+  <p class="where">Root cause: <code>src/routes/[slug]/tracks/+page.svelte</code> passes
+     <code>virtual={false}</code> to <code>Tracklist</code>, so it takes the grouped <code>{#each}</code> branch
+     and mounts a real DOM subtree for <b>every</b> track at once. The 470 ms of <code>document.cookie</code>
+     reads and the layout/paint cost are all downstream of that 2 582-node render storm (posthog autocapture +
+     style/layout reacting to the insertions).</p>
+  <p class="fix"><b>Not a one-line flip.</b> <code>Tracklist</code> can virtualize (its <code>flatItems</code>
+     already interleaves month headers, so grouping survives), but simply setting <code>virtual={true}</code>
+     <i>doesn’t</i> help here: the route scrolls the global <code>.scroll-area</code>, while
+     <code>SvelteVirtualList</code> needs its own height-bounded viewport — measured it still rendered all 2 582
+     nodes. Making it virtualize means giving the page a bounded flex-column scroll container, and that collides
+     with <code>+layout.svelte</code>’s scroll-restoration (which saves/restores <code>.scroll-area.scrollTop</code>,
+     not an inner viewport). So this is a real design call: <b>(a)</b> restructure the route to virtualize inside
+     its own viewport and move scroll-restoration with it, or <b>(b)</b> incrementally reveal (render ~100, grow
+     on scroll like <code>infinite-grid</code>) — lower risk, keeps document scroll, but Ctrl-F won’t hit
+     unrendered rows.</p>
+  <div class="ba">
+    <div class="box"><div class="t">Before</div>~1.7 s frozen tab on “see all tracks”<br>2 582 nodes mounted in one task</div>
+    <div class="box"><div class="t">After</div>pending design call (a vs b)<br>target: no task &gt; 50 ms, windowed DOM</div>
+  </div>
+</div>
+
+<!-- F7 — headline from the transition-profiling round, FIXED -->
+<div class="finding">
+  <div class="top">
+    <h3>7 · Pressing play on a big channel freezes the main thread ~1.2 s</h3>
+    <span class="badge b-bad">severe</span>
+    <span class="badge b-bad">reproduces in prod</span>
+    <span class="badge b-good">fixed ✓</span>
+  </div>
+  <p><b>The core action of the app.</b> Hitting play on a large channel — from <i>anywhere</i> (homepage,
+     a channel page, search) — blocked the main thread in a single ~1.2&nbsp;s long task. Not YouTube: I warmed
+     the YT iframe on a small channel first, then played a 2 582-track channel and it still froze 1 216&nbsp;ms;
+     replaying the same channel was free. So it was a <b>first-play-per-large-channel</b> cost in our own code.</p>
+  <div class="ev">// play oskar (2 582 tracks), YouTube already warm, worst single long task:
+prod / PR        1 216 ms        small channels (10–14 tracks)   0 ms
+dev (localhost)  1 871 ms  →  0 ms after fix
+
+// main-thread self-time during the freeze (CPU profile, YT warm):
+1 024 ms  TanStack live-query build (e / k / get / has / enrichWithVirtualProps)</div>
+  <p class="where">Root cause: <code>src/lib/components/queue-panel.svelte</code> resolved the playlist with a
+     live query — <code>useLiveQuery(q =&gt; q.from({t}).where(inArray(t.id, trackIds)))</code> — where
+     <code>trackIds</code> is the <b>entire playlist</b> (2 582 ids). <code>inArray()</code> over a
+     multi-thousand-element list rebuilds a whole query collection on every new playlist. The kicker: the queue
+     panel is <b>always mounted</b> (hidden via CSS, not unmounted), so this ran on every play even when the queue
+     was closed and invisible.</p>
+  <p class="fix"><b>Fix shipped:</b> resolve the queue straight from the collection Map —
+     <code>trackIds.map((id) =&gt; tracksCollection.state.get(id))</code> — the exact pattern
+     <code>player.svelte</code> already uses for the same playlist. The tracks are already in the collection, so
+     it’s O(n) Map lookups (instant) instead of building a live-query collection. Dropped the
+     <code>useLiveQuery</code>/<code>inArray</code> imports. Playback (<code>next</code>/<code>prev</code>) was
+     never affected — it reads the id queue directly, not the resolved objects.</p>
+  <div class="ba">
+    <div class="box"><div class="t">Before</div>~1.2 s frozen tab on every first play of a big channel</div>
+    <div class="box"><div class="t">After ✓ measured</div>0 ms long task · queue still renders (windowed) in correct order</div>
+  </div>
+  <p class="legend">Verified: queue panel shows the right tracks newest-first, switching channels updates it,
+     220/220 tests pass, no new type errors. Same engine as #6 (TanStack materialisation over thousands of rows)
+     — but here it was pure waste (a hidden panel fetching the whole playlist), so it was a clean win.</p>
+</div>
 
 <!-- F1 -->
 <div class="finding">
@@ -278,7 +375,7 @@ t=262 ms  @oskar · real channel header</div>
 <h2>Proven healthy — don’t touch</h2>
 <ul class="tight">
   <li><b>Scroll performance:</b> 2 580-track channel scrolls at a steady 60 fps — worst frame 17 ms, <b>zero</b> long tasks, on both dev and prod.</li>
-  <li><b>List rendering:</b> windowed (<code>@humanspeak/svelte-virtual-list</code>), ~110 rows in DOM regardless of channel size.</li>
+  <li><b>List rendering — where it’s windowed:</b> the channel landing preview (50 tracks) and the queue panel use the virtual list (<code>@humanspeak/svelte-virtual-list</code>), ~110 rows in DOM. <b>Exception:</b> the full <code>/[slug]/tracks</code> route is <i>not</i> windowed — see finding #6.</li>
   <li><b>Warm navigation:</b> revisiting a channel settles in 70–130 ms.</li>
   <li><b>No long tasks</b> observed in any measured interaction.</li>
   <li><b>Collection cache:</b> <code>tracks</code> staleTime 24 h, <code>channels</code> 1 h — sensible; the issue is fetch <i>dedup</i>, not staleness.</li>
