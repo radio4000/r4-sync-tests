@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Radio4000 — Performance Report</title>
+<style>
+  :root {
+    --bg: #0e1014; --panel: #171a21; --panel2: #1e222b; --line: #2a2f3a;
+    --ink: #e7e9ee; --dim: #9aa3b2; --faint: #6b7280;
+    --good: #34d399; --warn: #fbbf24; --bad: #f87171; --accent: #a78bfa;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, "Radio Canada", system-ui, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 40px 24px 80px; }
+  header h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -.02em; }
+  header .sub { color: var(--dim); margin: 0; }
+  .meta { color: var(--faint); font-size: 13px; margin-top: 10px; }
+  h2 { font-size: 19px; margin: 44px 0 14px; letter-spacing: -.01em;
+    border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  h3 { font-size: 15px; margin: 22px 0 8px; }
+  p { color: var(--dim); }
+  code, .mono { font-family: var(--mono); font-size: 12.5px; }
+  code { background: var(--panel2); padding: 1px 6px; border-radius: 5px; color: #cdd3df; }
+  a { color: var(--accent); }
+
+  .grid { display: grid; gap: 14px; }
+  .cols-3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 720px) { .cols-3 { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px 18px; }
+  .kpi { font-size: 26px; font-weight: 650; letter-spacing: -.02em; }
+  .kpi small { font-size: 13px; color: var(--faint); font-weight: 400; }
+  .kpi-label { color: var(--dim); font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; }
+
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 4px; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--dim); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  td.num, th.num { text-align: right; font-family: var(--mono); font-size: 13px; }
+  tbody tr:hover { background: #ffffff06; }
+
+  .badge { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 9px;
+    border-radius: 99px; letter-spacing: .02em; white-space: nowrap; }
+  .b-good { background: #34d39922; color: var(--good); }
+  .b-warn { background: #fbbf2422; color: var(--warn); }
+  .b-bad  { background: #f8717122; color: var(--bad); }
+  .b-info { background: #a78bfa22; color: var(--accent); }
+
+  .finding { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px 20px; margin: 14px 0; }
+  .finding .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .finding .top h3 { margin: 0; flex: 1; min-width: 200px; }
+  .finding .ev { background: var(--panel2); border-radius: 8px; padding: 10px 14px;
+    margin: 12px 0; font-family: var(--mono); font-size: 12.5px; color: #cdd3df; white-space: pre-wrap; }
+  .finding .fix { color: var(--ink); }
+  .finding .fix b { color: var(--good); }
+  .finding .where { color: var(--faint); font-size: 12.5px; }
+  .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .ba .box { border: 1px dashed var(--line); border-radius: 8px; padding: 8px 12px; }
+  .ba .box .t { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); }
+  .pending { color: var(--faint); font-style: italic; }
+  .note { background: #a78bfa11; border-left: 3px solid var(--accent);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; color: var(--dim); font-size: 14px; }
+  ul.tight { margin: 6px 0; padding-left: 20px; color: var(--dim); }
+  ul.tight li { margin: 3px 0; }
+  .legend { color: var(--faint); font-size: 12.5px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Radio4000 — Performance Report</h1>
+  <p class="sub">Where the app feels slow, proof it does (or doesn’t), and what to change.</p>
+  <p class="meta">
+    Baseline captured 2026-06-04 · localhost (Vite dev, <code>:5173</code>) vs production
+    (<a href="https://radio4000.com">radio4000.com</a>, deployed from <code>main</code>) ·
+    test channel <code>/oskar</code> (2 580 tracks) ·
+    method: <code>agent-browser</code> automation, see <code>perf/measure.sh</code>.
+  </p>
+</header>
+
+<div class="note">
+  <b>Read dev numbers with care.</b> Vite serves hundreds of un-bundled module requests in dev,
+  so localhost first-loads are inflated and not representative. <b>Production is the real baseline.</b>
+  The value of showing both: findings that reproduce in <i>both</i> columns are genuine; ones that only
+  show up on localhost are dev-tooling artifacts.
+</div>
+
+<!-- ============================ SCORECARD ============================ -->
+<h2>Scorecard</h2>
+<div class="grid cols-3">
+  <div class="card">
+    <div class="kpi-label">Scroll on 2 580 tracks</div>
+    <div class="kpi" style="color:var(--good)">60<small> fps</small></div>
+    <div class="legend">worst frame 17 ms · 0 long tasks · both envs</div>
+  </div>
+  <div class="card">
+    <div class="kpi-label">In-app revisit nav</div>
+    <div class="kpi" style="color:var(--good)">70–130<small> ms</small></div>
+    <div class="legend">prod SPA settle, channel ⇄ directory</div>
+  </div>
+  <div class="card">
+    <div class="kpi-label">Homepage CLS</div>
+    <div class="kpi" style="color:var(--warn)">0.16</div>
+    <div class="legend">same in dev &amp; prod · target &lt; 0.1</div>
+  </div>
+</div>
+<p>Bottom line: <b>rendering and scrolling are not the problem</b> — they’re solid. The friction is in
+<b>data loading on first navigation</b> (redundant fetches, empty-state flashes) and a
+<b>layout shift on the homepage</b>. All network-/state-shaped — exactly the TanStack-DB territory worth tuning.</p>
+
+<!-- ============================ CORE VITALS ============================ -->
+<h2>Core Web Vitals — homepage</h2>
+<table>
+  <thead><tr><th>Metric</th><th class="num">localhost</th><th class="num">production</th><th>Verdict</th></tr></thead>
+  <tbody>
+    <tr><td>FCP — first contentful paint</td><td class="num">544 ms</td><td class="num">144 ms</td><td><span class="badge b-good">good</span></td></tr>
+    <tr><td>LCP — largest contentful paint <span class="where">(featured artwork img)</span></td><td class="num">772 ms</td><td class="num">576 ms</td><td><span class="badge b-good">good</span></td></tr>
+    <tr><td>TTFB</td><td class="num">2 ms</td><td class="num">25 ms</td><td><span class="badge b-good">good</span></td></tr>
+    <tr><td>CLS — cumulative layout shift</td><td class="num">0.16</td><td class="num">0.16</td><td><span class="badge b-warn">needs work</span></td></tr>
+    <tr><td>INP</td><td class="num">—</td><td class="num">—</td><td><span class="badge b-info">no slow interactions seen</span></td></tr>
+  </tbody>
+</table>
+<p class="legend">CLS is identical across environments → it’s a real layout problem, not dev noise.
+The single biggest shift (0.14) lands at ~550 ms as featured content settles in.</p>
+
+<!-- ============================ NAV TIMING ============================ -->
+<h2>SPA navigation — settle time</h2>
+<p>Time from click to the DOM going quiet (300 ms no-mutation window), measured in-app (no full reload).</p>
+<table>
+  <thead><tr><th>Transition</th><th class="num">localhost</th><th class="num">production</th><th>Verdict</th></tr></thead>
+  <tbody>
+    <tr><td>Home → channel <span class="where">(cold, first in session)</span></td><td class="num">464 ms</td><td class="num">379 ms</td><td><span class="badge b-warn">network-bound</span></td></tr>
+    <tr><td>Channel → directory</td><td class="num">180 ms</td><td class="num">202 ms</td><td><span class="badge b-good">snappy</span></td></tr>
+    <tr><td>Directory → channel <span class="where">(warm revisit)</span></td><td class="num">86–105 ms</td><td class="num">70–81 ms</td><td><span class="badge b-good">snappy</span></td></tr>
+  </tbody>
+</table>
+<p class="legend">Navigation itself is fast. The only slow step is the first cold fetch of a channel’s data
+— and even that is dominated by the round-trip to Supabase, not by rendering.</p>
+
+<!-- ============================ FINDINGS ============================ -->
+<h2>Findings &amp; proposed fixes</h2>
+<p class="legend">Ordered by leverage. “Before” is measured; “After” fills in as fixes land.</p>
+
+<!-- F1 -->
+<div class="finding">
+  <div class="top">
+    <h3>1 · Redundant data fetches on every channel load</h3>
+    <span class="badge b-warn">medium</span>
+    <span class="badge b-bad">reproduces in prod</span>
+  </div>
+  <p>A single channel visit fires the same queries several times over. Confirmed identical on dev and prod
+     (clean SPA home → <code>/oskar</code>):</p>
+  <div class="ev">rest/v1/channels_with_tracks   × 4
+rest/v1/channel_tracks         × 2
+rest/v1/followers              × 2
++ YouTube thumbnails           × ~50  (first 20 eager, rest loading="lazy")</div>
+  <p class="where">Root cause: <code>src/routes/[slug]/+layout.svelte</code> resolves the channel in two
+     <code>useLiveQuery</code> stages (by slug, then by stable id), and tracks/followers each trigger their own
+     query — keys aren’t deduped, so <code>channels_with_tracks</code> is requested 4×.</p>
+  <p class="fix"><b>Fix:</b> collapse the 2-stage channel resolution into one stable query key; gate
+     followers/tracks behind the resolved channel id. Goal: 1× channels, 1× tracks, 1× followers per visit.</p>
+  <div class="ba">
+    <div class="box"><div class="t">Before</div>channels ×4 · tracks ×2 · followers ×2</div>
+    <div class="box"><div class="t">After</div><span class="pending">pending fix</span></div>
+  </div>
+</div>
+
+<!-- F2 -->
+<div class="finding">
+  <div class="top">
+    <h3>2 · Homepage layout shift (CLS 0.16)</h3>
+    <span class="badge b-warn">medium</span>
+    <span class="badge b-bad">reproduces in prod</span>
+  </div>
+  <p>The homepage shifts as featured channels and their artwork load. CLS 0.16 in both environments;
+     biggest single shift 0.14 at ~550 ms.</p>
+  <div class="ev">cls.score = 0.16   (target &lt; 0.10)
+largest shift: value 0.1415 @ startTime 551 ms
+LCP element: featured channel &lt;img&gt; (cloudinary thumb)</div>
+  <p class="where">Root cause: featured-channel cards / artwork render without reserved space, so later content
+     pushes layout down.</p>
+  <p class="fix"><b>Fix:</b> reserve space with explicit <code>width</code>/<code>height</code> or an
+     <code>aspect-ratio</code> box on artwork and card slots so images paint into a fixed footprint.</p>
+  <div class="ba">
+    <div class="box"><div class="t">Before</div>CLS 0.16</div>
+    <div class="box"><div class="t">After</div><span class="pending">pending fix</span></div>
+  </div>
+</div>
+
+<!-- F3 -->
+<div class="finding">
+  <div class="top">
+    <h3>3 · Track list blinks empty on every channel switch</h3>
+    <span class="badge b-warn">low–medium</span>
+    <span class="badge b-bad">reproduces in prod</span>
+  </div>
+  <p><code>tracksCollection</code> is a single global collection filtered by slug. Switching channels re-runs its
+     <code>queryFn</code>, so its state momentarily empties before repopulating — a flash of “Tracks (0)” /
+     “No tracks yet”.</p>
+  <div class="ev">window.r5.tracksCollection._state.size
+  channel A:  2580
+  → switch:      0      ← empty flash
+  → repopulate: 2580   (~70–130 ms later)</div>
+  <p class="where">Root cause: <code>src/lib/collections/tracks.ts</code> (on-demand, slug-filtered) +
+     <code>src/routes/[slug]/+layout.svelte</code> tracks <code>useLiveQuery</code>.</p>
+  <p class="fix"><b>Fix:</b> keep previous results visible until the new query resolves
+     (TanStack <code>placeholderData</code> / keep-previous), or show a skeleton row state instead of the
+     empty “0 / no tracks” copy.</p>
+  <div class="ba">
+    <div class="box"><div class="t">Before</div>size 2580 → 0 → 2580 on switch</div>
+    <div class="box"><div class="t">After</div><span class="pending">pending fix</span></div>
+  </div>
+</div>
+
+<!-- F4 -->
+<div class="finding">
+  <div class="top">
+    <h3>4 · Literal “@unknown / Updated unknown” placeholder flash</h3>
+    <span class="badge b-good">low (cosmetic)</span>
+    <span class="badge b-info">client-nav path</span>
+  </div>
+  <p>On client-side channel load, the header shows literal placeholder text before metadata hydrates
+     (~100 ms window on dev/SPA). Production hard-loads hide it via SSR, but in-app navigation still hits it.</p>
+  <div class="ev">t=162 ms  @unknown · "Updated unknown"   ← flash
+t=262 ms  @oskar · real channel header</div>
+  <p class="where">Root cause: <code>src/lib/dates.js:125</code> <code>relativeDate()</code> returns the string
+     <code>'unknown'</code> for a null date, rendered at <code>src/routes/[slug]/+page.svelte:407</code>.</p>
+  <p class="fix"><b>Fix:</b> render nothing / a skeleton when the channel (or its date) isn’t resolved yet,
+     instead of emitting the literal word “unknown”.</p>
+  <div class="ba">
+    <div class="box"><div class="t">Before</div>~100 ms “@unknown” flash on SPA nav</div>
+    <div class="box"><div class="t">After</div><span class="pending">pending fix</span></div>
+  </div>
+</div>
+
+<!-- F5 -->
+<div class="finding">
+  <div class="top">
+    <h3>5 · ~50 YouTube thumbnails per channel load</h3>
+    <span class="badge b-good">low</span>
+  </div>
+  <p>Each channel visit pulls ~50 <code>i.ytimg.com/.../mqdefault.jpg</code> images (first 20 eager). It doesn’t
+     cause jank today — scroll stays at 60 fps — but it’s a lot of third-party requests up front.</p>
+  <p class="where"><code>src/lib/components/track-card.svelte:174</code> — <code>loading="lazy"</code> only applies when
+     <code>index &gt; 20</code>.</p>
+  <p class="fix"><b>Fix (optional):</b> trim the eager count, and set explicit image dimensions to keep layout
+     work down. Low priority — monitor, don’t over-engineer.</p>
+</div>
+
+<!-- ============================ HEALTHY ============================ -->
+<h2>Proven healthy — don’t touch</h2>
+<ul class="tight">
+  <li><b>Scroll performance:</b> 2 580-track channel scrolls at a steady 60 fps — worst frame 17 ms, <b>zero</b> long tasks, on both dev and prod.</li>
+  <li><b>List rendering:</b> windowed (<code>@humanspeak/svelte-virtual-list</code>), ~110 rows in DOM regardless of channel size.</li>
+  <li><b>Warm navigation:</b> revisiting a channel settles in 70–130 ms.</li>
+  <li><b>No long tasks</b> observed in any measured interaction.</li>
+  <li><b>Collection cache:</b> <code>tracks</code> staleTime 24 h, <code>channels</code> 1 h — sensible; the issue is fetch <i>dedup</i>, not staleness.</li>
+</ul>
+
+<!-- ============================ METHOD ============================ -->
+<h2>How to reproduce</h2>
+<p>The harness drives a real browser through a fixed scenario and prints JSON. Run it against either base URL
+   to capture before/after numbers:</p>
+<div class="ev">bun dev                                  # for the localhost run
+perf/measure.sh http://localhost:5173    # dev numbers
+perf/measure.sh https://radio4000.com    # prod baseline</div>
+<p class="legend">Captures: homepage Core Web Vitals, SPA nav settle (cold + warm), scroll-jank frame stats on a
+   heavy channel, placeholder-flash timeline, and per-load request counts. Numbers wobble a few ms run-to-run —
+   read trends, not last digits.</p>
+
+</div>
+</body>
+</html>
