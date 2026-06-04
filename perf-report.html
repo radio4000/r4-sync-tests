@@ -213,12 +213,13 @@ LCP element: featured channel &lt;img&gt; (cloudinary thumb)</div>
   → repopulate: 2580   (~70–130 ms later)</div>
   <p class="where">Root cause: <code>src/lib/collections/tracks.ts</code> (on-demand, slug-filtered) +
      <code>src/routes/[slug]/+layout.svelte</code> tracks <code>useLiveQuery</code>.</p>
-  <p class="fix"><b>Fix:</b> keep previous results visible until the new query resolves
-     (TanStack <code>placeholderData</code> / keep-previous), or show a skeleton row state instead of the
-     empty “0 / no tracks” copy.</p>
+  <p class="fix"><b>Fix shipped:</b> the tab count now prefers loaded tracks but falls back to the
+     channel’s known <code>track_count</code> while they load, and the header keeps the previously-resolved
+     channel visible during the ~60 ms switch gap (<code>src/routes/[slug]/+layout.svelte</code>). The body
+     already had a “Loading tracks…” guard. Same root fix as #4.</p>
   <div class="ba">
-    <div class="box"><div class="t">Before</div>size 2580 → 0 → 2580 on switch</div>
-    <div class="box"><div class="t">After</div><span class="pending">pending fix</span></div>
+    <div class="box"><div class="t">Before</div>tab “Tracks (0)” mid-switch<br>(count derived from 0 loaded rows)</div>
+    <div class="box"><div class="t">After ✓ measured</div>“Tracks (2581)” → “Tracks (2514)”<br>no 0 in between</div>
   </div>
 </div>
 
@@ -233,13 +234,17 @@ LCP element: featured channel &lt;img&gt; (cloudinary thumb)</div>
      (~100 ms window on dev/SPA). Production hard-loads hide it via SSR, but in-app navigation still hits it.</p>
   <div class="ev">t=162 ms  @unknown · "Updated unknown"   ← flash
 t=262 ms  @oskar · real channel header</div>
-  <p class="where">Root cause: <code>src/lib/dates.js:125</code> <code>relativeDate()</code> returns the string
-     <code>'unknown'</code> for a null date, rendered at <code>src/routes/[slug]/+page.svelte:407</code>.</p>
-  <p class="fix"><b>Fix:</b> render nothing / a skeleton when the channel (or its date) isn’t resolved yet,
-     instead of emitting the literal word “unknown”.</p>
+  <p class="where">Real root cause (found via instrumentation): during a channel switch a single-result live
+     query briefly yields a truthy <b>empty object</b> <code>{}</code>, so <code>pickRouteChannel</code> returned
+     a ghost channel with no name → <code>deckTitle()</code> fell back to the literal <code>'@unknown'</code>
+     (<code>src/lib/deck.ts:8</code>), and the tab read <code>track_count</code> of <code>undefined</code> → 0.</p>
+  <p class="fix"><b>Fix shipped:</b> <code>pickRouteChannel</code> now rejects id-less ghost objects
+     (<code>src/lib/channel-route.ts</code>, + unit test), so <code>channel</code> is cleanly
+     <code>undefined</code> during the gap; the layout then holds the previous channel for presentation until
+     the new one resolves. Header transitions Radio Oskar → Nomads Radio with no “@unknown” frame.</p>
   <div class="ba">
-    <div class="box"><div class="t">Before</div>~100 ms “@unknown” flash on SPA nav</div>
-    <div class="box"><div class="t">After</div><span class="pending">pending fix</span></div>
+    <div class="box"><div class="t">Before</div>~60 ms “@unknown” header frame on every channel switch</div>
+    <div class="box"><div class="t">After ✓ measured</div>0 frames — direct name→name transition</div>
   </div>
 </div>
 

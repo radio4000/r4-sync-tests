@@ -19,5 +19,9 @@ export function pickRouteChannel(
 	channelFromId: Channel | undefined
 ): Channel | undefined {
 	if (channelFromSlug?.slug === slug) return channelFromSlug
-	return channelFromId ?? channelFromSlug
+	const candidate = channelFromId ?? channelFromSlug
+	// A single-result live query in transition can briefly yield a truthy but empty
+	// object ({}). Treat anything without an id as "not resolved" so callers don't
+	// render a ghost channel (header flashing "@unknown" / "Tracks (0)").
+	return candidate?.id ? candidate : undefined
 }
