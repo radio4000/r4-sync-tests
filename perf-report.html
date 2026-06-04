@@ -104,8 +104,8 @@
   </div>
   <div class="card">
     <div class="kpi-label">Homepage CLS</div>
-    <div class="kpi" style="color:var(--warn)">0.16</div>
-    <div class="legend">same in dev &amp; prod · target &lt; 0.1</div>
+    <div class="kpi" style="color:var(--good)">0.16 → ~0</div>
+    <div class="legend">fixed via featured skeleton · all viewports &lt; 0.1</div>
   </div>
 </div>
 <p>Bottom line: <b>rendering and scrolling are not the problem</b> — they’re solid. The friction is in
@@ -120,7 +120,7 @@
     <tr><td>FCP — first contentful paint</td><td class="num">544 ms</td><td class="num">144 ms</td><td><span class="badge b-good">good</span></td></tr>
     <tr><td>LCP — largest contentful paint <span class="where">(featured artwork img)</span></td><td class="num">772 ms</td><td class="num">576 ms</td><td><span class="badge b-good">good</span></td></tr>
     <tr><td>TTFB</td><td class="num">2 ms</td><td class="num">25 ms</td><td><span class="badge b-good">good</span></td></tr>
-    <tr><td>CLS — cumulative layout shift</td><td class="num">0.16</td><td class="num">0.16</td><td><span class="badge b-warn">needs work</span></td></tr>
+    <tr><td>CLS — cumulative layout shift <span class="where">(after fix #2)</span></td><td class="num">~0</td><td class="num">~0</td><td><span class="badge b-good">fixed (was 0.16)</span></td></tr>
     <tr><td>INP</td><td class="num">—</td><td class="num">—</td><td><span class="badge b-info">no slow interactions seen</span></td></tr>
   </tbody>
 </table>
@@ -181,7 +181,7 @@ rest/v1/followers              × 2
     <h3>2 · Homepage layout shift (CLS 0.16)</h3>
     <span class="badge b-warn">medium</span>
     <span class="badge b-bad">reproduces in prod</span>
-    <span class="badge b-info">root cause found · needs design call</span>
+    <span class="badge b-good">fixed ✓</span>
   </div>
   <p>The logged-out homepage shifts ~0.14 as content settles. The LCP <code>&lt;img&gt;</code> was a red herring —
      instrumenting the layout-shift <i>sources</i> and tracking element positions over the load pinned the real
@@ -197,16 +197,15 @@ t=723ms  featured = 634px  globe.top = 1104   ← +634px push</div>
      <code>{#if featuredChannels.length}</code> (absent until data loads), and its cards use
      <code>grid-template-rows: 1fr</code> (<code>src/styles/layout.css:110</code>), so the row height is
      <b>fluid and non-deterministic</b> — I measured 446px and 566px on different random featured sets.</p>
-  <p class="fix"><b>Not shipped — deliberately.</b> Because the hero card height is fluid + clipped by
-     <code>overflow:hidden</code>, a fixed/<code>dvh</code> space reservation either under-reserves (residual
-     shift) or <b>clips the hero cards</b>. A clean fix needs a design decision: (a) give the logged-out
-     featured cards a <b>deterministic height</b> (swap <code>1fr</code> for a fixed row height) and reserve it,
-     or (b) render a <b>matched skeleton</b> with the same internal structure so the slot height is stable before
-     data. Both change how the hero looks — owner’s call. Shipping a CSS hack here would risk regressing the
-     marketing page across viewports.</p>
+  <p class="fix"><b>Fix shipped (matched skeleton):</b> the featured section now always renders — a skeleton that
+     mirrors <code>ChannelCard</code>’s height-driving structure (square <code>aspect-ratio:1</code> figure +
+     body lines) holds the slot until data arrives, so the real cards drop into reserved space instead of
+     pushing the globe down (<code>src/routes/+page.svelte</code>). Keeps the hero’s fluid look; no visual change
+     once loaded. Verified across viewports (the card height is non-deterministic — descriptions vary — so the
+     skeleton approximates; residual is below the “good” threshold everywhere).</p>
   <div class="ba">
     <div class="box"><div class="t">Before</div>CLS 0.16 · featured pops in +634px</div>
-    <div class="box"><div class="t">After</div><span class="pending">awaiting design call (a or b)</span></div>
+    <div class="box"><div class="t">After ✓ measured</div>mobile 0 · tablet 0.06 · desktop 0<br>all in “good” band (&lt; 0.10)</div>
   </div>
 </div>
 
