@@ -1,8 +1,6 @@
-Radio4000 is a music curation platform. People create radio channels and collect tracks — links to music on YouTube, SoundCloud, and other sources. You reference and annotate media, you never host it. Human curation over algorithms, since 2014.
+Radio4000 is a music curation platform. People create radio channels and collect tracks — links to music on YouTube, Discogs, and other sources. You reference and annotate media, you never host it. Human curation over algorithms, since 2014.
 
-This repo (`r4-sync-tests`) is the SvelteKit frontend. It uses Svelte 5, `@radio4000/sdk` (Supabase data layer), TanStack DB (local-first sync), and `media-now` (URL parsing). The domain model — channels, tracks, views, decks, broadcast, auto-radio — is explained in [universe](docs/universe.md).
-
-Be concise. Short answers, no walls of text.
+This repo (`github.com/radio4000/r4-svelte`) is the SvelteKit frontend. It uses Svelte 5, `@radio4000/sdk` (Supabase data layer), TanStack DB (local-first sync), and `media-now` (URL parsing). The domain model: channels, tracks, views, decks, broadcast — is explained in [universe](docs/universe.md).
 
 ## Workflow
 
@@ -21,6 +19,8 @@ For any task or question:
 /src/lib/components   -- components
 ```
 
+Be concise. Short answers, no walls of text.
+
 ## Key docs
 
 - [reference](docs/reference.json) - scan for relevant functions, SDK methods, components, types
@@ -32,13 +32,8 @@ For any task or question:
 - [browser-testing](docs/browser-testing.md) - testing with agent-browser
 - See `docs/` for topic-specific docs (player, search, broadcast, etc.)
 
-## Don't
-
-- No new files unless clearly necessary. Edit existing code.
-- No piping `bun run test/check/types` through `tail`, `head`, or `grep` — terminal control sequences break.
-
 ## Debug
 
-`window.r5` exposes sdk, appState, queryClient, tracksCollection, channelsCollection for console testing.
-Playground routes live under `/src/routes/docs` alongside their markdown docs. Add `playground: true` in the page server load to get the docs/playground split layout.
+`window.r5` exposes `sdk`, `appState`, `queryClient`, `tracksCollection`, `channelsCollection` for console testing.
+Playground routes live under `/src/routes/docs` alongside their markdown docs. 
 The `r4 --help` CLI can help inspect data from remote PostgreSQL.
