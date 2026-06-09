@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Radio4000 — Performance Report</title>
+<style>
+  :root {
+    --bg: #0e1014; --panel: #171a21; --panel2: #1e222b; --line: #2a2f3a;
+    --ink: #e7e9ee; --dim: #9aa3b2; --faint: #6b7280;
+    --good: #34d399; --warn: #fbbf24; --bad: #f87171; --accent: #a78bfa;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, "Radio Canada", system-ui, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 40px 24px 80px; }
+  header h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -.02em; }
+  header .sub { color: var(--dim); margin: 0; }
+  .meta { color: var(--faint); font-size: 13px; margin-top: 10px; }
+  h2 { font-size: 19px; margin: 44px 0 14px; letter-spacing: -.01em;
+    border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  h3 { font-size: 15px; margin: 22px 0 8px; }
+  p { color: var(--dim); }
+  code, .mono { font-family: var(--mono); font-size: 12.5px; }
+  code { background: var(--panel2); padding: 1px 6px; border-radius: 5px; color: #cdd3df; }
+  a { color: var(--accent); }
+
+  .grid { display: grid; gap: 14px; }
+  .cols-3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 720px) { .cols-3 { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px 18px; }
+  .kpi { font-size: 26px; font-weight: 650; letter-spacing: -.02em; }
+  .kpi small { font-size: 13px; color: var(--faint); font-weight: 400; }
+  .kpi-label { color: var(--dim); font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; }
+
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 4px; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--dim); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  td.num, th.num { text-align: right; font-family: var(--mono); font-size: 13px; }
+  tbody tr:hover { background: #ffffff06; }
+
+  .badge { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 9px;
+    border-radius: 99px; letter-spacing: .02em; white-space: nowrap; }
+  .b-good { background: #34d39922; color: var(--good); }
+  .b-warn { background: #fbbf2422; color: var(--warn); }
+  .b-bad  { background: #f8717122; color: var(--bad); }
+  .b-info { background: #a78bfa22; color: var(--accent); }
+
+  .finding { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px 20px; margin: 14px 0; }
+  .finding .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .finding .top h3 { margin: 0; flex: 1; min-width: 200px; }
+  .finding .ev { background: var(--panel2); border-radius: 8px; padding: 10px 14px;
+    margin: 12px 0; font-family: var(--mono); font-size: 12.5px; color: #cdd3df; white-space: pre-wrap; }
+  .finding .fix { color: var(--ink); }
+  .finding .fix b { color: var(--good); }
+  .finding .where { color: var(--faint); font-size: 12.5px; }
+  .note { background: #a78bfa11; border-left: 3px solid var(--accent);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; color: var(--dim); font-size: 14px; }
+  ul.tight { margin: 6px 0; padding-left: 20px; color: var(--dim); }
+  ul.tight li { margin: 3px 0; }
+  .legend { color: var(--faint); font-size: 12.5px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Radio4000 — Performance Report</h1>
+  <p class="sub">Where the app feels slow, and what to change. Open items only.</p>
+  <p class="meta">
+    Baseline captured 2026-06-04 · localhost (Vite dev, <code>:5173</code>) vs production
+    (<a href="https://radio4000.com">radio4000.com</a>, deployed from <code>main</code>) ·
+    test channel <code>/oskar</code> (2 580 tracks) ·
+    method: <code>agent-browser</code> automation, see <code>perf/measure.sh</code>.
+  </p>
+</header>
+
+<div class="note">
+  <b>Read dev numbers with care.</b> Vite serves hundreds of un-bundled module requests in dev,
+  so localhost first-loads are inflated and not representative. <b>Production is the real baseline.</b>
+  Findings that reproduce in <i>both</i> columns are genuine; ones that only show up on localhost are
+  dev-tooling artifacts.
+</div>
+
+<!-- ============================ SCORECARD ============================ -->
+<h2>Scorecard</h2>
+<div class="grid cols-3">
+  <div class="card">
+    <div class="kpi-label">Scroll on 2 580 tracks</div>
+    <div class="kpi" style="color:var(--good)">60<small> fps</small></div>
+    <div class="legend">worst frame 17 ms · 0 long tasks · both envs</div>
+  </div>
+  <div class="card">
+    <div class="kpi-label">In-app revisit nav</div>
+    <div class="kpi" style="color:var(--good)">70–130<small> ms</small></div>
+    <div class="legend">prod SPA settle, channel ⇄ directory</div>
+  </div>
+  <div class="card">
+    <div class="kpi-label">Worst interaction · “see all tracks”</div>
+    <div class="kpi" style="color:var(--bad)">~1.7<small> s frozen</small></div>
+    <div class="legend">single long task · 2 582 nodes · PR + prod · finding #1 (open)</div>
+  </div>
+</div>
+<p>Bottom line: <b>scrolling and ordinary navigation are solid</b> — home, menu, explore, settings and channel
+revisits all settle fast with no long tasks. One outlier dwarfs the rest: <b>“see all tracks” on a big channel
+freezes the main thread for ~1.7 s</b> (finding #1) — the single worst interaction in the app.</p>
+<p class="legend"><b>Transitions checked (PR + prod):</b> home ⇄ channel ⇄ channel, open/reopen menu,
+explore, settings/keyboard, and small vs heavy channels. All clean (settle &lt; 300 ms, 0–1 sub-100 ms tasks)
+<i>except</i>: heavy-channel landing carries a ~60–80 ms task that scales with track count (TanStack live-query
+rebuild over all rows — acceptable), and <code>/[slug]/tracks</code> freezes ~1.7 s (finding #1).</p>
+
+<!-- ============================ CORE VITALS ============================ -->
+<h2>Core Web Vitals — homepage</h2>
+<table>
+  <thead><tr><th>Metric</th><th class="num">localhost</th><th class="num">production</th><th>Verdict</th></tr></thead>
+  <tbody>
+    <tr><td>FCP — first contentful paint</td><td class="num">544 ms</td><td class="num">144 ms</td><td><span class="badge b-good">good</span></td></tr>
+    <tr><td>LCP — largest contentful paint <span class="where">(featured artwork img)</span></td><td class="num">772 ms</td><td class="num">576 ms</td><td><span class="badge b-good">good</span></td></tr>
+    <tr><td>TTFB</td><td class="num">2 ms</td><td class="num">25 ms</td><td><span class="badge b-good">good</span></td></tr>
+    <tr><td>CLS — cumulative layout shift</td><td class="num">~0</td><td class="num">~0</td><td><span class="badge b-good">good</span></td></tr>
+    <tr><td>INP</td><td class="num">—</td><td class="num">—</td><td><span class="badge b-info">no slow interactions seen</span></td></tr>
+  </tbody>
+</table>
+
+<!-- ============================ NAV TIMING ============================ -->
+<h2>SPA navigation — settle time</h2>
+<p>Time from click to the DOM going quiet (300 ms no-mutation window), measured in-app (no full reload).</p>
+<table>
+  <thead><tr><th>Transition</th><th class="num">localhost</th><th class="num">production</th><th>Verdict</th></tr></thead>
+  <tbody>
+    <tr><td>Home → channel <span class="where">(cold, first in session)</span></td><td class="num">464 ms</td><td class="num">379 ms</td><td><span class="badge b-warn">network-bound</span></td></tr>
+    <tr><td>Channel → directory</td><td class="num">180 ms</td><td class="num">202 ms</td><td><span class="badge b-good">snappy</span></td></tr>
+    <tr><td>Directory → channel <span class="where">(warm revisit)</span></td><td class="num">86–105 ms</td><td class="num">70–81 ms</td><td><span class="badge b-good">snappy</span></td></tr>
+  </tbody>
+</table>
+<p class="legend">Navigation itself is fast. The only slow step is the first cold fetch of a channel’s data
+— and even that is dominated by the round-trip to Supabase, not by rendering.</p>
+
+<!-- ============================ FINDINGS ============================ -->
+<h2>Open findings &amp; proposed fixes</h2>
+
+<!-- F1 — the headline -->
+<div class="finding">
+  <div class="top">
+    <h3>1 · “See all tracks” freezes the main thread ~1.7 s</h3>
+    <span class="badge b-bad">severe</span>
+    <span class="badge b-bad">reproduces in prod</span>
+  </div>
+  <p>Opening a big channel’s full track list (<code>/[slug]/tracks</code>) blocks the main thread in a
+     <b>single ~1.7 s long task</b> — the tab is frozen (no scroll, no clicks) for that whole time. Dead
+     consistent across reps and <b>identical on the PR and on radio4000.com</b>, so it’s pre-existing. The
+     channel <i>landing</i> page is fine because it only renders a 50-track preview; the freeze is specific to
+     the “see all” route.</p>
+  <div class="ev">// SPA nav home → /oskar/tracks (2 582 tracks), worst single long task:
+PR  (less-queries.workers.dev)   1 758 / 1 752 / 1 767 ms   (3 reps)
+prod (radio4000.com)             1 520 ms
+DOM nodes rendered               2 582  (one full TrackCard subtree each)
+
+// main-thread self-time during the freeze (prod CPU profile):
+824 ms  (program / native layout)      470 ms  document.cookie reads
+588 ms  TrackCard render (app chunk)   457 ms  insertBefore   56 ms cloneNode</div>
+  <p class="where">Root cause: <code>src/routes/[slug]/tracks/+page.svelte</code> passes
+     <code>virtual={false}</code> to <code>Tracklist</code>, so it takes the grouped <code>{#each}</code> branch
+     and mounts a real DOM subtree for <b>every</b> track at once. The 470 ms of <code>document.cookie</code>
+     reads and the layout/paint cost are all downstream of that 2 582-node render storm (posthog autocapture +
+     style/layout reacting to the insertions).</p>
+  <p class="fix"><b>Not a one-line flip.</b> <code>Tracklist</code> can virtualize (its <code>flatItems</code>
+     already interleaves month headers, so grouping survives), but simply setting <code>virtual={true}</code>
+     <i>doesn’t</i> help here: the route scrolls the global <code>.scroll-area</code>, while
+     <code>SvelteVirtualList</code> needs its own height-bounded viewport — measured it still rendered all 2 582
+     nodes. Making it virtualize means giving the page a bounded flex-column scroll container, and that collides
+     with <code>+layout.svelte</code>’s scroll-restoration (which saves/restores <code>.scroll-area.scrollTop</code>,
+     not an inner viewport). So this is a real design call: <b>(a)</b> restructure the route to virtualize inside
+     its own viewport and move scroll-restoration with it, or <b>(b)</b> incrementally reveal (render ~100, grow
+     on scroll like <code>infinite-grid</code>) — lower risk, keeps document scroll, but Ctrl-F won’t hit
+     unrendered rows. Target: no task &gt; 50 ms, windowed DOM.</p>
+</div>
+
+<!-- F2 -->
+<div class="finding">
+  <div class="top">
+    <h3>2 · ~50 YouTube thumbnails per channel load</h3>
+    <span class="badge b-good">low</span>
+  </div>
+  <p>Each channel visit pulls ~50 <code>i.ytimg.com/.../mqdefault.jpg</code> images (first 20 eager). It doesn’t
+     cause jank today — scroll stays at 60 fps — but it’s a lot of third-party requests up front.</p>
+  <p class="where"><code>src/lib/components/track-card.svelte:174</code> — <code>loading="lazy"</code> only applies when
+     <code>index &gt; 20</code>.</p>
+  <p class="fix"><b>Fix (optional):</b> trim the eager count, and set explicit image dimensions to keep layout
+     work down. Low priority — monitor, don’t over-engineer.</p>
+</div>
+
+<!-- ============================ HEALTHY ============================ -->
+<h2>Proven healthy — don’t touch</h2>
+<ul class="tight">
+  <li><b>Scroll performance:</b> 2 580-track channel scrolls at a steady 60 fps — worst frame 17 ms, <b>zero</b> long tasks, on both dev and prod.</li>
+  <li><b>List rendering — where it’s windowed:</b> the channel landing preview (50 tracks) and the queue panel use the virtual list (<code>@humanspeak/svelte-virtual-list</code>), ~110 rows in DOM. <b>Exception:</b> the full <code>/[slug]/tracks</code> route is <i>not</i> windowed — see finding #1.</li>
+  <li><b>Warm navigation:</b> revisiting a channel settles in 70–130 ms.</li>
+  <li><b>No long tasks</b> observed in any measured interaction.</li>
+  <li><b>Collection cache:</b> <code>tracks</code> staleTime 24 h, <code>channels</code> 1 h — sensible.</li>
+</ul>
+
+<!-- ============================ METHOD ============================ -->
+<h2>How to reproduce</h2>
+<p>The harness drives a real browser through a fixed scenario and prints JSON. Run it against either base URL
+   to capture before/after numbers:</p>
+<div class="ev">bun dev                                  # for the localhost run
+perf/measure.sh http://localhost:5173    # dev numbers
+perf/measure.sh https://radio4000.com    # prod baseline</div>
+<p class="legend">Captures: homepage Core Web Vitals, SPA nav settle (cold + warm), scroll-jank frame stats on a
+   heavy channel, placeholder-flash timeline, and per-load request counts. Numbers wobble a few ms run-to-run —
+   read trends, not last digits.</p>
+
+</div>
+</body>
+</html>

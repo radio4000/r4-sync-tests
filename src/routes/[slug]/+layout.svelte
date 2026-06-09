@@ -32,6 +32,7 @@
 	import * as m from '$lib/paraglide/messages'
 	import {watchPresence, unwatchPresence, channelPresence} from '$lib/presence.svelte'
 	import {pickRouteChannel, updateStableChannelId} from '$lib/channel-route'
+	import type {Channel} from '$lib/types'
 
 	// --- Props & route params ---
 
@@ -103,6 +104,24 @@
 			.orderBy(({tracks}) => tracks.created_at, 'desc')
 	)
 	let allChannelTracks = $derived(tracksQuery.data ?? [])
+	// Keep the last resolved channel during the brief gap while switching channels,
+	// so the header doesn't flash "@unknown" / collapse. displayChannel === channel
+	// in steady state; only during the ~60ms resolution gap does it fall back to the
+	// previous channel until the new one resolves. Logic/effects still use `channel`.
+	let lastChannel = $state<Channel | undefined>(undefined)
+	$effect(() => {
+		if (channel?.id) {
+			const resolved = channel
+			untrack(() => (lastChannel = resolved))
+		}
+	})
+	// Fall back to the previous channel only while the new one is still loading.
+	// Once resolved-as-missing (channelIsReady && !channel) we drop it so the
+	// "not found" state shows instead of a stale header.
+	let displayChannel = $derived(channel ?? (channelIsReady ? undefined : lastChannel))
+	// Tab count: prefer loaded tracks, fall back to the channel's known count while
+	// they load — avoids a "Tracks (0)" flash on every channel switch.
+	let channelTrackCount = $derived(allChannelTracks.length || displayChannel?.track_count || 0)
 
 	// Channel-specific broadcast live query so "Live" state updates on this page
 	const channelBroadcastQuery = useLiveQuery((q) =>
@@ -293,7 +312,7 @@
 
 <div class="channel-layout fill-height" style="--channel-sticky-height: {channelStickyHeight}px">
 	<div class="channel-sticky" bind:clientHeight={channelStickyHeight}>
-		{#if channel}
+		{#if displayChannel}
 			<header>
 				<div class="channel-main">
 					<div class="avatar">
@@ -302,20 +321,20 @@
 								type="button"
 								class="avatar-btn"
 								title={m.channel_card_join_broadcast()}
-								onclick={() => joinBroadcast(appState.active_deck_id, channel.id)}
+								onclick={() => joinBroadcast(appState.active_deck_id, displayChannel.id)}
 							>
-								<ChannelAvatar id={channel.image} alt={channel.name} size={80} />
+								<ChannelAvatar id={displayChannel.image} alt={displayChannel.name} size={80} />
 							</button>
 						{:else}
 							<a href={resolve('/[slug]/image', {slug})} tabindex="-1">
-								<ChannelAvatar id={channel.image} alt={channel.name} size={80} />
+								<ChannelAvatar id={displayChannel.image} alt={displayChannel.name} size={80} />
 							</a>
 						{/if}
 					</div>
 					<div class="info">
 						<DeckChannelHeader
 							deck={channelListeningDeck ?? channelPlayingDeck ?? anyChannelAutoDecks[0]}
-							{channel}
+							channel={displayChannel}
 							track={listeningTrack}
 							titleElement="h1"
 							titleClass="channel-page-title"
@@ -327,7 +346,7 @@
 
 				<div class="channel-secondary-actions">
 					{#if (appState.channels?.length ?? 0) > 0}
-						<ButtonFollow {channel} />
+						<ButtonFollow channel={displayChannel} />
 					{:else}
 						<a href={authHref} class="btn" {@attach tooltip({content: m.common_follow()})}>
 							<Icon icon="favorite" />
@@ -369,7 +388,10 @@
 								</a>
 								<hr />
 							{/if}
-							<button type="button" onclick={() => (appState.modal_share = {channel})}>
+							<button
+								type="button"
+								onclick={() => (appState.modal_share = {channel: displayChannel})}
+							>
 								<Icon icon="share" />
 								{m.share_native()}
 							</button>
@@ -450,7 +472,7 @@
 		{#if !isTrackDetail}
 			<menu class="channel-nav">
 				{#if page.route.id !== '/[slug]/image'}
-					<ChannelSectionMenu {slug} {channel} trackCount={allChannelTracks.length} />
+					<ChannelSectionMenu {slug} channel={displayChannel} trackCount={channelTrackCount} />
 				{/if}
 				{#if channelNavControls}
 					<menu class="channel-nav-controls">

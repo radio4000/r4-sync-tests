@@ -147,15 +147,28 @@ export const channelsCollection = createCollection<Channel, string>({
 				)
 				const remoteIds = p.idIn.filter((id) => !localIds.has(id))
 				if (!remoteIds.length) return localMatches
+				// Serve channels already in the collection from cache (fresh within staleTime),
+				// fetching only the ids we're missing. Avoids re-fetching a channel we just
+				// loaded by slug (the by-id resolution on every channel page) and shrinks
+				// follower/following hydration batches on revisits. Shuffle skips the cache so
+				// randomized ordering still comes from the server.
+				const cachedById = p.shuffle
+					? new Map<string, Channel>()
+					: new Map(all.map((c) => [c.id, c]))
+				const cachedMatches = remoteIds
+					.map((id) => cachedById.get(id))
+					.filter((c): c is Channel => Boolean(c))
+				const missingIds = remoteIds.filter((id) => !cachedById.has(id))
+				if (!missingIds.length) return [...localMatches, ...cachedMatches]
 				let idQuery = sdk.supabase
 					.from(p.shuffle ? 'random_channels_with_tracks' : 'channels_with_tracks')
 					.select('*')
-					.in('id', remoteIds)
+					.in('id', missingIds)
 				if (!p.shuffle)
 					idQuery = idQuery.order(p.orderColumn ?? 'created_at', {ascending: p.ascending})
-				const {data, error} = await idQuery.limit(remoteIds.length)
+				const {data, error} = await idQuery.limit(missingIds.length)
 				if (error) throw error
-				return [...localMatches, ...(data || [])] as Channel[]
+				return [...localMatches, ...cachedMatches, ...(data || [])] as Channel[]
 			}
 			const limit =
 				ctx.meta?.loadSubsetOptions?.limit ?? (p.coordinatesNotNull ? 5000 : CHANNELS_PAGE_SIZE)

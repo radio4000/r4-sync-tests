@@ -52,4 +52,10 @@ describe('channel route helpers', () => {
 		expect(pickRouteChannel('beta', beta, resolvedById)).toEqual(beta)
 		expect(pickRouteChannel('beta', staleSlugChannel, undefined)).toEqual(staleSlugChannel)
 	})
+
+	test('ignores an id-less ghost channel from a transitioning live query', () => {
+		const ghost = {} as Channel
+		expect(pickRouteChannel('beta', undefined, ghost)).toBeUndefined()
+		expect(pickRouteChannel('beta', ghost, undefined)).toBeUndefined()
+	})
 })

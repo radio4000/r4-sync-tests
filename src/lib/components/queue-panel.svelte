@@ -1,6 +1,4 @@
 <script>
-	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {inArray} from '@tanstack/db'
 	import {fuzzySearch} from '$lib/utils'
 	import {appState, canEditChannel} from '$lib/app-state.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
@@ -43,15 +41,14 @@
 
 	let trackIds = $derived(getActiveQueue(deck))
 
-	// Resolve tracks by playlist IDs (works for cross-channel queues like search results)
-	const tracksQuery = useLiveQuery((q) =>
-		q.from({t: tracksCollection}).where(({t}) => inArray(t.id, trackIds.length ? trackIds : ['']))
-	)
-
-	// Order by playlist_tracks position
+	// Resolve tracks directly from the collection, ordered by playlist position.
+	// An inArray() live query over a multi-thousand-track playlist rebuilds an
+	// entire query collection on every play (~1.2s main-thread block); the tracks
+	// are already in the collection, so plain Map lookups are O(n) and instant.
+	// Matches the direct-resolve pattern in player.svelte.
 	let queueTracks = $derived.by(() => {
-		const byId = new Map((tracksQuery.data ?? []).map((t) => [t.id, t]))
-		return trackIds.map((id) => byId.get(id)).filter((t) => !!t)
+		const state = tracksCollection.state
+		return trackIds.map((id) => state.get(id)).filter((t) => !!t)
 	})
 
 	let filteredQueueTracks = $derived(
