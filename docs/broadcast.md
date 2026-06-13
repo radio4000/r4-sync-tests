@@ -42,10 +42,10 @@ In the deck player, a full-width Live mode button sits below the header and abov
 
 ## Files
 
-- `broadcast.js` — core logic
-- `tanstack/collections/broadcasts.js` — collection with realtime subscription
-- `broadcasts/+page.svelte` — list page
-- `broadcast-controls.svelte` — UI
+- `src/lib/broadcast.js` — core logic
+- `src/lib/collections/broadcasts.js` — collection with realtime subscription
+- `src/routes/broadcast/+page.svelte` — list page
+- `src/lib/components/broadcast-controls.svelte` — UI
 
 ## Types
 

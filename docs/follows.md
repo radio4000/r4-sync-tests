@@ -10,7 +10,7 @@ Follow/save channels as favorites. Stored in `followers` table with `follower_id
 
 ## Collection
 
-Uses `queryCollectionOptions` like other collections. Data flows through query cache (persisted to IDB). See `src/lib/tanstack/collections/follows.ts`.
+Uses `queryCollectionOptions` like other collections. Data flows through query cache (persisted to IDB). See `src/lib/collections/follows.ts`.
 
 ## API
 
@@ -50,7 +50,7 @@ sdk.channels.readFollowings(channelId) // who this channel follows
 
 ## Files
 
-- `src/lib/tanstack/collections/follows.ts` - collection + functions
+- `src/lib/collections/follows.ts` - collection + functions
 - `src/lib/components/button-follow.svelte` - follow button
 - `src/lib/followed-channels.svelte.ts` - reactive followed-channel helper
 - `src/lib/components/auth-listener.svelte` - calls loadUserFollows on auth
