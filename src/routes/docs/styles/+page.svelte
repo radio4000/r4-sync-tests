@@ -1,5 +1,5 @@
 <svelte:head>
-	<title>Styles - r5 docs</title>
+	<title>Styles - Radio4000 docs</title>
 </svelte:head>
 
 <section>

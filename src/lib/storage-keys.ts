@@ -1,4 +1,4 @@
-/** All localStorage keys used by R5. Add new keys here to ensure resetLocalData clears them. */
+/** All localStorage keys used by Radio4000. Add new keys here to ensure resetLocalData clears them. */
 export const LOCAL_STORAGE_KEYS = {
 	appState: 'r5-app-state',
 	appStateQueue: 'r5-app-state-queue',
@@ -8,7 +8,7 @@ export const LOCAL_STORAGE_KEYS = {
 	views: 'r5-views'
 } as const
 
-/** All IndexedDB database names used by R5. */
+/** All IndexedDB database names used by Radio4000. */
 export const IDB_DATABASES = {
 	keyval: 'r5-keyval'
 } as const

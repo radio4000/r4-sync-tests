@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-	<title>Tooltips | r5 docs</title>
+	<title>Tooltips | Radio4000 docs</title>
 </svelte:head>
 
 <h1>Tooltips</h1>

@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.slug} - r5 docs</title>
+	<title>{data.slug} - Radio4000 docs</title>
 </svelte:head>
 
 <!-- eslint-disable svelte/no-at-html-tags -->

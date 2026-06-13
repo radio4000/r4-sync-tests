@@ -1,6 +1,6 @@
 # Docs
 
-Internal development docs for Radio4000 r5 — a SvelteKit + Svelte 5 frontend using [@radio4000/sdk](radio4000-sdk.md) and [TanStack DB](tanstack.md).
+Development docs for Radio4000 — a SvelteKit + Svelte 5 frontend using [@radio4000/sdk](radio4000-sdk.md) and [TanStack DB](tanstack.md).
 
 Start with [universe](universe.md). It maps the domain model (channels, tracks, views, decks, broadcast, auto-radio) and how data flows.
 

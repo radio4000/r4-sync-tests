@@ -109,7 +109,7 @@
 </script>
 
 <svelte:head>
-	<title>Spam Angel | r5 docs</title>
+	<title>Spam Angel | Radio4000 docs</title>
 </svelte:head>
 
 <header>

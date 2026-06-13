@@ -26,7 +26,7 @@
 </script>
 
 <svelte:head>
-	<title>Map Single | r5 docs</title>
+	<title>Map Single | Radio4000 docs</title>
 </svelte:head>
 
 <article class="page">

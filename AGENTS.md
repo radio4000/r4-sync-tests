@@ -35,5 +35,5 @@ Be concise. Short answers, no walls of text.
 ## Debug
 
 `window.r5` exposes `sdk`, `appState`, `queryClient`, `tracksCollection`, `channelsCollection` for console testing.
-Playground routes live under `/src/routes/docs` alongside their markdown docs. 
+Playground routes live under `/src/routes/docs` alongside their markdown docs.
 The `r4 --help` CLI can help inspect data from remote PostgreSQL.

@@ -4,7 +4,7 @@
 
 ## Problem
 
-The v1 player (`player.radio4000.com`, `<radio4000-player>`) is built on v1, and doesn't support our newer features. We want a clean slate and reuse R5 wherewever possible. R5 already has everything: deck view (player + queue + controls), broadcast auto-join, tag/text filtering, channel browsing. The embed should just be R5 in a trimmed-down mode.
+The v1 player (`player.radio4000.com`, `<radio4000-player>`) is built on v1, and doesn't support our newer features. We want a clean slate and reuse the app wherewever possible. The app already has everything: deck view (player + queue + controls), broadcast auto-join, tag/text filtering, channel browsing. The embed should just be the app in a trimmed-down mode.
 
 ## Open questions
 

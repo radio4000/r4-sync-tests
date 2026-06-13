@@ -1,5 +1,5 @@
 <svelte:head>
-	<title>Map | r5 docs</title>
+	<title>Map | Radio4000 docs</title>
 </svelte:head>
 
 <menu class="nav-grouped">

@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>Map Global | r5 docs</title>
+	<title>Map Global | Radio4000 docs</title>
 </svelte:head>
 
 <article class="page">

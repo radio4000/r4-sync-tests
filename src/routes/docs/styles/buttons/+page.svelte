@@ -8,7 +8,7 @@
 </script>
 
 <svelte:head>
-	<title>Buttons & inputs — r5 docs</title>
+	<title>Buttons & inputs — Radio4000 docs</title>
 </svelte:head>
 
 <h1>Buttons & inputs</h1>
@@ -237,7 +237,7 @@
 	<p><small>With secondary nav (<code>.track-tabs</code> pattern)</small></p>
 	<div class="tabs" style="border-bottom: 1px solid var(--gray-5);">
 		<nav>
-			<a href="#a" class="active"><Icon icon="circle-info" /> R5</a>
+			<a href="#a" class="active"><Icon icon="circle-info" /> Radio4000</a>
 			<a href="#b"><Icon icon="play-fill" /> YouTube</a>
 			<a href="#c"><Icon icon="code-branch" /> MusicBrainz</a>
 			<a href="#d"><Icon icon="tag" /> Discogs</a>

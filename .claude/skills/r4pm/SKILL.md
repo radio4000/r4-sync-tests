@@ -42,7 +42,7 @@ Update CHANGELOG.md based on recent changes.
 
 ### Context
 
-Radio4000 (r5) is a web app, not a library. No breaking changes to track. No marketing announcements or sales pitches. Track primarily relevant user-facing changes.
+Radio4000 (r4) is a web app, not a library. No breaking changes to track. No marketing announcements or sales pitches. Track primarily relevant user-facing changes.
 
 ### Style
 

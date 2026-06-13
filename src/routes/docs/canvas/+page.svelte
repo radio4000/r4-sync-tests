@@ -36,7 +36,7 @@
 </script>
 
 <svelte:head>
-	<title>Infinite Canvas | r5 docs</title>
+	<title>Infinite Canvas | Radio4000 docs</title>
 </svelte:head>
 
 <article>

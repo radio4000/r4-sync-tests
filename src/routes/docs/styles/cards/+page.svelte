@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>Cards — r5 docs</title>
+	<title>Cards — Radio4000 docs</title>
 </svelte:head>
 
 <h1>Cards</h1>

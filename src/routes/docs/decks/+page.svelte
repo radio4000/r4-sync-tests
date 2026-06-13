@@ -31,7 +31,7 @@
 </script>
 
 <svelte:head>
-	<title>Decks - r5 docs</title>
+	<title>Decks - Radio4000 docs</title>
 </svelte:head>
 
 <p>Changes are live and persist to localStorage.</p>

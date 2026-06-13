@@ -1,6 +1,6 @@
 # Analytics
 
-R5 uses [PostHog](https://posthog.com) for product analytics and web analytics. It is **opt-in** — nothing is sent until the user explicitly enables it in settings.
+Radio4000 uses [PostHog](https://posthog.com) for product analytics and web analytics. It is **opt-in** — nothing is sent until the user explicitly enables it in settings.
 
 ## Setup
 

@@ -121,7 +121,7 @@
 </script>
 
 <svelte:head>
-	<title>Async Test | r5 docs</title>
+	<title>Async Test | Radio4000 docs</title>
 </svelte:head>
 
 <h1>Async Test</h1>

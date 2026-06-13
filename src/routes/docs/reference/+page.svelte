@@ -51,7 +51,7 @@
 </script>
 
 <svelte:head>
-	<title>Reference - r5 docs</title>
+	<title>Reference - Radio4000 docs</title>
 </svelte:head>
 
 <article>

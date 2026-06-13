@@ -143,7 +143,7 @@
 </script>
 
 <svelte:head>
-	<title>3D Single | r5 docs</title>
+	<title>3D Single | Radio4000 docs</title>
 </svelte:head>
 
 <article class="fill-height">

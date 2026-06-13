@@ -118,7 +118,7 @@
 </script>
 
 <svelte:head>
-	<title>3D Infinite | r5 docs</title>
+	<title>3D Infinite | r4 docs</title>
 </svelte:head>
 
 <article class="fill-height">

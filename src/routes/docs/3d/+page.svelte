@@ -21,7 +21,7 @@
 </script>
 
 <svelte:head>
-	<title>3D | r5 docs</title>
+	<title>3D | r4 docs</title>
 </svelte:head>
 
 <article class="fill-height">

@@ -34,7 +34,7 @@
 </script>
 
 <svelte:head>
-	<title>CoverFlip — r5 docs</title>
+	<title>CoverFlip — Radio4000 docs</title>
 </svelte:head>
 
 <h1>CoverFlip</h1>
