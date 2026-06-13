@@ -559,7 +559,7 @@
 						<menu class="deck-context-menu">
 							<button
 								onclick={() => toggleVideo(deckId)}
-								class:active={deck?.hide_video_player}
+								class:active={!deck?.hide_video_player}
 								data-no-close
 							>
 								{deck?.hide_video_player ? m.player_hidden() : m.player_visible()}
@@ -568,7 +568,7 @@
 							{#if !isListeningToBroadcast && !deck?.auto_radio}
 								<button
 									onclick={() => toggleQueuePanel(deckId)}
-									class:active={deck?.hide_queue_panel}
+									class:active={!deck?.hide_queue_panel}
 									data-no-close
 								>
 									{deck?.hide_queue_panel ? m.queue_hidden() : m.queue_visible()}
