@@ -20,16 +20,46 @@ export const followsCollection = createCollection<{id: string}, string>(
 		queryFn: async () => {
 			const userChannelId = appState.channels?.[0]
 			if (!userChannelId) return []
-			const {data} = await sdk.channels.readFollowings(userChannelId)
-			return (data || []).map((ch) => ({id: ch.id}))
+			return fetchUserFollows(userChannelId)
 		}
 	})
 )
 
+async function fetchUserFollows(userChannelId: string) {
+	const {data, error} = await sdk.channels.readFollowings(userChannelId)
+	if (error) throw error
+	return (data || []).map((ch) => ({id: ch.id}))
+}
+
+/** Replace collection rows with fetched follows (eager sync pins the pre-auth query key). */
+function syncFollowsCollection(items: Array<{id: string}>) {
+	const nextIds = new Set(items.map((item) => item.id))
+	followsCollection.utils.writeBatch(() => {
+		for (const item of followsCollection.values()) {
+			if (!nextIds.has(item.id)) followsCollection.utils.writeDelete(item.id)
+		}
+		for (const item of items) {
+			if (!followsCollection.has(item.id)) followsCollection.utils.writeInsert(item)
+		}
+	})
+}
+
 export async function loadUserFollows() {
 	const userChannelId = appState.channels?.[0]
 	if (!userChannelId) return
-	await queryClient.invalidateQueries({queryKey: ['follows', userChannelId]})
+
+	const key = ['follows', userChannelId] as const
+	try {
+		const items = await queryClient.fetchQuery({
+			queryKey: key,
+			queryFn: () => fetchUserFollows(userChannelId),
+			staleTime: 24 * 60 * 60 * 1000
+		})
+		syncFollowsCollection(items)
+		queryClient.removeQueries({queryKey: ['follows'], exact: true})
+	} catch (error) {
+		log.warn('load_user_follows_failed', {userChannelId, error})
+	}
 }
 
 export async function followChannel(channelId: string) {

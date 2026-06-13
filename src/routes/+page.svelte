@@ -389,7 +389,7 @@
 								>
 							</li>
 							<li>
-								<input type="checkbox" disabled checked={follows.followedChannels.length > 0} />
+								<input type="checkbox" disabled checked={follows.followedIds.length > 0} />
 								<a href={resolve('/channels/featured')}>{m.home_onboarding_follow_radio()}</a>
 							</li>
 							<li>

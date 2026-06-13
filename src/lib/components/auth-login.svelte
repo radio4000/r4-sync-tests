@@ -177,7 +177,7 @@
 			/>
 		</fieldset>
 		<button type="submit" class="primary" disabled={loading}>
-			{loading ? m.common_sending() : m.auth_continue_with_email()}
+			{loading ? m.common_sending() : password ? m.auth_log_in() : m.auth_continue_with_email()}
 		</button>
 	</form>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}

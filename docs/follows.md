@@ -6,7 +6,7 @@ Follow/save channels as favorites. Stored in `followers` table with `follower_id
 
 **unauthenticated**: follow button hidden
 
-**authenticated**: on login, invalidates the follows query to trigger a fresh fetch. Button updates optimistically.
+**authenticated**: on login, fetches follows and syncs them into the collection. Button updates optimistically.
 
 ## Collection
 
