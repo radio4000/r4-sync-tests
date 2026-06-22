@@ -43,10 +43,12 @@
 
 	// Resolve tracks directly from the collection, ordered by playlist position.
 	// An inArray() live query over a multi-thousand-track playlist rebuilds an
-	// entire query collection on every play (~1.2s main-thread block); the tracks
-	// are already in the collection, so plain Map lookups are O(n) and instant.
-	// Matches the direct-resolve pattern in player.svelte.
+	// entire query collection on every play (~1.2s main-thread block); direct Map
+	// lookups are O(1) each and instant. Matches deck-display.svelte.ts, including
+	// the `state.size` touch — `state.get()` is a non-reactive snapshot read (see
+	// docs/tanstack.md), so we depend on size to recompute as tracks load in.
 	let queueTracks = $derived.by(() => {
+		void tracksCollection.state.size
 		const state = tracksCollection.state
 		return trackIds.map((id) => state.get(id)).filter((t) => !!t)
 	})

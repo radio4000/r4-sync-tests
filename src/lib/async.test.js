@@ -24,7 +24,7 @@ test('respects concurrency limit', async () => {
 
 	const items = Array.from({length: 10}, (_, i) => i)
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	 
 	for await (const _ of mapChunked(
 		items,
 		async (chunk) => {

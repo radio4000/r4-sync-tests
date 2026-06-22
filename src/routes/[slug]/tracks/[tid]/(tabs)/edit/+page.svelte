@@ -39,4 +39,3 @@
 {:else}
 	<p>{m.track_edit_no_permission()}</p>
 {/if}
-

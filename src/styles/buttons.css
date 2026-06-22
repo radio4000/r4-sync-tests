@@ -221,7 +221,6 @@ button.chip.active,
 	}
 }
 
-
 .chip-group > :not(button) {
 	display: inline-flex;
 	align-items: center;

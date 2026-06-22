@@ -209,7 +209,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
-	}	
+	}
 
 	.form {
 		gap: 1.25rem;
