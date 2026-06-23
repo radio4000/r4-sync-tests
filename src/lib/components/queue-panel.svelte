@@ -4,7 +4,7 @@
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {tracksCollection} from '$lib/collections/tracks'
-	import {toggleShuffle, clearQueue, clearAllQueue} from '$lib/api'
+	import {clearQueue, clearAllQueue} from '$lib/api'
 	import {getActiveQueue} from '$lib/player/queue'
 	import SearchInput from './search-input.svelte'
 	import Icon from './icon.svelte'
@@ -91,16 +91,6 @@
 				{@attach tooltip({content: m.queue_clear_search()})}
 			>
 				<Icon icon="close" />
-			</button>
-		{/if}
-		{#if trackIds.length > 2}
-			<button
-				onclick={() => toggleShuffle(deckId)}
-				class:active={deck?.shuffle}
-				{@attach tooltip({content: m.player_tooltip_shuffle()})}
-				title={m.player_tooltip_shuffle()}
-			>
-				<Icon icon="shuffle" />
 			</button>
 		{/if}
 		{#if !appState.embed_mode && trackIds.length > 0 && (deck?.is_playing ? trackIds.length > 1 : true)}

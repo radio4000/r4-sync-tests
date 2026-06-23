@@ -11,7 +11,8 @@
 		getMediaPlayer,
 		resyncAutoRadio,
 		clearUserInitiatedPlay,
-		toggleDeckCompact
+		toggleDeckCompact,
+		toggleShuffle
 	} from '$lib/api'
 	import {getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
@@ -195,6 +196,16 @@
 				>
 					<Icon icon="next-fill" />
 				</button>
+				{#if activeQueue.length > 2}
+					<button
+						onclick={() => toggleShuffle(deckId)}
+						class:active={deck?.shuffle}
+						aria-label={m.player_tooltip_shuffle()}
+						{@attach tooltip({content: m.player_tooltip_shuffle()})}
+					>
+						<Icon icon="shuffle" />
+					</button>
+				{/if}
 				<SpeedControl {deckId} {provider} />
 				<VolumeControl {deckId} />
 			{:else if deck?.auto_radio}

@@ -17,7 +17,8 @@
 		setUserInitiatedPlay,
 		resyncAutoRadio,
 		recordSeekPosition,
-		clearUserInitiatedPlay
+		clearUserInitiatedPlay,
+		toggleShuffle
 	} from '$lib/api'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {playbackState, toAutoTracks} from '$lib/player/auto-radio'
@@ -717,6 +718,16 @@
 					{@render btnPrev()}
 					{@render btnPlay()}
 					{@render btnNext()}
+					{#if activeQueue.length > 2}
+						<button
+							onclick={() => toggleShuffle(deckId)}
+							class:active={deck?.shuffle}
+							class="shuffle"
+							{@attach tooltip({content: m.player_tooltip_shuffle()})}
+						>
+							<Icon icon="shuffle" />
+						</button>
+					{/if}
 					<SpeedControl {deckId} {provider} />
 					<VolumeControl {deckId} />
 				{:else if deck?.auto_radio}
