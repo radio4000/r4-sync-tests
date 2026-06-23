@@ -137,7 +137,6 @@ function shouldDehydrateQuery(query: {
 	return true
 }
 
- 
 const _persistOptions = {
 	queryClient,
 	persister: idbPersister,
