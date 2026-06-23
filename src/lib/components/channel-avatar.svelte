@@ -14,6 +14,7 @@
 {#if id}
 	<img
 		loading="lazy"
+		crossorigin="anonymous"
 		src={channelAvatarUrl(id, size)}
 		{alt}
 		class:loaded
