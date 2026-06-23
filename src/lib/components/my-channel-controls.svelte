@@ -99,7 +99,7 @@
 	}
 </script>
 
-<menu class="my-channel-controls nav-grouped">
+<menu>
 	<button
 		type="button"
 		class:active={isBroadcasting}
@@ -150,26 +150,23 @@
 </menu>
 
 <style>
-	.my-channel-controls {
+	menu {
 		margin: 0 0 0 auto;
-		gap: 0.2rem;
+		gap: var(--space-1);
+
 		:global(.icon svg) {
 			width: 18px;
 			height: 18px;
 		}
-	}
 
-	.my-channel-controls button {
-		border: none;
-		box-shadow: none;
-	}
-
-	.my-channel-controls button.active {
-		background: var(--accent-3);
+		button {
+			border: none;
+			box-shadow: none;
+		}
 	}
 
 	.channel-link {
-		gap: 0.2rem;
+		gap: var(--space-1);
 	}
 
 	.avatar {
@@ -180,7 +177,7 @@
 		:global(img, svg) {
 			width: 100%;
 			height: 100%;
-			border-radius: calc(var(--border-radius) - 0.15rem);
+			border-radius: calc(var(--border-radius) - 0.2rem);
 			object-fit: cover;
 		}
 	}

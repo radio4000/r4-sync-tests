@@ -567,7 +567,6 @@
 			left: 0;
 			right: 0;
 			margin-inline: 0;
-			padding-inline: 0;
 			/* Default page controls layer: above content, below app overlays/fullscreen deck. */
 			z-index: 3;
 		}
@@ -588,13 +587,13 @@
 	}
 
 	.featured-live-link-wrap {
-		margin: 0.25rem 0.5rem 0.5rem;
+		margin: var(--space-1) 0.5rem 0.5rem;
 	}
 
 	.featured-live-link {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
+		gap: 0.5rem;
 		color: var(--accent-9);
 		border-color: var(--accent-6);
 		background: var(--accent-2);

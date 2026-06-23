@@ -8,7 +8,7 @@
 	let routeId = $derived(page.route.id)
 </script>
 
-<nav class="channel-section-menu tabs chip-tabs" aria-label="Channel navigation">
+<nav class="channel-section-menu tabs" aria-label="Channel navigation">
 	<a href={resolve('/[slug]', {slug})} class="btn chip" class:active={routeId === '/[slug]'}>
 		{m.home_tab_home()}
 	</a>
@@ -60,17 +60,9 @@
 
 <style>
 	.channel-section-menu {
-		display: flex;
 		flex-wrap: nowrap;
 		width: 100%;
-		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
-		scrollbar-width: thin;
-		padding-bottom: 0.25rem;
-	}
-
-	.channel-section-menu :global(.btn.chip) {
-		flex: 0 0 auto;
-		padding-block: 0.3rem;
+		padding-bottom: var(--space-1);
 	}
 </style>

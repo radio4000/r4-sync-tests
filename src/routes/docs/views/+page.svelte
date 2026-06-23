@@ -146,7 +146,7 @@
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 	.examples li {
 		display: flex;
@@ -172,7 +172,7 @@
 	.representations {
 		display: grid;
 		grid-template-columns: auto 1fr;
-		gap: 0.25rem 0.5rem;
+		gap: var(--space-1) 0.5rem;
 	}
 	.representations dt {
 		font-weight: 600;

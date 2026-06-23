@@ -207,7 +207,7 @@
 			</label>
 			<label>
 				<span class="param-label">Split rule</span>
-				<select class="select" bind:value={algorithm}>
+				<select bind:value={algorithm}>
 					<option value="equal_per_track">Every referenced song earns equally</option>
 					<option value="equal_per_artist">Every artist earns equally</option>
 					<option value="track_weighted">Recent additions earn more</option>
@@ -273,20 +273,18 @@
 	<!-- ═══ MAIN ═══ -->
 	<div class="main">
 		<!-- Tab bar -->
-		<nav class="tab-bar">
-			<button
-				class="tab-btn"
-				class:active={tab === 'ecosystem'}
-				onclick={() => (tab = 'ecosystem')}
-			>
+		<nav class="tabs tab-bar">
+			<button class:active={tab === 'ecosystem'} onclick={() => (tab = 'ecosystem')}>
 				The big picture
 			</button>
-			<button class="tab-btn" class:active={tab === 'channel'} onclick={() => (tab = 'channel')}>
+			<button class:active={tab === 'channel'} onclick={() => (tab = 'channel')}>
 				A channel's share
 			</button>
 
 			{#if appState.channel && tab !== 'channel'}
-				<button class="your-channel-btn" onclick={selectUserChannel}> My channel → </button>
+				<button class="btn" style="margin-left: auto;" onclick={selectUserChannel}>
+					My channel →
+				</button>
 			{/if}
 		</nav>
 
@@ -295,11 +293,11 @@
 			<div class="tab-content">
 				<!-- Big numbers -->
 				<div class="stat-grid">
-					<div class="stat-card">
+					<div class="card stat-card">
 						<span class="stat-value">{formatEuro(result.grossPool)}</span>
 						<span class="stat-label">contributed / month</span>
 					</div>
-					<div class="stat-card">
+					<div class="card stat-card">
 						<span class="stat-value">{formatEuro(result.platformShare)}</span>
 						<span class="stat-label">platform team</span>
 						{#if result.platformShare > 0}
@@ -308,7 +306,7 @@
 							>
 						{/if}
 					</div>
-					<div class="stat-card">
+					<div class="card stat-card">
 						<span class="stat-value">{formatEuro(result.curatorPool)}</span>
 						<span class="stat-label">curators</span>
 						{#if result.curatorPool > 0}
@@ -319,7 +317,7 @@
 							>
 						{/if}
 					</div>
-					<div class="stat-card stat-card--accent">
+					<div class="card stat-card stat-card--accent">
 						<span class="stat-value">{formatEuro(result.reachableArtistPool)}</span>
 						<span class="stat-label">artists — paid now</span>
 						{#if result.pendingArtistPool > 0}
@@ -331,7 +329,7 @@
 				<!-- Three-party split -->
 				<details class="flow-section" open>
 					<summary>Who gets what</summary>
-					<p class="section-note">
+					<p class="note">
 						From every {avgContribution} € contributed, three groups receive a share.
 					</p>
 					<div class="parties">
@@ -420,12 +418,12 @@
 				<!-- Breakeven -->
 				<details class="breakeven-section" open>
 					<summary>When does it become real?</summary>
-					<p class="breakeven-note">
+					<p class="note">
 						At {avgContribution} € average — how many contributors until each group reaches a meaningful
 						milestone?
 					</p>
 					<div class="breakeven-grid">
-						<div class="breakeven-card breakeven-card--platform">
+						<div class="card breakeven-card breakeven-card--platform">
 							<span class="breakeven-who">Platform team</span>
 							<span class="breakeven-n"
 								>{formatCount(result.breakeven.usersFor1PlatformSalary)}</span
@@ -434,7 +432,7 @@
 								>contributors for the platform to pay <strong>1 salary</strong> ({referenceSalary} €/mo)</span
 							>
 						</div>
-						<div class="breakeven-card breakeven-card--artist">
+						<div class="card breakeven-card breakeven-card--artist">
 							<span class="breakeven-who">Artists</span>
 							<span class="breakeven-n">{formatCount(result.breakeven.usersFor1EuroPerArtist)}</span
 							>
@@ -442,7 +440,7 @@
 								>contributors for each identifiable artist to earn <strong>1 €/month</strong></span
 							>
 						</div>
-						<div class="breakeven-card breakeven-card--artist">
+						<div class="card breakeven-card breakeven-card--artist">
 							<span class="breakeven-who">Artists</span>
 							<span class="breakeven-n"
 								>{formatCount(result.breakeven.usersFor10EuroPerArtist)}</span
@@ -457,31 +455,31 @@
 				<!-- Timeline scrubber -->
 				<details class="projections-section" open>
 					<summary>How it grows over time</summary>
-					<p class="section-note">
+					<p class="note">
 						Drag to explore any point in the future — assuming {monthlyGrowthRatePct}% monthly
 						growth.
 					</p>
-					<div class="scrubber">
+					<div class="card scrubber">
 						<div class="scrubber-header">
 							<span class="scrubber-period"
 								>After <strong>{monthsLabel(projectionMonths)}</strong></span
 							>
-							<span class="scrubber-marks">
-								<button class="scrubber-mark" onclick={() => (projectionMonths = 1)}>1mo</button>
-								<button class="scrubber-mark" onclick={() => (projectionMonths = 12)}>1y</button>
-								<button class="scrubber-mark" onclick={() => (projectionMonths = 36)}>3y</button>
-								<button class="scrubber-mark" onclick={() => (projectionMonths = 60)}>5y</button>
-								<button class="scrubber-mark" onclick={() => (projectionMonths = 120)}>10y</button>
+							<span class="chip-group">
+								<button class="chip" onclick={() => (projectionMonths = 1)}>1mo</button>
+								<button class="chip" onclick={() => (projectionMonths = 12)}>1y</button>
+								<button class="chip" onclick={() => (projectionMonths = 36)}>3y</button>
+								<button class="chip" onclick={() => (projectionMonths = 60)}>5y</button>
+								<button class="chip" onclick={() => (projectionMonths = 120)}>10y</button>
 							</span>
 						</div>
 						<InputRange bind:value={projectionMonths} min={1} max={120} step={1} visualStep={12} />
 					</div>
 					<div class="proj-grid">
-						<div class="proj-card">
+						<div class="card proj-card">
 							<span class="proj-value">{formatEuro(pointInTime.monthlyGross)}</span>
 							<span class="proj-label">contributed that month</span>
 						</div>
-						<div class="proj-card">
+						<div class="card proj-card">
 							<span class="proj-value">{formatEuro(pointInTime.monthlyPlatform)}</span>
 							<span class="proj-label">platform team</span>
 							{#if pointInTime.monthlyPlatform > 0}
@@ -492,11 +490,11 @@
 								>
 							{/if}
 						</div>
-						<div class="proj-card">
+						<div class="card proj-card">
 							<span class="proj-value">{formatEuro(pointInTime.monthlyCuratorPool)}</span>
 							<span class="proj-label">curators</span>
 						</div>
-						<div class="proj-card proj-card--accent">
+						<div class="card proj-card proj-card--accent">
 							<span class="proj-value">{formatEuro(pointInTime.monthlyReachableArtistPool)}</span>
 							<span class="proj-label">artists — paid now</span>
 							{#if pointInTime.monthlyReachableArtistPool > 0}
@@ -506,7 +504,7 @@
 							{/if}
 						</div>
 					</div>
-					<div class="proj-cumulative">
+					<div class="card proj-cumulative">
 						<div class="proj-cum-item">
 							<span class="proj-cum-label">Total gathered over {monthsLabel(projectionMonths)}</span
 							>
@@ -524,11 +522,11 @@
 				<!-- Scenario comparison -->
 				<details class="scenarios-section" open>
 					<summary>Scale reference</summary>
-					<p class="section-note">
+					<p class="note">
 						A few fixed examples to anchor the numbers — 10% platform, 20% channels-you-follow
 						bonus.
 					</p>
-					<div class="table-wrap">
+					<div class="card table-wrap">
 						<table>
 							<thead>
 								<tr>
@@ -688,7 +686,7 @@
 								<span class="earning-sublabel">from the distributable artist pool</span>
 							</div>
 						</div>
-						<p class="earning-note">
+						<p class="note">
 							The {formatEuro(result.reachableArtistPool)} distributable artist pool ({artistReachabilityPct}%
 							of artists identified) is shared across all {formatCount(result.totalTracks)} referenced
 							tracks.
@@ -698,7 +696,7 @@
 						</p>
 
 						<!-- Channel projections -->
-						<div class="table-wrap">
+						<div class="card table-wrap">
 							<table>
 								<thead>
 									<tr>
@@ -779,11 +777,11 @@
 
 	/* ─── Sidebar concept blurb ─── */
 	.sidebar-concept {
-		padding: 0.75rem 1rem;
+		padding: var(--space-2) var(--space-3);
 		border-bottom: 1px solid var(--gray-3);
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 
 	.sidebar-concept p {
@@ -813,7 +811,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.75rem 1rem;
+		padding: var(--space-2) var(--space-3);
 		border-bottom: 1px solid var(--gray-4);
 		position: sticky;
 		top: 0;
@@ -827,11 +825,11 @@
 	}
 
 	.param-section {
-		padding: 0.75rem 1rem;
+		padding: var(--space-2) var(--space-3);
 		border-bottom: 1px solid var(--gray-3);
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: var(--space-2);
 	}
 
 	.param-section > summary {
@@ -871,7 +869,7 @@
 	label {
 		display: flex;
 		flex-direction: column;
-		gap: 0.2rem;
+		gap: var(--space-1);
 	}
 
 	.param-label {
@@ -885,16 +883,6 @@
 		line-height: 1.4;
 	}
 
-	.select {
-		align-self: flex-start;
-		padding: 0.25rem 0.4rem;
-		border: 1px solid var(--gray-5);
-		border-radius: var(--border-radius);
-		background: var(--gray-1);
-		color: var(--gray-12);
-		font-size: var(--font-3);
-	}
-
 	.scale-stats {
 		margin-top: auto;
 	}
@@ -902,7 +890,7 @@
 	.scale-dl {
 		display: grid;
 		grid-template-columns: 1fr auto;
-		gap: 0.15rem 0.5rem;
+		gap: var(--space-1) 0.5rem;
 		font-size: var(--font-3);
 	}
 
@@ -916,13 +904,13 @@
 		color: var(--gray-11);
 		display: flex;
 		align-items: center;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		justify-content: flex-end;
 	}
 
 	.live-badge {
 		font-size: var(--font-1);
-		padding: 0.1rem 0.3rem;
+		padding: 0.1rem var(--space-1);
 		border-radius: 2px;
 		background: var(--gray-4);
 		color: var(--gray-9);
@@ -933,55 +921,13 @@
 		color: var(--accent-11);
 	}
 
-	/* ─── Tab bar ─── */
+	/* ─── Tab bar ─── (.tabs primitive provides flex/gap; this adds the surface) */
 	.tab-bar {
-		display: flex;
 		align-items: center;
-		gap: 0;
-		padding: 0 1rem;
+		padding: var(--space-2) var(--space-3);
 		border-bottom: 1px solid var(--gray-4);
 		background: var(--gray-1);
 		flex-shrink: 0;
-	}
-
-	.tab-btn {
-		padding: 0.75rem 1rem;
-		border: none;
-		border-bottom: 2px solid transparent;
-		background: none;
-		color: var(--gray-9);
-		font-size: var(--font-4);
-		cursor: pointer;
-		transition:
-			color 150ms,
-			border-color 150ms;
-		margin-bottom: -1px;
-	}
-
-	.tab-btn:hover {
-		color: var(--gray-12);
-	}
-
-	.tab-btn.active {
-		color: var(--gray-12);
-		border-bottom-color: var(--accent-9);
-		font-weight: 500;
-	}
-
-	.your-channel-btn {
-		margin-left: auto;
-		padding: 0.35rem 0.75rem;
-		border: 1px solid var(--gray-5);
-		border-radius: var(--border-radius);
-		background: var(--gray-2);
-		color: var(--gray-11);
-		font-size: var(--font-3);
-		cursor: pointer;
-		transition: background 150ms;
-	}
-
-	.your-channel-btn:hover {
-		background: var(--gray-3);
 	}
 
 	/* ─── Tab content ─── */
@@ -994,21 +940,25 @@
 		gap: 2rem;
 	}
 
+	/* ─── Card surface (bg + border + radius); layout layered per type ─── */
+	.card {
+		background: var(--gray-1);
+		border: 1px solid var(--gray-4);
+		border-radius: var(--border-radius);
+	}
+
 	/* ─── Stat grid ─── */
 	.stat-grid {
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
-		gap: 0.75rem;
+		gap: var(--space-2);
 	}
 
 	.stat-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		padding: 1rem 1.25rem;
-		background: var(--gray-1);
-		border: 1px solid var(--gray-4);
-		border-radius: var(--border-radius);
 	}
 
 	.stat-card--accent {
@@ -1041,7 +991,7 @@
 	.scenarios-section > summary {
 		font-size: var(--font-5);
 		font-weight: 600;
-		margin: 0 0 0.75rem;
+		margin: 0 0 var(--space-3);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
@@ -1097,7 +1047,7 @@
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
-		gap: 0.75rem;
+		gap: var(--space-2);
 	}
 
 	.party-name {
@@ -1152,7 +1102,7 @@
 	.party-artist-split {
 		display: flex;
 		flex-direction: column;
-		gap: 0.15rem;
+		gap: var(--space-1);
 		font-size: var(--font-2);
 	}
 
@@ -1179,27 +1129,26 @@
 		border: 1px solid var(--accent-7);
 	}
 
-	/* ─── Breakeven ─── */
-	.breakeven-note {
+	/* ─── Muted explanatory paragraph ─── */
+	.note {
 		font-size: var(--font-3);
-		color: var(--gray-10);
-		margin: 0 0 0.75rem;
+		color: var(--gray-9);
+		line-height: 1.5;
+		margin: 0 0 var(--space-3);
 	}
 
+	/* ─── Breakeven ─── */
 	.breakeven-grid {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
-		gap: 0.75rem;
+		gap: var(--space-2);
 	}
 
 	.breakeven-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		padding: 1rem;
-		background: var(--gray-1);
-		border: 1px solid var(--gray-4);
-		border-radius: var(--border-radius);
 		font-size: var(--font-3);
 		color: var(--gray-10);
 	}
@@ -1231,8 +1180,8 @@
 	.param-derived {
 		font-size: var(--font-2);
 		color: var(--gray-9);
-		margin: 0.25rem 0 0;
-		padding: 0.4rem 0.6rem;
+		margin: var(--space-1) 0 0;
+		padding: 0.4rem var(--space-2);
 		background: var(--gray-2);
 		border-radius: var(--border-radius);
 	}
@@ -1241,18 +1190,15 @@
 	.stat-salary {
 		font-size: var(--font-2);
 		color: var(--gray-8);
-		margin-top: 0.15rem;
+		margin-top: var(--space-1);
 	}
 
 	/* ─── Timeline scrubber ─── */
 	.scrubber {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		padding: 1rem;
-		background: var(--gray-1);
-		border: 1px solid var(--gray-4);
-		border-radius: var(--border-radius);
 	}
 
 	.scrubber-header {
@@ -1267,42 +1213,18 @@
 		color: var(--gray-11);
 	}
 
-	.scrubber-marks {
-		display: flex;
-		gap: 0.25rem;
-	}
-
-	.scrubber-mark {
-		padding: 0.15rem 0.4rem;
-		border: 1px solid var(--gray-4);
-		border-radius: var(--border-radius);
-		background: var(--gray-2);
-		color: var(--gray-9);
-		font-size: var(--font-2);
-		cursor: pointer;
-		transition: background 150ms;
-	}
-
-	.scrubber-mark:hover {
-		background: var(--gray-3);
-		color: var(--gray-11);
-	}
-
 	.proj-grid {
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
-		gap: 0.75rem;
-		margin-top: 0.75rem;
+		gap: var(--space-2);
+		margin-top: var(--space-3);
 	}
 
 	.proj-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.2rem;
-		padding: 0.75rem 1rem;
-		background: var(--gray-1);
-		border: 1px solid var(--gray-4);
-		border-radius: var(--border-radius);
+		gap: var(--space-1);
+		padding: var(--space-2) var(--space-3);
 	}
 
 	.proj-card--accent {
@@ -1337,11 +1259,8 @@
 	.proj-cumulative {
 		display: flex;
 		gap: 1.5rem;
-		padding: 0.75rem 1rem;
-		background: var(--gray-1);
-		border: 1px solid var(--gray-3);
-		border-radius: var(--border-radius);
-		margin-top: 0.75rem;
+		padding: var(--space-2) var(--space-3);
+		margin-top: var(--space-3);
 	}
 
 	.proj-cum-item {
@@ -1368,17 +1287,8 @@
 	}
 
 	/* ─── Tables ─── */
-	.section-note {
-		font-size: var(--font-3);
-		color: var(--gray-9);
-		margin: 0 0 0.75rem;
-	}
-
 	.table-wrap {
 		overflow-x: auto;
-		border: 1px solid var(--gray-4);
-		border-radius: var(--border-radius);
-		background: var(--gray-1);
 	}
 
 	table {
@@ -1393,13 +1303,13 @@
 		color: var(--gray-9);
 		background: var(--gray-2);
 		text-align: left;
-		padding: 0.5rem 0.75rem;
+		padding: var(--space-2) var(--space-2);
 		white-space: nowrap;
 		border-bottom: 1px solid var(--gray-4);
 	}
 
 	td {
-		padding: 0.5rem 0.75rem;
+		padding: var(--space-2) var(--space-2);
 		border-top: 1px solid var(--gray-3);
 	}
 
@@ -1423,8 +1333,8 @@
 	.your-channel-row {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
-		padding-bottom: 1rem;
+		gap: var(--space-2);
+		padding-bottom: var(--space-3);
 		border-bottom: 1px solid var(--gray-4);
 	}
 
@@ -1443,8 +1353,8 @@
 	.channel-pick-btn {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.4rem 0.75rem;
+		gap: var(--space-2);
+		padding: var(--space-1) var(--space-2);
 		border: 1px solid var(--gray-5);
 		border-radius: var(--border-radius);
 		background: var(--gray-1);
@@ -1509,7 +1419,7 @@
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 
 	.search-results li {
@@ -1530,7 +1440,7 @@
 	.channel-header {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: var(--space-2);
 	}
 
 	.channel-avatar-lg {
@@ -1577,14 +1487,14 @@
 	.earning-pair {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 0.75rem;
+		gap: var(--space-2);
 	}
 
 	.earning-highlight {
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		padding: 1rem 1.25rem;
 		border-radius: var(--border-radius);
 	}
@@ -1625,12 +1535,6 @@
 		color: var(--gray-8);
 	}
 
-	.earning-note {
-		font-size: var(--font-3);
-		color: var(--gray-9);
-		margin: 0;
-	}
-
 	.comparison {
 		display: flex;
 		flex-direction: column;
@@ -1649,14 +1553,14 @@
 	.comparison-rows {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 
 	.comparison-row {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 0.5rem 0.75rem;
+		padding: var(--space-2) var(--space-2);
 		font-size: var(--font-3);
 		color: var(--gray-10);
 		background: var(--gray-1);

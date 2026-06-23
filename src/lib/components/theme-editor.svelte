@@ -136,7 +136,7 @@
 						? customVariables['--border-radius'] !== '0'
 						: true}
 					onchange={(e) =>
-						updateVariable('--border-radius', e.currentTarget.checked ? '0.4rem' : '0')}
+						updateVariable('--border-radius', e.currentTarget.checked ? '0.5rem' : '0')}
 					id={`${uid}--border-radius`}
 				/>
 			</fieldset>
@@ -149,7 +149,7 @@
 						? customVariables['--media-radius'] !== '0'
 						: true}
 					onchange={(e) =>
-						updateVariable('--media-radius', e.currentTarget.checked ? '0.4rem' : '0')}
+						updateVariable('--media-radius', e.currentTarget.checked ? '0.5rem' : '0')}
 					id={`${uid}--media-radius`}
 				/>
 			</fieldset>
@@ -314,7 +314,7 @@
 	.color-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(3rem, 1fr));
-		gap: 0.25rem;
+		gap: var(--space-1);
 		margin: 0;
 
 		figure {
@@ -324,7 +324,7 @@
 		code {
 			font-size: var(--font-3);
 			font-family: inherit;
-			padding: 0.2rem 0.3rem;
+			padding: var(--space-1) var(--space-1);
 			text-align: center;
 			display: block;
 		}
@@ -342,6 +342,6 @@
 	}
 
 	.palette-header {
-		margin: 0 0 0.25rem;
+		margin: 0 0 var(--space-1);
 	}
 </style>

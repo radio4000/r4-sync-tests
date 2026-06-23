@@ -536,7 +536,7 @@
 	.filter-tags {
 		margin: 0 0.5rem 0.5rem;
 		flex-wrap: wrap;
-		gap: 0.35rem;
+		gap: var(--space-1);
 	}
 
 	.cloud {

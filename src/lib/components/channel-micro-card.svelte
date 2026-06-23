@@ -37,9 +37,9 @@
 	.channel-micro-card {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		min-height: 1.6rem;
-		padding: 0.15rem 0.35rem 0.15rem 0.15rem;
+		padding: var(--space-1) var(--space-1) var(--space-1) var(--space-1);
 		border-radius: var(--border-radius);
 		color: inherit;
 		text-decoration: none;
@@ -55,7 +55,7 @@
 		:global(img, svg) {
 			width: 100%;
 			height: 100%;
-			border-radius: calc(var(--border-radius) - 0.15rem);
+			border-radius: calc(var(--border-radius) - 0.2rem);
 			object-fit: cover;
 		}
 	}

@@ -159,10 +159,10 @@
 		position: relative;
 		display: flex;
 		flex-flow: column nowrap;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		border: 1px solid transparent;
 		border-radius: var(--border-radius);
-		padding: 0.25rem;
+		padding: var(--space-1);
 		user-select: none;
 		cursor: var(--interactive-cursor, pointer);
 		transition:
@@ -253,7 +253,7 @@
 	.body {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		flex: 1;
 
 		:global(.list) & {
@@ -276,7 +276,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		gap: 0.2rem;
+		gap: var(--space-1);
 
 		:global(.list) & {
 			flex-shrink: 0;
@@ -289,7 +289,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		flex-shrink: 0;
 
 		:global(.list) & {
@@ -303,7 +303,7 @@
 	.meta {
 		display: flex;
 		justify-content: space-between;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		color: light-dark(var(--gray-10), var(--gray-9));
 		font-size: var(--font-3);
 		flex: 1;
@@ -331,7 +331,7 @@
 	h3 {
 		display: flex;
 		align-items: flex-start;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		font-weight: 600;
 		font-size: var(--font-6);
 		line-height: 1.2;

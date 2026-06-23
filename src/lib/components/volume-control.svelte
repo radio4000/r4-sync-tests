@@ -61,7 +61,7 @@
 	.volume {
 		display: flex;
 		align-items: center;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		flex: 1 1 6rem;
 		min-width: 0;
 	}

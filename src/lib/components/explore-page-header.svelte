@@ -6,49 +6,41 @@
 </script>
 
 <PageHeader wrap>
-	<div class="explore-top-row">
+	<nav class="explore-top-row">
 		{@render children?.()}
-	</div>
+	</nav>
 	<nav class="explore-nav-row">
 		<ExploreSectionMenu />
 		{#if filterChips}
-			<div class="explore-filter-chips">
+			<nav class="explore-filter-chips">
 				{@render filterChips()}
-			</div>
+			</nav>
 		{/if}
 	</nav>
 </PageHeader>
 
 <style>
 	.explore-top-row {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		width: 100%;
 		min-width: 0;
+		gap: 0.5rem;
+
+		& :global(.search-input) {
+			flex: 1 1 0;
+			min-width: 4rem;
+		}
 	}
 
-	.explore-top-row :global(.search-input) {
-		flex: 1 1 0;
-		min-width: 4rem;
+	nav {
+		width: 100%;
+		align-items: center;
 	}
 
 	.explore-nav-row {
-		display: flex;
-		align-items: center;
-		width: 100%;
-		gap: 0.75rem;
+		gap: 1rem;
+		justify-content: space-between;
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: thin;
-	}
-
-	.explore-filter-chips {
-		display: flex;
-		flex-wrap: nowrap;
-		gap: 0.5rem;
-		padding-left: 0.25rem;
-		border-left: 1px solid var(--gray-5);
 	}
 
 	@media (max-width: 768px) {
@@ -60,8 +52,9 @@
 		.explore-filter-chips {
 			flex-basis: 100%;
 			border-left: none;
+			margin-left: 0;
 			padding-left: 0;
-			padding-top: 0.4rem;
+			padding-top: 0.5rem;
 			overflow-x: auto;
 			scrollbar-width: none;
 		}

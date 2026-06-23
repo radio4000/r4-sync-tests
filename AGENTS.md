@@ -21,6 +21,8 @@ For any task or question:
 
 Be concise. Short answers, no walls of text.
 
+Name CSS classes by primitive/identity (`tabs`, `btn`, `chip`, `link`, etc.), not by location (`explore-section-menu`) — reusable vocabulary styled once in `src/styles/`.
+
 ## Key docs
 
 - [reference](docs/reference.json) - scan for relevant functions, SDK methods, components, types

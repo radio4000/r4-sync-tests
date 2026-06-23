@@ -214,18 +214,17 @@
 		--app-nav-btn-size: clamp(2.05rem, calc(var(--app-header-size) * 0.34), 3.3rem);
 		--app-nav-glyph-size: clamp(0.88rem, calc(var(--app-nav-btn-size) * 0.42), 1.32rem);
 		--app-nav-gap: 0.34rem;
-		--app-nav-pad-inline: clamp(0.4rem, calc(var(--app-nav-btn-size) * 0.17), 0.62rem);
+		--app-nav-pad-inline: clamp(0.5rem, calc(var(--app-nav-btn-size) * 0.17), 0.62rem);
 		--app-nav-pad-block: clamp(0rem, calc(var(--app-nav-btn-size) * 0.06), 0.18rem);
 		display: flex;
 		flex-flow: column nowrap;
-		gap: clamp(0.3rem, calc(var(--app-nav-btn-size) * 0.2), 0.8rem);
-		padding: 0.4rem 0.35rem;
+		gap: clamp(var(--space-1), calc(var(--app-nav-btn-size) * 0.2), 0.8rem);
+		padding: 0.5rem var(--space-1);
 		inline-size: clamp(min-content, var(--app-header-size), max-content);
 		min-inline-size: min-content;
 		max-inline-size: max-content;
 		background: var(--color-interface);
 		border-right: 1px solid var(--gray-4);
-		border-radius: var(--border-radius);
 		z-index: 50;
 		position: relative;
 		overflow: visible;
@@ -237,7 +236,7 @@
 
 		@media (min-width: 768px) {
 			/* vertical version has more space */
-			gap: 0.3rem;
+			gap: var(--space-1);
 		}
 	}
 
@@ -303,7 +302,7 @@
 	}
 
 	.channel-link {
-		padding: 0.15rem;
+		padding: var(--space-1);
 		overflow: hidden;
 		flex-shrink: 0;
 
@@ -314,7 +313,7 @@
 		:global(img, .fallback, svg) {
 			width: 100%;
 			height: 100%;
-			border-radius: calc(var(--border-radius) - 0.15rem);
+			border-radius: calc(var(--border-radius) - 0.2rem);
 			object-fit: cover;
 		}
 	}
@@ -330,7 +329,7 @@
 	}
 
 	.channel-link.nav-btn {
-		padding: 0.2rem 0.32rem 0.25rem;
+		padding: var(--space-1) 0.32rem var(--space-1);
 		--channel-avatar-size: var(--app-nav-glyph-size);
 
 		:global(img, .fallback, svg) {
@@ -390,8 +389,8 @@
 			align-items: center;
 			flex-direction: row;
 			justify-content: space-between;
-			gap: 0.4rem;
-			padding: 0.3rem 0.5rem 0.55rem;
+			gap: 0.5rem;
+			padding: var(--space-1) 0.5rem var(--space-2);
 			inline-size: 100%;
 			width: 100%;
 			min-inline-size: 100%;
@@ -420,7 +419,7 @@
 			flex-direction: row;
 			flex: 0 0 auto;
 			justify-content: flex-start;
-			gap: 0.2rem;
+			gap: var(--space-1);
 		}
 
 		.user-nav {

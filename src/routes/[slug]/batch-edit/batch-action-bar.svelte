@@ -235,7 +235,7 @@
 	aside {
 		display: flex;
 		align-items: center;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		margin: 0.5rem;
 		min-height: 2rem;
 	}
@@ -268,7 +268,7 @@
 	dialog menu {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		padding: 0;
 		margin: 0.5rem 0;
 	}

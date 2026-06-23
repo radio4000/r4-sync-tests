@@ -131,14 +131,14 @@ a.slug-link,
 .channel-badge {
 	display: inline-block;
 	vertical-align: middle;
-	margin-left: 0.3rem;
+	margin-left: var(--space-1);
 	font-size: var(--font-1);
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
 	background: var(--accent-9);
 	color: var(--gray-1);
-	padding: 0 0.3rem;
+	padding: 0 var(--space-1);
 	border-radius: 3px;
 	line-height: 1.6;
 	transition:
@@ -155,7 +155,7 @@ a.slug-link,
 .channel-badge:has(.icon) {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.2rem;
+	gap: var(--space-1);
 }
 
 button.channel-badge:hover {

@@ -48,7 +48,7 @@
 <style>
 	.sort-row {
 		display: flex;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 
 	.sort-row select {

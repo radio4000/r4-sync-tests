@@ -144,7 +144,7 @@
 
 	figcaption {
 		font-size: var(--font-3);
-		margin-top: 0.2rem;
+		margin-top: var(--space-1);
 		text-align: center;
 	}
 
@@ -166,7 +166,7 @@
 	}
 
 	.about-actions {
-		padding: 0.65rem 0.5rem 0.35rem;
+		padding: 0.65rem 0.5rem var(--space-1);
 		text-align: center;
 		position: sticky;
 		bottom: 0;
@@ -178,7 +178,7 @@
 	.about-actions-group {
 		display: flex;
 		justify-content: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		flex-wrap: wrap;
 		width: 100%;
 		margin: 0 auto;
@@ -188,7 +188,7 @@
 	:global(.featured-flip) {
 		width: 100%;
 		max-width: 100%;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		margin-bottom: 0;
 		overflow-x: clip;
 	}

@@ -47,7 +47,7 @@
 		font: inherit;
 		font-stretch: 90%;
 		color: var(--tag-color, inherit);
-		background: var(--tag-bg, var(--gray-3));
+		background: var(--tag-bg, var(--gray-2));
 		box-shadow: 0 0 0 1px var(--tag-border, transparent);
 		white-space: nowrap;
 		transition:

@@ -489,49 +489,52 @@
 		{/if}
 	{:else}
 		<!-- Not logged in -->
-		<div class="loggedout-top-row" class:modal-open={appState.show_welcome_hint}>
-			{#if appState.show_welcome_hint}
-				<section class="section welcome-section dismissible top-row-welcome">
-					<button
-						class="dismiss-btn"
-						onclick={() => (appState.show_welcome_hint = false)}
-						aria-label="Close"
-					>
-						<Icon icon="close" />
-					</button>
-					<h1>{m.welcome_title({appName})}</h1>
-					<p class="tagline">{m.welcome_tagline_channel()}</p>
-					<p class="tagline">{m.welcome_tagline_metadata()}</p>
-					<ul class="feature-list">
-						<li>{m.welcome_feature_archive()}</li>
-						<li>{m.welcome_feature_decks()}</li>
-						<li>{m.welcome_feature_follow()}</li>
-						<li>{m.welcome_feature_open()}</li>
-					</ul>
-					<menu class="welcome-menu">
-						<a
-							href={resolve('/auth/create-account') + '?redirect=' + resolve('/create-channel')}
-							class="btn primary">{m.header_start_your_radio()}</a
-						>
-						<a href={resolve('/auth/login')} class="btn">{m.nav_sign_in()}</a>
-						<a href={resolve('/about')} class="btn ghost">{m.nav_about()}</a>
-					</menu>
-				</section>
-			{/if}
 
-			{#if showBroadcastCountWidget}
-				<section class="section top-row-live">
-					<h2 class="section-title">
-						<a href={resolve('/channels/broadcasting')}>{m.home_broadcasting()}</a>
-					</h2>
-					<ol class="list">
-						{#each activeBroadcasts as broadcast (broadcast.channel_id)}
-							<li><ChannelCard channel={broadcast.channels} /></li>
-						{/each}
-					</ol>
-				</section>
-			{/if}
-		</div>
+		{#if appState.show_welcome_hint || showBroadcastCountWidget}
+			<div class="loggedout-top-row" class:modal-open={appState.show_welcome_hint}>
+				{#if appState.show_welcome_hint}
+					<section class="section welcome-section dismissible top-row-welcome">
+						<button
+							class="dismiss-btn"
+							onclick={() => (appState.show_welcome_hint = false)}
+							aria-label="Close"
+						>
+							<Icon icon="close" />
+						</button>
+						<h1>{m.welcome_title({appName})}</h1>
+						<p class="tagline">{m.welcome_tagline_channel()}</p>
+						<p class="tagline">{m.welcome_tagline_metadata()}</p>
+						<ul class="feature-list">
+							<li>{m.welcome_feature_archive()}</li>
+							<li>{m.welcome_feature_decks()}</li>
+							<li>{m.welcome_feature_follow()}</li>
+							<li>{m.welcome_feature_open()}</li>
+						</ul>
+						<menu class="welcome-menu">
+							<a
+								href={resolve('/auth/create-account') + '?redirect=' + resolve('/create-channel')}
+								class="btn primary">{m.header_start_your_radio()}</a
+							>
+							<a href={resolve('/auth/login')} class="btn">{m.nav_sign_in()}</a>
+							<a href={resolve('/about')} class="btn ghost">{m.nav_about()}</a>
+						</menu>
+					</section>
+				{/if}
+
+				{#if showBroadcastCountWidget}
+					<section class="section top-row-live">
+						<h2 class="section-title">
+							<a href={resolve('/channels/broadcasting')}>{m.home_broadcasting()}</a>
+						</h2>
+						<ol class="list">
+							{#each activeBroadcasts as broadcast (broadcast.channel_id)}
+								<li><ChannelCard channel={broadcast.channels} /></li>
+							{/each}
+						</ol>
+					</section>
+				{/if}
+			</div>
+		{/if}
 
 		<div class="loggedout-over-globe">
 			<div class="loggedout-grid">
@@ -539,7 +542,7 @@
 					<section class="section section--featured-col">
 						<header class="section-header">
 							<h2 class="section-title">
-								<a href={resolve('/channels/featured')}>{m.home_featured()}</a>
+								<a class="btn chip" href={resolve('/channels/featured')}>{m.home_featured()}</a>
 							</h2>
 							<menu>
 								{#if featuredFirst}
@@ -571,7 +574,9 @@
 					     of popping in and shoving the globe down (CLS). -->
 					<section class="section section--featured-col" aria-hidden="true">
 						<header class="section-header">
-							<h2 class="section-title">{m.home_featured()}</h2>
+							<h2 class="section-title">
+								<a class="btn chip" href={resolve('/channels/featured')}>{m.home_featured()}</a>
+							</h2>
 						</header>
 						<ol class="grid grid--scroll">
 							{#each Array.from({length: featuredPickCount}) as _, i (i)}
@@ -740,8 +745,8 @@
 		flex-direction: column;
 		flex: 1;
 		min-height: 0;
-		padding: 0.6rem 0.5rem;
-		gap: 0.6rem;
+		padding: 0 0.5rem 0.5rem;
+		gap: 0.5rem;
 	}
 
 	.section--featured-col {
@@ -772,7 +777,8 @@
 	.dashboard-section {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+ 		gap: var(--space-2);
+		margin-inline: var(--space-2);
 
 		:global(.list) {
 			margin: 0;
@@ -905,15 +911,9 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 0.5rem;
 
 		.section-title {
 			margin-bottom: 0;
-		}
-
-		menu {
-			display: flex;
-			gap: 0.1rem;
 		}
 	}
 
@@ -985,10 +985,6 @@
 		&:hover {
 			opacity: 1;
 		}
-	}
-
-	.footer-stats {
-		padding-top: 1rem;
 	}
 
 	/* Featured loading skeleton — mirrors ChannelCard's structure so the slot height

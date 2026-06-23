@@ -95,7 +95,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.35rem 0.5rem;
+		padding: var(--space-1) 0.5rem;
 		border-bottom: 1px solid var(--gray-4);
 		background: var(--color-interface);
 		font-size: var(--font-3);
@@ -113,12 +113,12 @@
 	.live-badge {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		color: var(--accent-11);
 		background: var(--accent-3);
 		border: 1px solid var(--accent-6);
 		border-radius: var(--border-radius);
-		padding: 0.1rem 0.45rem;
+		padding: 0.1rem var(--space-2);
 	}
 
 	.idle {

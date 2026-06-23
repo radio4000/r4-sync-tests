@@ -164,7 +164,7 @@
 	kbd {
 		border: 1px solid var(--gray-5);
 		border-radius: var(--border-radius);
-		padding: 0.2rem 0.5rem;
+		padding: var(--space-1) 0.5rem;
 		min-width: 3rem;
 		text-align: center;
 	}
@@ -183,7 +183,7 @@
 
 	code {
 		background: var(--gray-3);
-		padding: 0.125rem 0.2rem;
+		padding: 0.125rem var(--space-1);
 		border-radius: var(--border-radius);
 	}
 

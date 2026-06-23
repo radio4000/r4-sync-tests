@@ -254,13 +254,13 @@
 	.filters {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		padding: 0;
 
 		button {
 			font-size: var(--font-2);
 			min-height: unset;
-			padding: 0.15rem 0.5rem;
+			padding: var(--space-1) 0.5rem;
 		}
 	}
 
@@ -282,7 +282,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		min-width: 0;
 		overflow: hidden;
 		padding-inline: 0.5rem;
@@ -304,7 +304,7 @@
 
 	.play-metas {
 		display: inline-flex;
-		gap: 0.3rem;
+		gap: var(--space-1);
 	}
 
 	.reason-icon {
@@ -332,7 +332,7 @@
 
 	th {
 		border-bottom: 1px solid var(--gray-5);
-		padding: 0.2rem 0.5rem;
+		padding: var(--space-1) 0.5rem;
 		font-weight: 500;
 		color: var(--gray-10);
 		text-transform: uppercase;
@@ -341,7 +341,7 @@
 	}
 
 	td {
-		padding: 0.2rem 0.5rem;
+		padding: var(--space-1) 0.5rem;
 		vertical-align: top;
 		border-bottom: 1px solid var(--gray-3);
 	}

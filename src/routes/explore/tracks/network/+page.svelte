@@ -98,7 +98,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		padding-inline: 0.5rem;
 	}
 
@@ -116,14 +116,14 @@
 	}
 
 	.content {
-		padding: 0.25rem 0.5rem 0.5rem;
+		padding: var(--space-1) 0.5rem 0.5rem;
 	}
 
 	.day-header {
 		font-size: var(--font-4);
 		font-weight: 600;
 		color: light-dark(var(--gray-11), var(--gray-9));
-		margin: 1rem 0 0.25rem;
+		margin: 1rem 0 var(--space-1);
 		&:first-child {
 			margin-top: 0;
 		}

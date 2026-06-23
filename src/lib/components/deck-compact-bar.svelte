@@ -273,13 +273,13 @@
 		flex-direction: row;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		min-width: 0;
 		flex: 1 1 auto;
 		width: 100%;
 		min-height: 2rem;
-		padding-inline: 0.4rem;
-		padding-block: 0.25rem;
+		padding-inline: 0.5rem;
+		padding-block: var(--space-1);
 	}
 
 	.close-deck {
@@ -292,7 +292,7 @@
 		display: flex;
 		align-items: center;
 		flex-wrap: nowrap;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		min-width: 0;
 		flex: 0 0 auto;
 		max-width: 100%;
@@ -328,7 +328,7 @@
 		align-items: center;
 		justify-content: flex-end;
 		flex-wrap: nowrap;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		flex: 1 0 100%;
 		width: 100%;
 		min-width: 0;
@@ -395,8 +395,8 @@
 
 	@media (max-width: 767px) {
 		.header-info {
-			padding-inline: 0.25rem;
-			gap: 0.2rem;
+			padding-inline: var(--space-1);
+			gap: var(--space-1);
 			align-items: center;
 		}
 
@@ -408,7 +408,7 @@
 
 		:global(.channel-panel .channel-micro-card) {
 			min-height: 1.35rem;
-			padding: 0.08rem 0.25rem 0.08rem 0.08rem;
+			padding: 0.08rem var(--space-1) 0.08rem 0.08rem;
 		}
 
 		:global(.channel-panel .channel-micro-card .slug) {
@@ -425,7 +425,7 @@
 		}
 
 		.controls {
-			gap: 0.15rem;
+			gap: var(--space-1);
 			flex: 1 1 auto;
 			width: 100%;
 			flex-wrap: nowrap;
@@ -436,7 +436,7 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			gap: 0.3rem;
+			gap: var(--space-1);
 			overflow: hidden;
 		}
 
@@ -465,7 +465,7 @@
 		.controls :global(.volume .btn),
 		.controls :global(.volume media-mute-button) {
 			min-width: 0;
-			padding-inline: 0.25rem;
+			padding-inline: var(--space-1);
 			font-size: var(--font-1);
 		}
 

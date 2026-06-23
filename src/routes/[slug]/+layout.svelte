@@ -512,8 +512,8 @@
 			'main secondary'
 			'controls controls';
 		grid-template-columns: 1fr auto;
-		gap: 0.4rem;
-		padding: 0.5rem 0.5rem 0.4rem;
+		gap: var(--space-1);
+		padding: var(--space-2);
 		min-width: 0;
 		align-items: center;
 	}
@@ -579,7 +579,7 @@
 		grid-area: controls;
 		display: flex;
 		align-items: center;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		min-width: 0;
 	}
 
@@ -587,7 +587,7 @@
 		display: flex;
 		align-items: stretch;
 		justify-content: center;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		flex: 1 1 auto;
 		min-width: 0;
 		margin: 0;
@@ -597,7 +597,7 @@
 		grid-area: secondary;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 
 	main {
@@ -612,9 +612,9 @@
 	.channel-nav {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		background: var(--gray-1);
-		padding: 0.5rem 0.5rem 0.4rem;
+		padding: 0.5rem;
 	}
 
 	.channel-nav-controls {
@@ -622,6 +622,6 @@
 		min-width: 0;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 </style>

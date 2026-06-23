@@ -163,7 +163,7 @@
 	.title-row {
 		display: flex;
 		align-items: center;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		min-width: 0;
 		margin: 0;
 	}
@@ -187,7 +187,7 @@
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		min-width: 0;
 		font-size: var(--font-2);
 	}
@@ -197,7 +197,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		padding: 0 0.3rem;
+		padding: 0 var(--space-1);
 	}
 
 	.sync-icon :global(svg) {
@@ -208,7 +208,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		padding-inline: 0.35rem;
+		padding-inline: var(--space-1);
 		min-height: 1.35rem;
 		align-self: center;
 	}

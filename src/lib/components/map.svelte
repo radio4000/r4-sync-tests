@@ -207,7 +207,7 @@
 		display: flex;
 		flex-direction: column-reverse;
 		align-items: flex-end;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 
 	.map :global(.maplibregl-ctrl-bottom-right .maplibregl-ctrl),

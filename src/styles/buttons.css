@@ -10,8 +10,8 @@ button,
 
 	/* dimensions */
 	min-width: 2rem;
-	min-height: 2rem;
-	padding: 0 0.4rem;
+	min-height: 1.75rem;
+	padding: 0 0.5rem;
 
 	flex-shrink: 0;
 	white-space: nowrap;
@@ -37,7 +37,7 @@ button,
 	/* 	0 1px 1.5px 0 rgba(0, 0, 0, 0.2), 0 1px 2px 0 rgba(0, 0, 0, 0.4), 0 0 0 0 transparent; */
 
 	transition-property: border, background-color, color, opacity, transform, outline;
-	transition-duration: 150ms;
+	transition-duration: 100ms;
 	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -50,8 +50,8 @@ button:hover,
 
 button:focus,
 .btn:focus {
-	outline: 2px solid var(--accent-9);
-	outline-offset: -2px;
+	/* outline: 2px solid var(--accent-9); */
+	/* outline-offset: -2px; */
 }
 
 button:disabled,
@@ -73,17 +73,17 @@ a.active {
 
 button.active,
 .btn.active {
-	background: var(--accent-7);
+	background: var(--gray-12);
+	color: var(--accent-1);
 
 	svg,
 	.icon {
-		color: var(--accent-10);
+		color: var(--gray-1);
 	}
-}
 
-button.active:active,
-.btn.active:active {
-	background-color: var(--accent-2);
+	&:active {
+		/* background-color: var(--accent-2); */
+	}
 }
 
 /* Looks like an <a> — no padding, no border, underlined text */
@@ -98,6 +98,7 @@ button.link {
 	font: inherit;
 	text-decoration: underline;
 	text-underline-offset: 0.15em;
+
 	&:hover,
 	&:focus {
 		border: none;
@@ -191,33 +192,18 @@ button.primary,
 a:has(svg, i),
 button:has(svg, i),
 .btn:has(svg, i) {
-	gap: 0.25rem;
+	gap: var(--space-1);
 }
 
 button.chip,
 .btn.chip {
 	border-radius: 1rem;
-	padding: 0 0.75rem;
-	background: var(--gray-3);
-	border-color: transparent;
-}
+	padding: 0 var(--space-2);
 
-button.chip:hover,
-.btn.chip:hover {
-	background: var(--gray-4);
-	border-color: transparent;
-}
-
-button.chip.active,
-.btn.chip.active {
-	background: var(--accent-7);
-
-	svg {
-		color: inherit;
-	}
-
-	&:hover {
-		background: var(--accent-8);
+	&.active {
+		svg {
+			color: inherit;
+		}
 	}
 }
 
@@ -240,7 +226,7 @@ button.chip.active,
 button.icon-label-below {
 	flex-direction: column;
 	gap: 0.12rem;
-	padding: 0.26rem 0.42rem;
+	padding: 0.26rem var(--space-2);
 	min-width: 3.1rem;
 	min-height: 3.2rem;
 	height: auto;
@@ -249,8 +235,8 @@ button.icon-label-below {
 .btn.icon-label-right,
 button.icon-label-right {
 	flex-direction: row;
-	gap: 0.3rem;
-	padding: 0.2rem 0.42rem;
+	gap: var(--space-1);
+	padding: var(--space-1) var(--space-2);
 }
 
 .btn-label {
@@ -272,7 +258,7 @@ button.icon-label-right {
 }
 
 .chip-delete {
-	padding: 0 0.5rem 0 0.2rem;
+	padding: 0 0.5rem 0 var(--space-1);
 	border-radius: 0 1rem 1rem 0;
 	background: var(--accent-4);
 	border: 1px solid var(--accent-6);
@@ -288,11 +274,6 @@ button.icon-label-right {
 .chip-delete:hover,
 .chip.active + .chip-delete:hover {
 	background: var(--color-red);
-}
-
-/* Channel header mode buttons: live / auto / play (see [slug]/+layout.svelte) */
-.mode-action {
-	gap: 0.4rem;
 }
 
 .mode-action.auto.drifted {

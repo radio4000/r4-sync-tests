@@ -32,7 +32,7 @@ media-control-bar {
 }
 
 media-control-bar {
-	gap: 0.2rem;
+	gap: var(--space-1);
 }
 
 media-time-display {
@@ -62,8 +62,8 @@ media-time-range {
 	@media (min-width: 768px) {
 		media-volume-range {
 			display: initial;
-			margin-left: 0.2rem;
-			margin-right: 0.2rem;
+			margin-left: var(--space-1);
+			margin-right: var(--space-1);
 		}
 	}
 

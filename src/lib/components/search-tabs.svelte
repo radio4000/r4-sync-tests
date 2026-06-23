@@ -13,7 +13,7 @@
 	const isTracks = $derived(page.route.id === '/search/tracks')
 </script>
 
-<nav class="search-tabs tabs chip-tabs">
+<nav class="search-tabs tabs">
 	<a href={href('/search')} class="btn chip" class:active={isAll}>
 		{m.search_tab_all()}
 	</a>
@@ -27,16 +27,8 @@
 
 <style>
 	.search-tabs {
-		display: flex;
 		flex-wrap: nowrap;
-		gap: 0.5rem;
 		width: 100%;
-		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
-		scrollbar-width: thin;
-	}
-
-	.search-tabs :global(.btn.chip) {
-		flex: 0 0 auto;
 	}
 </style>

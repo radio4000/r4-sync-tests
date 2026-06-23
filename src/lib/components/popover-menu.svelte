@@ -108,7 +108,7 @@
 	[popover] {
 		position: fixed;
 		margin: 0;
-		padding: 0.2rem;
+		padding: var(--space-1);
 		min-width: 10rem;
 		background: var(--color-interface-elevated);
 		border: 1px solid var(--color-interface-border);
