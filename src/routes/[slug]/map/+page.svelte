@@ -36,6 +36,7 @@
 					longitude={channel.longitude}
 					zoom={initialZoom}
 					syncUrl={true}
+					openSlug={channel.slug}
 					linkToMap="global"
 					showControls={true}
 					bind:globeMode

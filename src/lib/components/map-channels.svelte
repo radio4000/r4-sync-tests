@@ -91,20 +91,21 @@
 		return channelsCollection.state.get(channel.id) || channel
 	}
 
+	// Reuse one canvas and one probe element across all calls — creating/removing
+	// a DOM node per call forces a reflow each time (7+ per palette build).
 	const _colorCanvas = document.createElement('canvas')
 	_colorCanvas.width = _colorCanvas.height = 1
 	const _colorCtx = /** @type {CanvasRenderingContext2D} */ (
 		_colorCanvas.getContext('2d', {willReadFrequently: true})
 	)
+	const _colorProbe = document.createElement('div')
+	_colorProbe.style.visibility = 'hidden'
+	_colorProbe.style.position = 'absolute'
+	document.body.append(_colorProbe)
 
 	function resolveCssColor(variableName, fallback = '#888888') {
-		const div = document.createElement('div')
-		div.style.color = `var(${variableName})`
-		div.style.visibility = 'hidden'
-		div.style.position = 'absolute'
-		document.body.append(div)
-		const raw = getComputedStyle(div).color
-		div.remove()
+		_colorProbe.style.color = `var(${variableName})`
+		const raw = getComputedStyle(_colorProbe).color
 		// Normalize to rgb() — getComputedStyle may return oklch() in modern browsers,
 		// which MapLibre's color parser doesn't support. Canvas always gives sRGB bytes.
 		_colorCtx.clearRect(0, 0, 1, 1)
@@ -115,17 +116,18 @@
 	}
 
 	const palette = $derived.by(() => ({
-		normalStroke: resolveCssColor('--accent-6'),
-		normalFill: resolveCssColor('--gray-8'),
-		favoriteStroke: resolveCssColor('--accent-9'),
+		// Fixed dark charcoal, not a theme var: tiles like topo/satellite are always
+		// light-ish regardless of app theme, and a dark fill inside the white ring
+		// maximises internal contrast so the marker reads on any background.
+		normalFill: 'rgb(45, 45, 52)',
 		favoriteFill: resolveCssColor('--accent-6'),
-		favoriteBroadcastStroke: resolveCssColor('--accent-11'),
 		favoriteBroadcastFill: resolveCssColor('--accent-6'),
-		activeStroke: resolveCssColor('--accent-11'),
 		activeFill: resolveCssColor('--accent-9'),
-		// broadcasting: light accent fill (same var as channel-card's .playing bg) + thick stroke
-		broadcastingStroke: resolveCssColor('--accent-11'),
-		broadcastingFill: resolveCssColor('--accent-3')
+		// broadcasting: light accent fill (same var as channel-card's .playing bg)
+		broadcastingFill: resolveCssColor('--accent-3'),
+		// stroke vars below feed the broadcast ring (broadcastRingColor), not the marker outline
+		favoriteBroadcastStroke: resolveCssColor('--accent-11'),
+		broadcastingStroke: resolveCssColor('--accent-11')
 	}))
 
 	function getChannelState(channel) {
@@ -142,44 +144,20 @@
 		const state = getChannelState(channel)
 		// 5-tier visual hierarchy: favorite+broadcasting > broadcasting > active > favorite > normal
 		// mirrors channel card semantics while preserving favorite identity during live broadcast.
+		// State is encoded by fill + radius; every marker shares the white ring / dark shadow outline.
 		if (state.isFavorite && state.isBroadcasting) {
-			return {
-				radius: 10,
-				strokeColor: palette.favoriteBroadcastStroke,
-				fillColor: palette.favoriteBroadcastFill,
-				strokeWidth: 3
-			}
+			return {radius: 10, fillColor: palette.favoriteBroadcastFill, strokeWidth: 3}
 		}
 		if (state.isBroadcasting) {
-			return {
-				radius: 9,
-				strokeColor: palette.broadcastingStroke,
-				fillColor: palette.broadcastingFill,
-				strokeWidth: 3
-			}
+			return {radius: 9, fillColor: palette.broadcastingFill, strokeWidth: 3}
 		}
 		if (state.isActive) {
-			return {
-				radius: 8,
-				strokeColor: palette.activeStroke,
-				fillColor: palette.activeFill,
-				strokeWidth: 2
-			}
+			return {radius: 8, fillColor: palette.activeFill, strokeWidth: 2}
 		}
 		if (state.isFavorite) {
-			return {
-				radius: 7,
-				strokeColor: palette.favoriteStroke,
-				fillColor: palette.favoriteFill,
-				strokeWidth: 2
-			}
+			return {radius: 7, fillColor: palette.favoriteFill, strokeWidth: 2}
 		}
-		return {
-			radius: 5,
-			strokeColor: palette.normalStroke,
-			fillColor: palette.normalFill,
-			strokeWidth: 1.5
-		}
+		return {radius: 5, fillColor: palette.normalFill, strokeWidth: 1.5}
 	}
 
 	/** @returns {GeoJSON.FeatureCollection} */
@@ -197,7 +175,6 @@
 						id: c.id,
 						slug: c.slug,
 						radius: style.radius,
-						strokeColor: style.strokeColor,
 						fillColor: style.fillColor,
 						strokeWidth: style.strokeWidth,
 						isBroadcasting: state.isBroadcasting,
@@ -226,7 +203,6 @@
 						id: c.id,
 						slug: c.slug,
 						radius: style.radius,
-						strokeColor: style.strokeColor,
 						fillColor: style.fillColor,
 						strokeWidth: style.strokeWidth,
 						isBroadcasting: state.isBroadcasting,
@@ -259,6 +235,19 @@
 					'circle-blur': 0.1
 				}
 			})
+			// Soft dark shadow beneath each marker — the "dark" half of the
+			// light+dark contrast combo, so markers read on pale tiles too.
+			m.addLayer({
+				id: 'channels-shadow',
+				type: 'circle',
+				source: 'channels-source',
+				paint: {
+					'circle-radius': ['+', ['get', 'radius'], 3],
+					'circle-color': 'rgba(0, 0, 0, 0.55)',
+					'circle-blur': 0.6,
+					'circle-opacity': 0.7
+				}
+			})
 			m.addLayer({
 				id: 'channels-layer',
 				type: 'circle',
@@ -266,7 +255,8 @@
 				paint: {
 					'circle-radius': ['get', 'radius'],
 					'circle-color': ['get', 'fillColor'],
-					'circle-stroke-color': ['get', 'strokeColor'],
+					// White ring — the "light" half, pops on dark/satellite tiles.
+					'circle-stroke-color': 'rgb(255, 255, 255)',
 					'circle-stroke-width': ['get', 'strokeWidth'],
 					'circle-opacity': 1
 				}
@@ -492,6 +482,43 @@
 		}
 	}
 
+	const BASE_TILE_IDS = ['carto', 'topo', 'satellite']
+
+	/**
+	 * Swap only the base raster layer/source. A full `setStyle()` would tear down
+	 * every source and layer — including the channel markers, overlays and the
+	 * custom WebGL broadcast layer (shader recompile) — and blocks the UI ~1s.
+	 * Here the new base is added beneath the overlays, on top of the old base, and
+	 * the old base is dropped once the new tiles are in (so there's no blank flash).
+	 * @param {'carto'|'topo'|'satellite'} name
+	 */
+	function swapBaseTiles(name) {
+		const m = map
+		if (!m) return
+		const newId = name === 'carto' ? 'carto' : name
+		const layers = m.getStyle().layers
+		const bases = layers.filter((l) => BASE_TILE_IDS.includes(l.id))
+		if (bases.at(-1)?.id === newId) return // already the visible base
+		const firstOverlay = layers.find((l) => !BASE_TILE_IDS.includes(l.id))?.id
+		if (m.getSource(newId)) {
+			m.moveLayer(newId, firstOverlay)
+		} else {
+			const style = buildMapStyle(name)
+			const [srcId, srcDef] = Object.entries(style.sources)[0]
+			m.addSource(srcId, /** @type {any} */ (srcDef))
+			m.addLayer(/** @type {any} */ (style.layers[0]), firstOverlay)
+		}
+		const dropOldBases = () => {
+			for (const l of m.getStyle().layers) {
+				if (!BASE_TILE_IDS.includes(l.id) || l.id === newId) continue
+				if (m.getLayer(l.id)) m.removeLayer(l.id)
+				if (m.getSource(l.id)) m.removeSource(l.id)
+			}
+		}
+		if (m.isSourceLoaded(newId)) dropOldBases()
+		else m.once('idle', dropOldBases)
+	}
+
 	// ── Overlay GeoJSON builders ─────────────────────────────────────────────
 
 	/** Lines at equator, tropics of Cancer/Capricorn, Arctic/Antarctic circles. */
@@ -714,23 +741,11 @@
 		map.setProjection({type: globeMode ? 'globe' : 'mercator'})
 	})
 
-	// Tile style switcher: apply when user changes, re-add all layers via styledata callback.
-	// map.svelte only hooks styledata on theme changes — we must do it ourselves here.
+	// Tile style switcher: swap just the base raster layer (see swapBaseTiles).
 	$effect(() => {
 		const style = tileStyle
 		if (!map || !mapReady) return
-		const sourceId = style === 'carto' ? 'carto' : style
-		if (map.getSource(sourceId)) return // already applied
-		mapReady = false // block other effects during transition
-		const m = map
-		m.setStyle(buildMapStyle(style))
-		m.once('styledata', () => {
-			setupOverlays(m)
-			if (!broadcastLayer) broadcastLayer = new BroadcastLayer()
-			if (!m.getLayer('broadcast-3d')) m.addLayer(/** @type {any} */ (broadcastLayer))
-			updateBroadcastLayer()
-			mapReady = true // triggers the map-ready effect below
-		})
+		swapBaseTiles(style)
 	})
 
 	// Graticule visibility toggle
@@ -754,6 +769,7 @@
 	})
 
 	onDestroy(() => {
+		_colorProbe.remove()
 		clearAutoOpenRetry()
 		clearPendingPopupLinkNavigation()
 		for (const cleanup of popupCleanupFns) cleanup()
