@@ -19,7 +19,7 @@
 	import {sdk} from '@radio4000/sdk'
 	import ChannelCard from '$lib/components/channel-card.svelte'
 	import MyChannelControls from '$lib/components/my-channel-controls.svelte'
-	import {not, isNull} from '@tanstack/db'
+	import {not, isNull, eq} from '@tanstack/db'
 	import Icon from '$lib/components/icon.svelte'
 	import PageHeader from '$lib/components/page-header.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
@@ -53,7 +53,6 @@
 
 	// Featured channels (not logged in, or no channel)
 	let featuredPool = $state(/** @type {import('$lib/types').Channel[]} */ ([]))
-	let featuredChannels = $state(/** @type {import('$lib/types').Channel[]} */ ([]))
 	let featuredLoaded = $state(false)
 
 	const featuredPickCount = $derived(!isSignedIn ? FEATURED_COUNT_LOGGEDOUT : FEATURED_COUNT)
@@ -72,9 +71,9 @@
 		}
 	}
 
-	$effect(() => {
-		featuredChannels = pickFeatured(featuredPool, {count: featuredPickCount, seed: featuredSeed})
-	})
+	const featuredChannels = $derived(
+		pickFeatured(featuredPool, {count: featuredPickCount, seed: featuredSeed})
+	)
 
 	$effect(() => {
 		if (featuredLoaded) return
@@ -129,12 +128,18 @@
 	const userChannelTrackCount = $derived(userChannel?.track_count ?? 0)
 	const showTrackWidget = $derived(userChannelTrackCount > 0)
 
+	// Reactive: subscribes to the collection so tags appear once ensureTracksLoaded
+	// writes them. A plain tracksCollection.state read wouldn't re-run on that write.
+	const channelTracksQuery = useLiveQuery((q) =>
+		userChannel?.slug
+			? q.from({t: tracksCollection}).where(({t}) => eq(t.slug, userChannel.slug))
+			: null
+	)
+
 	const userChannelTopTags = $derived.by(() => {
 		if (!userChannel?.slug) return []
 		const channelTracks = /** @type {import('$lib/types').Track[]} */ (
-			[...tracksCollection.state.values()].filter(
-				(t) => /** @type {any} */ (t).slug === userChannel.slug
-			)
+			channelTracksQuery.data ?? []
 		)
 		const featuredTags = extractHashtags(userChannel.description ?? '').map((t) => t.slice(1))
 		const allByCount = getChannelTags(channelTracks)
@@ -715,8 +720,8 @@
 	.loggedout-top-row {
 		display: grid;
 		grid-template-columns: 1fr;
-		gap: 0.6rem;
-		padding: 0.6rem 0.5rem 0;
+		gap: var(--space-2);
+		padding: var(--space-2) 0.5rem 0;
 	}
 
 	@media (min-width: 980px) {
@@ -774,7 +779,7 @@
 	.dashboard-section {
 		display: flex;
 		flex-direction: column;
- 		gap: var(--space-2);
+		gap: var(--space-2);
 		margin-inline: var(--space-2);
 
 		:global(.list) {
@@ -785,7 +790,7 @@
 	.dashboard-group {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		border-radius: var(--border-radius);
 		background: var(--color-interface);
 	}
@@ -793,7 +798,7 @@
 	.dashboard-grid {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.3rem;
+		gap: var(--space-1);
 	}
 
 	.dashboard-grid--scroll {
@@ -809,7 +814,7 @@
 	.dashboard-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		padding: 0.5rem;
 		border-radius: var(--border-radius);
 		background: light-dark(var(--gray-1), var(--gray-2));
@@ -826,7 +831,7 @@
 	.dashboard-card--pill {
 		padding: 0rem 0.5rem;
 		border-radius: 999px;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		background: var(--color-interface-elevated);
 	}
 
@@ -861,7 +866,7 @@
 		text-decoration: none;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		min-width: 0;
 		flex-shrink: 1;
 		&:hover {
@@ -989,8 +994,8 @@
 	.skeleton-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
-		padding: 0.25rem;
+		gap: var(--space-1);
+		padding: var(--space-1);
 		height: 100%;
 	}
 
@@ -1086,7 +1091,7 @@
 			padding-left: 1.25rem;
 
 			li {
-				margin-block: 0.3rem;
+				margin-block: var(--space-1);
 			}
 		}
 	}
