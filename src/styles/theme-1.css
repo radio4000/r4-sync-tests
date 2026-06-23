@@ -1,13 +1,15 @@
 :root {
 	/* Default base colors for generating a color scale.
 	   Keep in sync with theme-editor.svelte baseColors defaults. */
-	--gray-light: oklch(0.67 0.01 0);
+	--gray-light: oklch(0.67 0.012 70);
 	--accent-light: oklch(0.5 0.25 290);
-	--gray-dark: oklch(0.67 0.005 0);
-	/* --accent-dark: #732ff1; */
-	--accent-dark: oklch(0.63 0.2 296.65);
-	/* --accent-dark: #7ed6cc; */
-	--color-red: hsl(11, 78%, 38%);
-	--color-error: var(--color-red, red); /* r4-components var */
-	--color-warning: hsl(38, 92%, 40%);
+
+	--gray-dark: oklch(0.67 0.008 70);
+	--accent-dark: oklch(0.63 0.2 296);
+
+	--color-red: oklch(0.5 0.16 35);
+	--color-error: var(--color-red);
+	--color-warning: oklch(0.65 0.13 71);
+
+	/* also see color-scales.css */
 }

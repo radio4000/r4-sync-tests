@@ -30,14 +30,14 @@ export const baseColors = [
 		name: '--gray-light',
 		label: () => m.theme_color_gray_label(),
 		description: () => m.theme_color_gray_desc(),
-		default: 'oklch(0.67 0.01 0)',
+		default: 'oklch(0.67 0.012 70)',
 		theme: 'light'
 	},
 	{
 		name: '--gray-dark',
 		label: () => m.theme_color_gray_label(),
 		description: () => m.theme_color_gray_desc(),
-		default: 'oklch(0.67 0.005 0)',
+		default: 'oklch(0.67 0.008 70)',
 		theme: 'dark'
 	}
 ]
