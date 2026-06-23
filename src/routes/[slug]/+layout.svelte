@@ -25,6 +25,7 @@
 	import {findAutoDecksForChannel, findChannelPlayingDeck, findListeningDeck} from '$lib/deck'
 	import ButtonFollow from '$lib/components/button-follow.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
+	import ChannelCanvasBg from '$lib/components/channel-canvas-bg.svelte'
 	import DeckChannelHeader from '$lib/components/deck-channel-header.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
@@ -314,6 +315,7 @@
 	<div class="channel-sticky" bind:clientHeight={channelStickyHeight}>
 		{#if displayChannel}
 			<header>
+				<ChannelCanvasBg id={displayChannel.image} />
 				<div class="channel-main">
 					<div class="avatar">
 						{#if isChannelLive}
@@ -507,6 +509,7 @@
 	}
 
 	header {
+		position: relative;
 		display: grid;
 		grid-template-areas:
 			'main secondary'
@@ -516,6 +519,14 @@
 		padding: var(--space-2);
 		min-width: 0;
 		align-items: center;
+		background: var(--gray-2);
+		border-bottom: 1px solid var(--gray-3);
+		overflow: hidden;
+	}
+
+	header > :not(.channel-canvas-bg) {
+		position: relative;
+		z-index: 1;
 	}
 
 	@container (min-width: 500px) {
