@@ -2,8 +2,30 @@ import {channelsCollection} from '$lib/collections/channels'
 import {queryClient} from '$lib/collections/query-client'
 import {fetchRecentTracksForSlugs} from '$lib/collections/tracks'
 import {sdk} from '@radio4000/sdk'
-import {featuredScore} from '$lib/utils'
+import {featuredScore, seededRandom, shuffleArray} from '$lib/utils'
+import {daysAgoIso} from '$lib/dates'
 import type {Channel} from '$lib/types'
+
+/** Today as a stable seed (YYYY-MM-DD) for daily-rotating picks. */
+export function dailySeed(): string {
+	return new Date().toISOString().slice(0, 10)
+}
+
+/**
+ * Pick featured channels from a pool: score a quality window, then shuffle it
+ * down to `count`. Pass a stable `seed` (e.g. dailySeed()) for daily rotation,
+ * or a random one to reshuffle. Without a seed, picks randomly each call.
+ * Shared by the homepage and the /featured explore page so both rotate alike.
+ */
+export function pickFeatured(
+	pool: Channel[],
+	{count = 12, window = 40, seed}: {count?: number; window?: number; seed?: string} = {}
+): Channel[] {
+	const top = pool
+		.toSorted((a, b) => featuredScore(b) - featuredScore(a))
+		.slice(0, Math.max(window, count))
+	return shuffleArray(top, seed ? seededRandom(seed) : Math.random).slice(0, count)
+}
 
 /**
  * Load the quality channel pool and return it.

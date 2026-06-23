@@ -21,7 +21,8 @@
 		handleCanvasDoubleClick
 	} from '$lib/components/channels-view-shared.js'
 	import {gte, inArray, not, isNull} from '@tanstack/db'
-	import {featuredScore} from '$lib/utils'
+	import {shuffleSeed} from '$lib/utils'
+	import {pickFeatured, dailySeed} from '$lib/collections/featured'
 	import ChannelCard from './channel-card.svelte'
 	import Dialog from './dialog.svelte'
 	import Pagination from './pagination.svelte'
@@ -79,6 +80,13 @@
 	}
 
 	let showFeaturedInfo = $state(false)
+
+	// Featured rotation: daily-seeded shuffle of a quality window so /featured
+	// rotates each day instead of always showing the same 12. Reshuffle button
+	// swaps the seed for instant on-demand variety.
+	const FEATURED_WINDOW = 40
+	const FEATURED_COUNT = 12
+	let featuredSeed = $state(dailySeed())
 
 	let paginatedLimit = $state(CHANNELS_PAGE_SIZE)
 	let extraPages = $state(0)
@@ -198,10 +206,15 @@
 		return base
 	})
 	const channelsRaw = $derived(channelsQuery.data ?? [])
-	// For featured: score and take top 12; paged views slice locally; otherwise all
+	// For featured: take a quality window by score, then daily-seeded shuffle down
+	// to 12 so it rotates; paged views slice locally; otherwise all
 	const channels = $derived.by(() => {
 		if (filter === 'featured')
-			return channelsRaw.toSorted((a, b) => featuredScore(b) - featuredScore(a)).slice(0, 12)
+			return pickFeatured(channelsRaw, {
+				count: FEATURED_COUNT,
+				window: FEATURED_WINDOW,
+				seed: featuredSeed
+			})
 		if (isPaged)
 			return channelsRaw.slice((currentPage - 1) * pageSize, (currentPage + extraPages) * pageSize)
 		return channelsRaw
@@ -390,6 +403,14 @@
 		{/if}
 
 		{#if filter === 'featured'}
+			<button
+				class="btn"
+				onclick={() => (featuredSeed = shuffleSeed())}
+				aria-label={m.home_featured_refresh()}
+				{@attach tooltip({content: m.home_featured_refresh()})}
+			>
+				<Icon icon="switch-alt" />
+			</button>
 			<button
 				class="btn"
 				onclick={() => (showFeaturedInfo = true)}

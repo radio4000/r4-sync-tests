@@ -7,9 +7,9 @@
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {featuredScore} from '$lib/utils'
+	import {shuffleSeed} from '$lib/utils'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
-	import {getFeaturedPool} from '$lib/collections/featured'
+	import {getFeaturedPool, pickFeatured, dailySeed} from '$lib/collections/featured'
 	import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 	import {getChannelTags, extractHashtags} from '$lib/utils'
 	import {playChannel, togglePlayPause, loadDeckView, playTrack, sortByNewest} from '$lib/api'
@@ -58,31 +58,30 @@
 
 	const featuredPickCount = $derived(!isSignedIn ? FEATURED_COUNT_LOGGEDOUT : FEATURED_COUNT)
 
-	// Shuffle button: random pick from the quality pool for variety
+	// Daily-seeded by default (same rotation as /featured); reshuffle picks a
+	// random seed for instant variety. Shared pickFeatured keeps both in sync.
+	let featuredSeed = $state(dailySeed())
 	let shuffling = $state(false)
-	async function pickFeatured() {
+	function reshuffleFeatured() {
 		if (!featuredPool.length || shuffling) return
 		shuffling = true
 		try {
-			const picked = featuredPool.toSorted(() => Math.random() - 0.5).slice(0, featuredPickCount)
-			featuredChannels = picked
+			featuredSeed = shuffleSeed()
 		} finally {
 			shuffling = false
 		}
 	}
 
 	$effect(() => {
+		featuredChannels = pickFeatured(featuredPool, {count: featuredPickCount, seed: featuredSeed})
+	})
+
+	$effect(() => {
 		if (featuredLoaded) return
 		featuredLoaded = true
 		void (async () => {
 			try {
-				const pool = await getFeaturedPool(FEATURED_DAYS)
-				featuredPool = pool
-				// Initial pick: by score, consistent with explore pages
-				const picked = pool
-					.toSorted((a, b) => featuredScore(b) - featuredScore(a))
-					.slice(0, featuredPickCount)
-				featuredChannels = picked
+				featuredPool = await getFeaturedPool(FEATURED_DAYS)
 			} catch (e) {
 				console.warn('[homepage] failed to load featured channels', e)
 			}
@@ -472,7 +471,7 @@
 							<button
 								type="button"
 								title={m.home_featured_refresh()}
-								onclick={pickFeatured}
+								onclick={reshuffleFeatured}
 								disabled={shuffling}
 							>
 								<Icon icon="switch-alt" />
@@ -554,7 +553,7 @@
 									<button
 										type="button"
 										title={m.home_featured_refresh()}
-										onclick={pickFeatured}
+										onclick={reshuffleFeatured}
 										disabled={shuffling}
 									>
 										<Icon icon="switch-alt" />
@@ -640,7 +639,6 @@
 
 <style>
 	.homepage {
-		padding: 0.35rem 0.5rem;
 		display: flex;
 		flex-direction: column;
 		flex: 1;
@@ -653,7 +651,6 @@
 	}
 
 	.homepage.signed-in {
-		gap: 1rem;
 		background: var(--color-interface);
 	}
 
