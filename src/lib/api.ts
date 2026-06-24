@@ -176,7 +176,7 @@ export async function playTrack(
 	if (isNormalPlayStart(startReason)) {
 		if (deck.listening_to_channel_id) leaveBroadcast(deckId)
 		deck.auto_radio = undefined
-		deck.auto_radio_drifted = undefined
+		deck.drifted = undefined
 		deck.auto_radio_rotation_start = undefined
 	}
 
@@ -311,7 +311,7 @@ export async function playChannel(
 	const d = getDeck(deckId)
 	if (d) {
 		d.auto_radio = undefined
-		d.auto_radio_drifted = undefined
+		d.drifted = undefined
 	}
 	await ensureTracksLoaded(slug)
 	const tracks = [...tracksCollection.state.values()]
@@ -362,7 +362,7 @@ export async function shufflePlayChannel(deckId, {id, slug}) {
 	const d = getDeck(deckId)
 	if (d) {
 		d.auto_radio = undefined
-		d.auto_radio_drifted = undefined
+		d.drifted = undefined
 	}
 	await ensureTracksLoaded(slug)
 	const tracks = [...tracksCollection.state.values()].filter((t) => t?.slug === slug)
@@ -440,7 +440,7 @@ export function addToPlaylist(deckId, trackIds) {
 	}
 	deck.view = undefined
 	deck.auto_radio = undefined
-	deck.auto_radio_drifted = undefined
+	deck.drifted = undefined
 	log.log('addToPlaylist', {
 		deckId,
 		added: trackIds.length,
@@ -463,7 +463,7 @@ export function playNext(deckId, trackIds) {
 		deck.playlist_tracks = ids
 		deck.view = undefined
 		deck.auto_radio = undefined
-		deck.auto_radio_drifted = undefined
+		deck.drifted = undefined
 		return
 	}
 	deck.playlist_tracks = queueInsertManyAfter(deck.playlist_tracks, currentId, ids)
@@ -476,7 +476,7 @@ export function playNext(deckId, trackIds) {
 	}
 	deck.view = undefined
 	deck.auto_radio = undefined
-	deck.auto_radio_drifted = undefined
+	deck.drifted = undefined
 	log.log('play_next', {deckId, ids, after: currentId})
 }
 
@@ -494,7 +494,7 @@ export function removeFromQueue(deckId, trackId) {
 	}
 	deck.view = undefined
 	deck.auto_radio = undefined
-	deck.auto_radio_drifted = undefined
+	deck.drifted = undefined
 	log.log('remove_from_queue', {deckId, trackId})
 }
 
@@ -886,7 +886,7 @@ export async function joinAutoRadio(deckId: number, tracks: Track[], view?: View
 	// playTrack → setPlaylist clears deck.view; restore it so resyncAutoRadio can run
 	if (appState.decks[deckId]) {
 		appState.decks[deckId].auto_radio = true
-		appState.decks[deckId].auto_radio_drifted = false
+		appState.decks[deckId].drifted = false
 		appState.decks[deckId].auto_radio_rotation_start = rotationStartUnix
 		if (view) appState.decks[deckId].view = view
 	}
@@ -930,7 +930,7 @@ export function leaveAutoRadio(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	deck.auto_radio = undefined
-	deck.auto_radio_drifted = undefined
+	deck.drifted = undefined
 	deck.auto_radio_rotation_start = undefined
 }
 
@@ -971,7 +971,7 @@ export async function resyncAutoRadio(deckId: number) {
 	const d = getDeck(deckId)
 	if (d) {
 		d.auto_radio = true
-		d.auto_radio_drifted = false
+		d.drifted = false
 		d.auto_radio_rotation_start = rotationStartUnix
 		if (label) d.playlist_title = label
 	}

@@ -36,10 +36,10 @@ export interface Deck {
 	broadcasting_channel_id?: string
 	listening_to_channel_id?: string
 	auto_radio?: boolean
-	auto_radio_drifted?: boolean
 	view?: import('$lib/views').View
 	auto_radio_rotation_start?: number
-	listening_drifted?: boolean
+	/** Listener/auto deck has drifted from its source clock. One flag for both modes — a deck is only ever one. */
+	drifted?: boolean
 	play_id?: string
 	track_played_at?: string
 	seeked_at?: string

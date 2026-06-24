@@ -51,11 +51,11 @@
 	const isListening = $derived(Boolean(deck?.listening_to_channel_id))
 	const listeningWhoSlug = $derived(isListening ? channel?.slug : undefined)
 	const listeningWhomSlug = $derived(isListening ? track?.slug || deck?.playlist_slug : undefined)
-	const broadcastSyncDrifted = $derived(Boolean(deck?.listening_drifted))
+	const broadcastSyncDrifted = $derived(Boolean(deck?.drifted))
 	const broadcastSyncTitle = $derived(
 		broadcastSyncDrifted ? m.player_sync_broadcast() : m.player_broadcast_synced()
 	)
-	const autoTitle = $derived(deck?.auto_radio_drifted ? m.auto_radio_resync() : m.auto_radio_join())
+	const autoTitle = $derived(deck?.drifted ? m.auto_radio_resync() : m.auto_radio_join())
 	const slugHref = (s) => (s ? resolve('/[slug]', {slug: s}) : undefined)
 	const resolvedSlugHref = $derived(slugHref(slug))
 	const resolvedChannelSlugHref = $derived(slugHref(channel?.slug))
@@ -130,7 +130,7 @@
 		{#if showModeMeta && showAutoButton}
 			<AutoRadioButton
 				className="auto-btn active"
-				synced={!!deck?.is_playing && !deck?.auto_radio_drifted}
+				synced={!!deck?.is_playing && !deck?.drifted}
 				title={autoTitle}
 				ariaLabel={autoTitle}
 				size={14}

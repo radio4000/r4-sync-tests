@@ -421,7 +421,7 @@ async function playBroadcastTrack(deckId, broadcast) {
 	if (appState.decks[deckId]) {
 		applyRemoteState(deckId, {
 			listening_to_channel_id: channel_id,
-			listening_drifted: false,
+			drifted: false,
 			...pickBroadcastFields(broadcast)
 		})
 
@@ -798,7 +798,7 @@ async function syncDeckToBroadcastState(deckId, channelId, state) {
 	if (!state?.track_id) {
 		applyRemoteState(deckId, {
 			listening_to_channel_id: channelId,
-			listening_drifted: false,
+			drifted: false,
 			playlist_track: undefined,
 			is_playing: false
 		})
@@ -810,7 +810,7 @@ async function syncDeckToBroadcastState(deckId, channelId, state) {
 
 	applyRemoteState(deckId, {
 		listening_to_channel_id: channelId,
-		listening_drifted: false,
+		drifted: false,
 		...pickBroadcastFields(state)
 	})
 	if (trackChanged) {

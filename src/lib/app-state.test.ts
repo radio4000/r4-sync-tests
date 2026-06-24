@@ -25,8 +25,7 @@ describe('app state persistence', () => {
 			view: {sources: [{channels: ['radio']}]},
 			is_playing: true,
 			broadcasting_channel_id: 'channel-1',
-			auto_radio_drifted: true,
-			listening_drifted: true,
+			drifted: true,
 			play_id: 'play-1',
 			track_played_at: '2026-05-26T00:00:00.000Z',
 			seeked_at: '2026-05-26T00:00:01.000Z',
@@ -52,8 +51,7 @@ describe('app state persistence', () => {
 		expect(persistedDeck).not.toHaveProperty('is_playing')
 		expect(persistedDeck).not.toHaveProperty('broadcasting_channel_id')
 		expect(persistedDeck).not.toHaveProperty('listening_to_channel_id')
-		expect(persistedDeck).not.toHaveProperty('auto_radio_drifted')
-		expect(persistedDeck).not.toHaveProperty('listening_drifted')
+		expect(persistedDeck).not.toHaveProperty('drifted')
 		expect(persistedDeck).not.toHaveProperty('play_id')
 		expect(persistedDeck).not.toHaveProperty('track_played_at')
 		expect(persistedDeck).not.toHaveProperty('seeked_at')
@@ -88,8 +86,7 @@ describe('app state persistence', () => {
 			is_playing: true,
 			broadcasting_channel_id: 'channel-1',
 			listening_to_channel_id: 'channel-2',
-			auto_radio_drifted: true,
-			listening_drifted: true,
+			drifted: true,
 			play_id: 'play-1',
 			track_played_at: '2026-05-26T00:00:00.000Z',
 			seeked_at: '2026-05-26T00:00:01.000Z',
@@ -104,8 +101,7 @@ describe('app state persistence', () => {
 		expect(deck.is_playing).toBe(false)
 		expect(deck.broadcasting_channel_id).toBeUndefined()
 		expect(deck.listening_to_channel_id).toBeUndefined()
-		expect(deck.auto_radio_drifted).toBeUndefined()
-		expect(deck.listening_drifted).toBeUndefined()
+		expect(deck.drifted).toBeUndefined()
 		expect(deck.play_id).toBeUndefined()
 		expect(deck.track_played_at).toBeUndefined()
 		expect(deck.seeked_at).toBeUndefined()

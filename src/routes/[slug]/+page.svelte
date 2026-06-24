@@ -354,7 +354,7 @@
 		{@const autoDecks = getAutoDecksForView(Object.values(appState.decks), autoView)}
 		{@const isAutoActive = autoDecks.length > 0}
 		{@const isAutoPlaying = autoDecks.some((d) => d.is_playing)}
-		{@const isAutoDrifted = autoDecks.some((d) => d.auto_radio_drifted)}
+		{@const isAutoDrifted = autoDecks.some((d) => d.drifted)}
 		<div class="play-actions-group">
 			<button
 				type="button"

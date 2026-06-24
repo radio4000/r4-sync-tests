@@ -209,7 +209,7 @@
 				<SpeedControl {deckId} {provider} />
 				<VolumeControl {deckId} />
 			{:else if deck?.auto_radio}
-				{@const autoNotSynced = !!deck?.auto_radio_drifted}
+				{@const autoNotSynced = !!deck?.drifted}
 				<button
 					class="play"
 					class:active={deck?.is_playing}

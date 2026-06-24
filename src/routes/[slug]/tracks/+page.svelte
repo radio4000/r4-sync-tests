@@ -200,7 +200,7 @@
 	)
 	let isFilteredAutoActive = $derived(filteredAutoDecks.length > 0)
 	let isFilteredAutoPlaying = $derived(filteredAutoDecks.some((d) => d.is_playing))
-	let isFilteredAutoDrifted = $derived(filteredAutoDecks.some((d) => d.auto_radio_drifted))
+	let isFilteredAutoDrifted = $derived(filteredAutoDecks.some((d) => d.drifted))
 	let targetTrackId = $derived.by(() => {
 		const hash = decodeURIComponent(page.url.hash.replace(HASH_PREFIX_REGEX, ''))
 		if (!hash) return null

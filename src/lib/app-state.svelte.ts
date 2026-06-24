@@ -6,8 +6,7 @@ function resetTransientDeckState(deck: Deck): Deck {
 	deck.is_playing = false
 	deck.broadcasting_channel_id = undefined
 	deck.listening_to_channel_id = undefined
-	deck.auto_radio_drifted = undefined
-	deck.listening_drifted = undefined
+	deck.drifted = undefined
 	deck.play_id = undefined
 	deck.track_played_at = undefined
 	deck.seeked_at = undefined

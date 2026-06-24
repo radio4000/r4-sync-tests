@@ -20,7 +20,7 @@
 	)
 	const isSearchAutoActive = $derived(searchAutoDecks.length > 0)
 	const isSearchAutoPlaying = $derived(searchAutoDecks.some((d) => d.is_playing))
-	const isSearchAutoDrifted = $derived(searchAutoDecks.some((d) => d.auto_radio_drifted))
+	const isSearchAutoDrifted = $derived(searchAutoDecks.some((d) => d.drifted))
 	const source = $derived(view?.sources?.[0] ?? {})
 	const hasSortFilter = $derived(
 		(view?.order ?? 'created') !== 'created' || view?.direction === 'asc'

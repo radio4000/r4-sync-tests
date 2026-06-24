@@ -53,7 +53,7 @@
 	)
 	let visibleListeningDecksSynced = $derived(
 		visibleListeningDeckIds.length > 0 &&
-			visibleListeningDeckIds.every((id) => !appState.decks[id]?.listening_drifted)
+			visibleListeningDeckIds.every((id) => !appState.decks[id]?.drifted)
 	)
 	let listenPresenceCount = $derived.by(() => {
 		let total = 0

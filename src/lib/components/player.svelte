@@ -439,7 +439,7 @@
 		if (!deck?.auto_radio || deck.auto_radio_rotation_start == null) return
 		const t = mediaCurrentTime
 		// Skip while the initial seek is still landing. joinAutoRadio/resyncAutoRadio
-		// set auto_radio_drifted=false immediately; this guard prevents a false-positive
+		// set drifted=false immediately; this guard prevents a false-positive
 		// drifted flip before the media element has moved off 0.
 		if (t < DRIFT_TOLERANCE_SECONDS) return
 		const snap = playbackState(
@@ -453,7 +453,7 @@
 			deck.playlist_track !== snap.currentTrack.id ||
 			Math.abs(t - snap.offsetSeconds) > DRIFT_TOLERANCE_SECONDS
 		untrack(() => {
-			if (deck) deck.auto_radio_drifted = drifted
+			if (deck) deck.drifted = drifted
 		})
 	})
 
@@ -488,7 +488,7 @@
 		if (expected == null) return
 		const drifted = Math.abs(t - expected) > DRIFT_TOLERANCE_SECONDS
 		untrack(() => {
-			if (deck) deck.listening_drifted = drifted
+			if (deck) deck.drifted = drifted
 		})
 	})
 </script>
@@ -737,7 +737,7 @@
 			</menu>
 		{/if}
 		{#if deck?.auto_radio}
-			{@const autoNotSynced = !!deck?.auto_radio_drifted}
+			{@const autoNotSynced = !!deck?.drifted}
 			<div class="sync-footer">
 				<button
 					class={['sync-btn', {active: !autoNotSynced}]}

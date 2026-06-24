@@ -163,7 +163,7 @@
 		Boolean(activeDeck?.auto_radio && activeDeck?.playlist_slug === slug)
 	)
 	let canShowAutoButton = $derived(hasAutoRadioCoverage(allChannelTracks))
-	let activeAutoDrifted = $derived(Boolean(isAutoEnabled && activeDeck?.auto_radio_drifted))
+	let activeAutoDrifted = $derived(Boolean(isAutoEnabled && activeDeck?.drifted))
 	let autoPresenceCount = $derived(
 		channel?.slug ? (channelPresence[channel.slug]?.byUri?.[`@${channel.slug}`] ?? 0) : 0
 	)
