@@ -44,7 +44,6 @@ export interface Deck {
 	expanded: boolean
 	hide_queue_panel: boolean
 	queue_panel_width?: number
-	broadcasting_channel_id?: string
 	/** Axis-1 clock: who drives this deck's playhead. Absent = self (manual). See {@link DeckClockState}. */
 	clock?: DeckClockState
 	view?: import('$lib/views').View
@@ -64,6 +63,8 @@ export interface AppState {
 	decks: Record<number, Deck>
 	next_deck_id: number
 	active_deck_id: number
+	/** Axis-2 publish: the channel you're broadcasting your workspace to, or undefined. Client-level, transient. */
+	broadcasting_channel_id?: string
 	theme?: string
 	custom_css_variables: Record<string, string>
 	channels_display: 'grid' | 'list' | 'map' | 'infinite' | 'tuner'

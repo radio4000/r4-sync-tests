@@ -16,9 +16,7 @@
 	/** @type {{channel: import('$lib/types').Channel}} */
 	let {channel} = $props()
 
-	const isBroadcasting = $derived(
-		Object.values(appState.decks).some((d) => d.broadcasting_channel_id === channel.id)
-	)
+	const isBroadcasting = $derived(appState.broadcasting_channel_id === channel.id)
 	const autoDecks = $derived(findAutoDecksForChannel(appState.decks, channel.slug))
 	const isAutoEnabled = $derived(autoDecks.length > 0)
 	const loadedDeckId = $derived(
@@ -47,7 +45,7 @@
 		const deck = appState.decks[deckId]
 		if (isBroadcasting) {
 			await stopBroadcast(channel.id)
-			if (deck) deck.broadcasting_channel_id = undefined
+			appState.broadcasting_channel_id = undefined
 			return
 		}
 
@@ -82,8 +80,7 @@
 
 		if (!trackId) return
 		await startBroadcast(channel.id, trackId)
-		if (appState.decks[sourceDeckId])
-			appState.decks[sourceDeckId].broadcasting_channel_id = channel.id
+		appState.broadcasting_channel_id = channel.id
 	}
 
 	function onPlayAction() {

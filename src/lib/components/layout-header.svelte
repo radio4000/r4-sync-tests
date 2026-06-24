@@ -21,8 +21,7 @@
 	const isSignedIn = $derived(!!appState.user)
 	const userChannel = $derived(appState.channel)
 	const isBroadcasting = $derived(
-		userChannel &&
-			Object.values(appState.decks).some((d) => d.broadcasting_channel_id === userChannel.id)
+		userChannel && appState.broadcasting_channel_id === userChannel.id
 	)
 	const deckIds = $derived(Object.keys(appState.decks).map(Number))
 	const activeDeckColor = $derived(deckAccent(deckIds, appState.active_deck_id))

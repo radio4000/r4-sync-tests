@@ -127,9 +127,7 @@ export async function checkUser() {
 		if (userError || !userData?.user) {
 			appState.channels = []
 			appState.channel = undefined
-			for (const deck of Object.values(appState.decks)) {
-				deck.broadcasting_channel_id = undefined
-			}
+			appState.broadcasting_channel_id = undefined
 			return null
 		}
 		const user = userData.user

@@ -12,7 +12,7 @@
 	let deck = $derived(appState.decks[deckId])
 	let showPlayer = $derived(page.url.searchParams.get('player') !== 'false')
 	let isListeningToBroadcast = $derived(isListening(deck))
-	let isBroadcasting = $derived(Boolean(deck?.broadcasting_channel_id))
+	let isBroadcasting = $derived(Boolean(appState.broadcasting_channel_id && !isListening(deck)))
 	let isAutoRadio = $derived(clockKind(deck) === 'auto')
 	let firstListeningDeckId = $derived.by(() =>
 		Object.keys(appState.decks)

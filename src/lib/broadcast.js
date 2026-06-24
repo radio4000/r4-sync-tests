@@ -102,7 +102,7 @@ const seekJobSeqByDeck = new Map()
 export function isUserBroadcasting(channelId) {
 	if (!channelId) return false
 	if (broadcastsCollection.state.get(channelId)) return true
-	return Object.values(appState.decks).some((deck) => deck.broadcasting_channel_id === channelId)
+	return appState.broadcasting_channel_id === channelId
 }
 
 /** @param {string} channelId */
@@ -115,8 +115,7 @@ export function notifyBroadcastState(channelId) {
 }
 
 export function getBroadcastingChannelId() {
-	return Object.values(appState.decks).find((deck) => deck.broadcasting_channel_id)
-		?.broadcasting_channel_id
+	return appState.broadcasting_channel_id
 }
 
 /**
@@ -294,10 +293,8 @@ export async function stopBroadcast(channelId) {
 		if (broadcastsCollection.state.has(channelId)) {
 			broadcastsCollection.utils.writeDelete(channelId)
 		}
-		for (const deck of Object.values(appState.decks)) {
-			if (deck.broadcasting_channel_id === channelId) {
-				deck.broadcasting_channel_id = undefined
-			}
+		if (appState.broadcasting_channel_id === channelId) {
+			appState.broadcasting_channel_id = undefined
 		}
 		stopBroadcastState(channelId)
 		capture('broadcast:channel_end', {channel_slug: label(channelId)})

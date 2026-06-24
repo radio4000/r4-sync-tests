@@ -74,17 +74,14 @@ function reconcileBroadcastsSnapshot(broadcasts) {
 }
 
 /**
- * Sync broadcasting_channel_id on all decks from the broadcasts list
+ * Clear the client-level publish flag when the user's own broadcast row disappears.
  * @param {BroadcastWithChannel[]} broadcasts
  */
 function syncBroadcastingState(broadcasts) {
 	const userChannelId = appState.channels?.[0]
-	const isUserBroadcasting = userChannelId && broadcasts.some((b) => b.channel_id === userChannelId)
-	for (const deck of Object.values(appState.decks)) {
-		if (deck.broadcasting_channel_id === userChannelId) {
-			deck.broadcasting_channel_id = isUserBroadcasting ? userChannelId : undefined
-		}
-	}
+	if (!userChannelId || appState.broadcasting_channel_id !== userChannelId) return
+	const isUserBroadcasting = broadcasts.some((b) => b.channel_id === userChannelId)
+	if (!isUserBroadcasting) appState.broadcasting_channel_id = undefined
 }
 
 sdk.supabase
@@ -111,12 +108,8 @@ sdk.supabase
 			if (broadcastsCollection.state.has(oldData.channel_id)) {
 				broadcastsCollection.utils.writeDelete(oldData.channel_id)
 			}
-			if (oldData.channel_id === appState.channels?.[0]) {
-				for (const deck of Object.values(appState.decks)) {
-					if (deck.broadcasting_channel_id === oldData.channel_id) {
-						deck.broadcasting_channel_id = undefined
-					}
-				}
+			if (oldData.channel_id === appState.broadcasting_channel_id) {
+				appState.broadcasting_channel_id = undefined
 			}
 			syncBroadcastingState([...broadcastsCollection.state.values()])
 		}

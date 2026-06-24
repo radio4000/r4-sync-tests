@@ -77,12 +77,6 @@ export function findListeningDeck(
 	return deckValues(decks).find((d) => listeningChannelId(d) === channelId)
 }
 
-/** Check if any deck is broadcasting for a given channel ID. */
-export function isBroadcasting(decks: Record<number, Deck>, channelId?: string): boolean {
-	if (!channelId) return false
-	return deckValues(decks).some((d) => d.broadcasting_channel_id === channelId)
-}
-
 /** Check if any deck is playing a given channel slug. */
 export function isChannelPlaying(decks: Record<number, Deck>, slug?: string): boolean {
 	if (!slug) return false

@@ -13,7 +13,6 @@
 	import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 	import {getChannelTags, extractHashtags} from '$lib/utils'
 	import {playChannel, togglePlayPause, loadDeckView, playTrack, sortByNewest} from '$lib/api'
-	import {isBroadcasting} from '$lib/deck'
 	import {authStatus} from '$lib/app-state.svelte'
 	import {appPresence, watchPresence, unwatchPresence} from '$lib/presence.svelte'
 	import {sdk} from '@radio4000/sdk'
@@ -114,7 +113,9 @@
 	)
 	const broadcastCount = $derived(broadcastRows.length)
 	const favoriteBroadcastCount = $derived(favoriteBroadcastRows.length)
-	const userChannelIsBroadcasting = $derived(isBroadcasting(appState.decks, userChannel?.id))
+	const userChannelIsBroadcasting = $derived(
+		Boolean(userChannel?.id && appState.broadcasting_channel_id === userChannel.id)
+	)
 
 	// User channel play state
 

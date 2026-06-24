@@ -45,12 +45,12 @@
 		error = null
 	})
 
-	// Mirror computed broadcast state to the active deck for local UI consumers.
+	// Mirror computed broadcast state to the client-level publish flag for local UI consumers.
 	// Skip when isLiveOverride is provided: that's a read-only display signal from the channel page
-	// and should not write back to the deck (would transiently clear broadcasting_channel_id on mount).
+	// and should not write back (would transiently clear broadcasting_channel_id on mount).
 	$effect(() => {
-		if (deck && typeof isLiveOverride !== 'boolean') {
-			deck.broadcasting_channel_id = isBroadcasting ? userChannelId : undefined
+		if (typeof isLiveOverride !== 'boolean') {
+			appState.broadcasting_channel_id = isBroadcasting ? userChannelId : undefined
 		}
 	})
 
@@ -60,7 +60,7 @@
 			if (userChannelId) {
 				await stopBroadcast(userChannelId)
 			}
-			if (deck) deck.broadcasting_channel_id = undefined
+			appState.broadcasting_channel_id = undefined
 		} catch (e) {
 			error = /** @type {Error} */ (e).message
 		}
@@ -103,9 +103,7 @@
 		if (userChannelId) {
 			try {
 				await startBroadcast(userChannelId, trackId)
-				if (appState.decks[sourceDeckId]) {
-					appState.decks[sourceDeckId].broadcasting_channel_id = userChannelId
-				}
+				appState.broadcasting_channel_id = userChannelId
 			} catch (e) {
 				error = /** @type {Error} */ (e).message
 			}

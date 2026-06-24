@@ -32,9 +32,7 @@
 		if (!channelId) return false
 		void broadcastsCollection.state.size
 		const remoteLive = broadcastsCollection.state.has(channelId)
-		const localLive = Object.values(appState.decks).some(
-			(deck) => deck.broadcasting_channel_id === channelId
-		)
+		const localLive = appState.broadcasting_channel_id === channelId
 		return remoteLive || localLive
 	})
 	const mediaItem = $derived.by(() => {

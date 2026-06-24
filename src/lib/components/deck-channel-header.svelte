@@ -4,6 +4,7 @@
 	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 	import Tag from '$lib/components/tag.svelte'
 	import PresenceCount from '$lib/components/presence-count.svelte'
+	import {appState} from '$lib/app-state.svelte'
 	import {deckTitle} from '$lib/deck'
 	import {clockKind} from '$lib/player/clock'
 	import {extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
@@ -46,7 +47,11 @@
 	const slug = $derived(deck?.playlist_slug)
 	const isPlaying = $derived(Boolean(deck?.is_playing))
 	const isBroadcasting = $derived(
-		Boolean(deck?.broadcasting_channel_id && deck.broadcasting_channel_id === channel?.id)
+		Boolean(
+			channel?.id &&
+				appState.broadcasting_channel_id === channel.id &&
+				clockKind(deck) !== 'listener'
+		)
 	)
 	const showAutoButton = $derived(clockKind(deck) === 'auto')
 	const isListening = $derived(clockKind(deck) === 'listener')

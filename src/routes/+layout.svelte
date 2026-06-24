@@ -230,9 +230,7 @@
 		const handler = async () => {
 			log.log('beforeunload_closing_db')
 			untrackAppPresence()
-			for (const deck of Object.values(appState.decks)) {
-				deck.broadcasting_channel_id = undefined
-			}
+			appState.broadcasting_channel_id = undefined
 		}
 		window.addEventListener('beforeunload', handler)
 		return () => window.removeEventListener('beforeunload', handler)

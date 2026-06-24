@@ -145,8 +145,8 @@
 		)
 	})
 	const broadcastSlug = $derived(
-		deck?.broadcasting_channel_id
-			? channelsCollection.state.get(deck.broadcasting_channel_id)?.slug
+		appState.broadcasting_channel_id && !isListening(deck)
+			? channelsCollection.state.get(appState.broadcasting_channel_id)?.slug
 			: undefined
 	)
 
@@ -181,7 +181,7 @@
 	const headerPresenceCount = $derived(
 		isListening(deck) && listenSlug
 			? (channelPresence[listenSlug]?.broadcast ?? 0)
-			: deck?.broadcasting_channel_id && broadcastSlug
+			: broadcastSlug
 				? (channelPresence[broadcastSlug]?.broadcast ?? 0)
 				: autoUri && deck?.playlist_slug
 					? (channelPresence[deck.playlist_slug]?.byUri?.[autoUri] ?? 0)

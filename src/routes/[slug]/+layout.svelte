@@ -228,8 +228,7 @@
 			if (canEdit) {
 				if (isChannelLive) {
 					await stopBroadcast(channel.id)
-					const deck = appState.decks[appState.active_deck_id]
-					if (deck) deck.broadcasting_channel_id = undefined
+					appState.broadcasting_channel_id = undefined
 					return
 				}
 
@@ -243,7 +242,7 @@
 				const trackId = appState.decks[deckId]?.playlist_track
 				if (!trackId) return
 				await startBroadcast(channel.id, trackId)
-				if (appState.decks[deckId]) appState.decks[deckId].broadcasting_channel_id = channel.id
+				appState.broadcasting_channel_id = channel.id
 				return
 			}
 

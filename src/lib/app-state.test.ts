@@ -23,7 +23,6 @@ describe('app state persistence', () => {
 			clock: {kind: 'auto', rotationStart: 123} as const,
 			view: {sources: [{channels: ['radio']}]},
 			is_playing: true,
-			broadcasting_channel_id: 'channel-1',
 			drifted: true,
 			play_id: 'play-1',
 			track_played_at: '2026-05-26T00:00:00.000Z',
@@ -36,18 +35,19 @@ describe('app state persistence', () => {
 			...defaultAppState,
 			decks: {1: deck},
 			next_deck_id: 3,
-			active_deck_id: 1
+			active_deck_id: 1,
+			broadcasting_channel_id: 'channel-1'
 		}
 
 		const persisted = serializeAppStateForStorage(state)
 		const persistedDeck = (persisted.decks as Record<number, Record<string, unknown>>)[1]
 
+		expect(persisted).not.toHaveProperty('broadcasting_channel_id')
 		expect(persistedDeck.playlist_slug).toBe('radio')
 		expect(persistedDeck.playlist_track).toBe('track-1')
 		expect(persistedDeck.clock).toEqual({kind: 'auto', rotationStart: 123})
 		expect(persistedDeck.view).toEqual({sources: [{channels: ['radio']}]})
 		expect(persistedDeck).not.toHaveProperty('is_playing')
-		expect(persistedDeck).not.toHaveProperty('broadcasting_channel_id')
 		expect(persistedDeck).not.toHaveProperty('drifted')
 		expect(persistedDeck).not.toHaveProperty('play_id')
 		expect(persistedDeck).not.toHaveProperty('track_played_at')
@@ -81,7 +81,6 @@ describe('app state persistence', () => {
 			playlist_slug: 'radio',
 			playlist_track: 'track-1',
 			is_playing: true,
-			broadcasting_channel_id: 'channel-1',
 			clock: {kind: 'listener', channel: 'channel-2'},
 			drifted: true,
 			play_id: 'play-1',
@@ -96,7 +95,6 @@ describe('app state persistence', () => {
 		expect(deck.playlist_slug).toBe('radio')
 		expect(deck.playlist_track).toBe('track-1')
 		expect(deck.is_playing).toBe(false)
-		expect(deck.broadcasting_channel_id).toBeUndefined()
 		expect(deck.clock).toBeUndefined()
 		expect(deck.drifted).toBeUndefined()
 		expect(deck.play_id).toBeUndefined()

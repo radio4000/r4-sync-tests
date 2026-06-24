@@ -7,8 +7,7 @@
 
 	const userChannel = $derived(appState.channel)
 	const isBroadcasting = $derived(
-		userChannel &&
-			Object.values(appState.decks).some((d) => d.broadcasting_channel_id === userChannel.id)
+		userChannel && appState.broadcasting_channel_id === userChannel.id
 	)
 </script>
 

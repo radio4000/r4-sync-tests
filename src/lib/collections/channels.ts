@@ -338,8 +338,6 @@ export function deleteChannel(id: string) {
 	// Clean up app state (not managed by collection, not automatically rolled back)
 	appState.channels = appState.channels?.filter((cid) => cid !== id)
 	if (appState.channel?.id === id) appState.channel = undefined
-	for (const deck of Object.values(appState.decks)) {
-		if (deck.broadcasting_channel_id === id) deck.broadcasting_channel_id = undefined
-	}
+	if (appState.broadcasting_channel_id === id) appState.broadcasting_channel_id = undefined
 	return channelsCollection.delete(id).isPersisted.promise.then(() => {})
 }

@@ -5,7 +5,6 @@ import {isListening} from '$lib/player/clock'
 
 function resetTransientDeckState(deck: Deck): Deck {
 	deck.is_playing = false
-	deck.broadcasting_channel_id = undefined
 	// Listener clocks are transient (never persisted); auto clocks survive a reload.
 	if (isListening(deck)) deck.clock = undefined
 	deck.drifted = undefined
@@ -24,6 +23,8 @@ export function normalizeLoadedDeck(id: number, deck?: Partial<Deck>): Deck {
 
 export function serializeAppStateForStorage(state: AppState): Record<string, unknown> {
 	const persistedState = {...state} as Record<string, unknown>
+	// Publish state is transient — you're never broadcasting on a fresh load.
+	delete persistedState.broadcasting_channel_id
 	const decks: Record<number, Partial<Deck>> = {}
 
 	for (const [id, deck] of Object.entries(state.decks)) {
@@ -82,7 +83,6 @@ export function createDefaultDeck(id: number): Deck {
 		expanded: false,
 		hide_queue_panel: false,
 		queue_panel_width: undefined,
-		broadcasting_channel_id: undefined,
 		track_played_at: undefined,
 		seeked_at: undefined,
 		seek_position: undefined,
@@ -105,6 +105,7 @@ export const defaultAppState: AppState = {
 	decks: {1: {...createDefaultDeck(1), compact: true}},
 	next_deck_id: 2,
 	active_deck_id: 1,
+	broadcasting_channel_id: undefined,
 
 	channels: [],
 	local_channel_ids: [],
@@ -176,6 +177,7 @@ function loadState(): AppState {
 	for (const deck of Object.values(state.decks)) {
 		resetTransientDeckState(deck)
 	}
+	state.broadcasting_channel_id = undefined
 
 	const deckIds = Object.keys(state.decks)
 		.map(Number)
