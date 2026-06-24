@@ -2,7 +2,9 @@
 
 This allows any user to broadcast (sync) their `appState.decks` to listeners in realtime via Supabase.
 
-A user broadcasts as their channel. The broadcast's `decks` JSONB column mirrors the local deck state (`BroadcastDeckState[]`). Listeners subscribe and play along. When the broadcaster changes tracks, seeks, or adjusts any deck - including volume - listeners are updated.
+A user broadcasts as their channel — one `broadcast` row per channel (PK `channel_id`). The row's `decks` JSONB column mirrors the broadcaster's local deck state (`BroadcastDeckState[]`): broadcasting ships _all_ the broadcaster's non-listener decks. To keep a deck off air, pause or remove it.
+
+Joining replaces the listener's current decks — they're torn down, then one listener deck is spawned per broadcaster deck (matched by `track_id`, else positionally). When the broadcaster changes tracks, seeks, or adjusts any deck — including volume — listeners update.
 
 ```
 broadcaster: appState.decks → broadcast.decks (remote) → realtime → listeners
@@ -13,6 +15,7 @@ broadcaster: appState.decks → broadcast.decks (remote) → realtime → listen
 - `startBroadcast` / `stopBroadcast` — broadcaster creates/removes the remote row
 - `joinBroadcast` / `leaveBroadcast` — listener subscribes/unsubscribes
 - `upsertRemoteBroadcast` — pushes current deck state to remote (called automatically on track changes)
+- `resyncBroadcastDeck` — re-syncs one drifted listener deck to current broadcast state without rebuilding the deck layout
 - `calculateSeekTime` — computes expected listener seek position from broadcast state (speed-aware)
 
 ## Broadcaster cleanup

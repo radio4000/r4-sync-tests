@@ -19,7 +19,7 @@ The player supports multiple independent decks. Each deck has its own queue, act
 
 ## Key patterns
 
-- Only render one player at a time using `{#if trackType}`
+- Only render one player at a time, branching on `provider` (`{#if provider === 'youtube'}` / soundcloud / audio)
 - Both players have `slot="media"` when active
 - YouTube URLs converted to embed format (`/embed/VIDEO_ID`) in `#initializePlayer()`
 - Use `loadVideoById()` for track changes, avoiding player re-initialization
@@ -37,6 +37,7 @@ When seeking after a track change, use `requestAnimationFrame` to wait for Svelt
 ## State
 
 `appState` stores app, user and player states.
+The live `player.svelte` copies playback position and duration into `deck.media_current_time` / `media_duration` so the compact bar can show progress without its own media element.
 `captureEventsCollection` records play events with start/end reasons (see [capture events](play-history.md)).
 
 ## Auto-radio
