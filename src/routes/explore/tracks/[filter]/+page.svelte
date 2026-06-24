@@ -22,7 +22,6 @@
 
 	const LIMIT = 50
 	const FEATURED_DAYS = 30
-	const FEATURED_COUNT = 3
 
 	let tracks = $state(/** @type {import('$lib/types').Track[]} */ ([]))
 	let loadedAll = $state(false)
@@ -59,7 +58,7 @@
 	}
 
 	async function loadFeatured() {
-		const picked = await loadFeaturedChannelTracks(FEATURED_COUNT, FEATURED_DAYS)
+		const picked = await loadFeaturedChannelTracks(FEATURED_DAYS)
 		const featuredSince = new Date(Date.now() - FEATURED_DAYS * 86400000).toISOString()
 		const slugSet = new Set(picked.map((ch) => ch.slug))
 		// Access .size so this derived re-runs when tracks are upserted into the collection

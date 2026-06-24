@@ -64,14 +64,14 @@ export async function getFeaturedPool(days = 30): Promise<Channel[]> {
 }
 
 /**
- * Load top `count` featured channels by score and fetch their recent tracks.
+ * Load the featured channel pool and fetch each channel's recent tracks.
  * Results land in tracksCollection.state — read from there after awaiting.
- * Returns the picked channels.
+ * Returns the pool channels (sorted by score).
  */
-export async function loadFeaturedChannelTracks(count = 3, days = 30): Promise<Channel[]> {
+export async function loadFeaturedChannelTracks(days = 30): Promise<Channel[]> {
 	const pool = await getFeaturedPool(days)
 	const since = new Date(Date.now() - days * 86400000).toISOString()
-	const picked = pool.toSorted((a, b) => featuredScore(b) - featuredScore(a)).slice(0, count)
+	const picked = pool.toSorted((a, b) => featuredScore(b) - featuredScore(a))
 	if (picked.length) {
 		await fetchRecentTracksForSlugs(
 			picked.map((ch) => ch.slug),
