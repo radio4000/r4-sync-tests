@@ -288,7 +288,7 @@ menu {
 
 .tabs {
 	display: flex;
-	gap: 0.5rem;
+	gap: var(--space-1);
 	overflow-x: auto;
 	scrollbar-width: thin;
 

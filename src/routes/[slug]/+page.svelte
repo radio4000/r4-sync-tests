@@ -561,10 +561,19 @@
 		color: inherit;
 	}
 
+	article:has(.track-section) {
+		display: flex;
+		flex-flow: column;
+		height: 100%;
+	}
+
 	.track-section {
+		display: flex;
+		flex-flow: column;
+		height: 100%;
 		footer {
+			margin: auto 0 0;
 			padding: 0.5rem;
-			margin: 0;
 			text-align: center;
 			position: sticky;
 			bottom: 0;

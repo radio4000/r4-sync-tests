@@ -676,7 +676,6 @@
 	}
 
 	.homepage:not(.signed-in) .section {
-		margin-bottom: 0;
 	}
 
 	.homepage > .section:not(.section--globe) {
@@ -1073,8 +1072,9 @@
 		max-width: 56rem;
 		margin-inline: auto;
 		padding: 1.5rem;
-		border-radius: 0.75rem;
-		background: light-dark(var(--gray-2), var(--gray-2));
+		border-radius: var(--border-radius);
+		background: var(--accent-2);
+		margin-bottom: var(--space-3);
 
 		h1 {
 			font-size: var(--font-8);
@@ -1094,12 +1094,6 @@
 				margin-block: var(--space-1);
 			}
 		}
-	}
-
-	.homepage:not(.signed-in) .welcome-section {
-		max-width: none;
-		margin-inline: 0;
-		border-radius: 0;
 	}
 
 	.welcome-menu {
