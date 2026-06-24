@@ -16,6 +16,7 @@
 	} from '$lib/api'
 	import {getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
+	import {isListening, isAutoRadio, listeningChannelId} from '$lib/player/clock'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {parseUrl} from 'media-now/parse-url'
 	import * as m from '$lib/paraglide/messages'
@@ -38,10 +39,10 @@
 		Object.keys(appState.decks)
 			.map(Number)
 			.sort((a, b) => a - b)
-			.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
+			.filter((id) => isListening(appState.decks[id]))
 	)
 	let isListeningGroupControlDeck = $derived(
-		!deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
+		!isListening(deck) || listeningDeckIds[0] === deckId
 	)
 
 	const display = createDeckDisplay(deckId)
@@ -50,25 +51,27 @@
 	const displayChannel = $derived(display.displayChannel)
 	const headerChannel = $derived(display.headerChannel)
 	const secondaryChannel = $derived(display.secondaryHeaderChannel)
-	const listenSlug = $derived(
-		deck?.listening_to_channel_id
-			? (channelsCollection.state.get(deck.listening_to_channel_id)?.slug ??
-					broadcastsCollection.state.get(deck.listening_to_channel_id)?.channels?.slug)
-			: undefined
-	)
+	const listenSlug = $derived.by(() => {
+		const id = listeningChannelId(deck)
+		if (!id) return undefined
+		return (
+			channelsCollection.state.get(id)?.slug ??
+			broadcastsCollection.state.get(id)?.channels?.slug
+		)
+	})
 	const broadcastSlug = $derived(
 		deck?.broadcasting_channel_id
 			? channelsCollection.state.get(deck.broadcasting_channel_id)?.slug
 			: undefined
 	)
 	const autoUri = $derived(
-		deck?.auto_radio && deck.playlist_slug
+		isAutoRadio(deck) && deck.playlist_slug
 			? viewLabel(deck.view ?? {sources: [{channels: [deck.playlist_slug]}]}) ||
 					`@${deck.playlist_slug}`
 			: undefined
 	)
 	const modePresenceCount = $derived(
-		deck?.listening_to_channel_id && listenSlug
+		isListening(deck) && listenSlug
 			? (channelPresence[listenSlug]?.broadcast ?? 0)
 			: deck?.broadcasting_channel_id && broadcastSlug
 				? (channelPresence[broadcastSlug]?.broadcast ?? 0)
@@ -114,7 +117,7 @@
 			{mediaDuration}
 			trackDuration={displayTrack?.duration}
 			isPlaying={Boolean(deck?.is_playing)}
-			disabled={Boolean(deck?.listening_to_channel_id || deck?.auto_radio)}
+			disabled={isListening(deck) || isAutoRadio(deck)}
 			onseek={(val) => {
 				if (deck) deck.media_current_time = val
 				const mediaElement = getMediaPlayer(deckId)
@@ -123,7 +126,7 @@
 		/>
 	{/if}
 	<div class="header-info" class:active-track-bg={Boolean(displayTrack)}>
-		{#if showEdgeControls && (!deck?.listening_to_channel_id || isListeningGroupControlDeck)}
+		{#if showEdgeControls && (!isListening(deck) || isListeningGroupControlDeck)}
 			<button
 				class="close-deck"
 				onclick={() => {
@@ -172,7 +175,7 @@
 			</div>
 		{/if}
 		<menu class="controls">
-			{#if !deck?.listening_to_channel_id && !deck?.auto_radio}
+			{#if !isListening(deck) && !isAutoRadio(deck)}
 				<button
 					onclick={() => previous(deckId, 'user_prev')}
 					aria-label={m.player_compact_prev()}
@@ -208,7 +211,7 @@
 				{/if}
 				<SpeedControl {deckId} {provider} />
 				<VolumeControl {deckId} />
-			{:else if deck?.auto_radio}
+			{:else if isAutoRadio(deck)}
 				{@const autoNotSynced = !!deck?.drifted}
 				<button
 					class="play"
@@ -233,7 +236,7 @@
 						<span class="live-count">{modePresenceCount}</span>
 					{/if}
 				</button>
-			{:else if !deck?.listening_to_channel_id}
+			{:else if !isListening(deck)}
 				<VolumeControl {deckId} />
 			{/if}
 			{#if showEdgeControls && isListeningGroupControlDeck}

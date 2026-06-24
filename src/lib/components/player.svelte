@@ -25,6 +25,7 @@
 	import {leaveBroadcast, getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast.js'
 	import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
+	import {isListening, isAutoRadio, autoRotationStart, listeningChannelId} from '$lib/player/clock'
 	import {appState, canEditChannel, removeDeck, deckAccent} from '$lib/app-state.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import Icon from '$lib/components/icon.svelte'
@@ -66,10 +67,10 @@
 		Object.keys(appState.decks)
 			.map(Number)
 			.sort((a, b) => a - b)
-			.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
+			.filter((id) => isListening(appState.decks[id]))
 	)
 	let isListeningGroupControlDeck = $derived(
-		!deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
+		!isListening(deck) || listeningDeckIds[0] === deckId
 	)
 	let hasListeningMultiDeck = $derived(listeningDeckIds.length > 1)
 	let listeningVideoMixActive = $derived.by(() => {
@@ -131,16 +132,18 @@
 
 	let didPlay = $state(false)
 	let userHasPlayed = $state(false)
-	const isListeningToBroadcast = $derived(Boolean(deck?.listening_to_channel_id))
-	const isSyncedListeningMode = $derived(Boolean(isListeningToBroadcast || deck?.auto_radio))
+	const isListeningToBroadcast = $derived(isListening(deck))
+	const isSyncedListeningMode = $derived(isListeningToBroadcast || isAutoRadio(deck))
 	let showDeckActions = $derived(!isListeningToBroadcast || isListeningGroupControlDeck)
 
-	const listenSlug = $derived(
-		deck?.listening_to_channel_id
-			? (channelsCollection.state.get(deck.listening_to_channel_id)?.slug ??
-					broadcastsCollection.state.get(deck.listening_to_channel_id)?.channels?.slug)
-			: undefined
-	)
+	const listenSlug = $derived.by(() => {
+		const id = listeningChannelId(deck)
+		if (!id) return undefined
+		return (
+			channelsCollection.state.get(id)?.slug ??
+			broadcastsCollection.state.get(id)?.channels?.slug
+		)
+	})
 	const broadcastSlug = $derived(
 		deck?.broadcasting_channel_id
 			? channelsCollection.state.get(deck.broadcasting_channel_id)?.slug
@@ -170,13 +173,13 @@
 	})
 
 	const autoUri = $derived(
-		deck?.auto_radio && deck.playlist_slug
+		isAutoRadio(deck) && deck.playlist_slug
 			? viewLabel(deck.view ?? {sources: [{channels: [deck.playlist_slug]}]}) ||
 					`@${deck.playlist_slug}`
 			: undefined
 	)
 	const headerPresenceCount = $derived(
-		deck?.listening_to_channel_id && listenSlug
+		isListening(deck) && listenSlug
 			? (channelPresence[listenSlug]?.broadcast ?? 0)
 			: deck?.broadcasting_channel_id && broadcastSlug
 				? (channelPresence[broadcastSlug]?.broadcast ?? 0)
@@ -268,7 +271,7 @@
 	}
 
 	function handleEndTrack() {
-		if (deck?.listening_to_channel_id) return
+		if (isListening(deck)) return
 		next(deckId, 'track_completed')
 	}
 
@@ -305,7 +308,7 @@
 		const next = !listeningVideoMixActive
 		for (const id of listeningDeckIds) {
 			const listeningDeck = appState.decks[id]
-			if (!listeningDeck?.listening_to_channel_id) continue
+			if (!isListening(listeningDeck)) continue
 			listeningDeck.video_mix = next
 			if (next) listeningDeck.hide_video_player = false
 		}
@@ -436,18 +439,14 @@
 
 	// Auto-radio drift — re-evaluates on every timeupdate (~250ms while playing)
 	$effect(() => {
-		if (!deck?.auto_radio || deck.auto_radio_rotation_start == null) return
+		const rotationStart = autoRotationStart(deck)
+		if (rotationStart == null) return
 		const t = mediaCurrentTime
 		// Skip while the initial seek is still landing. joinAutoRadio/resyncAutoRadio
 		// set drifted=false immediately; this guard prevents a false-positive
 		// drifted flip before the media element has moved off 0.
 		if (t < DRIFT_TOLERANCE_SECONDS) return
-		const snap = playbackState(
-			syncAutoTracks,
-			syncTotalDuration,
-			deck.auto_radio_rotation_start,
-			Date.now()
-		)
+		const snap = playbackState(syncAutoTracks, syncTotalDuration, rotationStart, Date.now())
 		const drifted =
 			!snap ||
 			deck.playlist_track !== snap.currentTrack.id ||
@@ -462,7 +461,7 @@
 	const sharePresence = $derived(appState.user?.user_metadata?.share_presence !== false)
 	$effect(() => {
 		if (!sharePresence) return
-		const autoSlug = deck?.auto_radio ? deck.playlist_slug : undefined
+		const autoSlug = isAutoRadio(deck) ? deck.playlist_slug : undefined
 
 		if (autoSlug) {
 			untrack(() => trackAutoRadioPresence(autoSlug, deck.view))
@@ -480,7 +479,7 @@
 
 	// Broadcast drift — O(1) arithmetic per tick
 	$effect(() => {
-		if (!deck?.listening_to_channel_id) return
+		if (!isListening(deck)) return
 		const t = mediaCurrentTime
 		const tr = track
 		if (!tr) return
@@ -566,7 +565,7 @@
 								{deck?.hide_video_player ? m.player_hidden() : m.player_visible()}
 								<Icon icon="tv" size={14} />
 							</button>
-							{#if !isListeningToBroadcast && !deck?.auto_radio}
+							{#if !isListeningToBroadcast && !isAutoRadio(deck)}
 								<button
 									onclick={() => toggleQueuePanel(deckId)}
 									class:active={!deck?.hide_queue_panel}
@@ -671,7 +670,7 @@
 				{mediaDuration}
 				trackDuration={track?.duration}
 				isPlaying={Boolean(deck?.is_playing)}
-				disabled={isListeningToBroadcast || Boolean(deck?.auto_radio)}
+				disabled={isListeningToBroadcast || isAutoRadio(deck)}
 				onseek={(val) => {
 					if (deck) deck.media_current_time = val
 					if (mediaElement) mediaElement.currentTime = val
@@ -712,9 +711,9 @@
 			{/if}
 		</footer>
 
-		{#if !isListeningToBroadcast || deck?.auto_radio}
+		{#if !isListeningToBroadcast || isAutoRadio(deck)}
 			<menu class="controls">
-				{#if !isListeningToBroadcast && !deck?.auto_radio}
+				{#if !isListeningToBroadcast && !isAutoRadio(deck)}
 					{@render btnPrev()}
 					{@render btnPlay()}
 					{@render btnNext()}
@@ -730,13 +729,13 @@
 					{/if}
 					<SpeedControl {deckId} {provider} />
 					<VolumeControl {deckId} />
-				{:else if deck?.auto_radio}
+				{:else if isAutoRadio(deck)}
 					{@render btnPlay()}
 					<VolumeControl {deckId} />
 				{/if}
 			</menu>
 		{/if}
-		{#if deck?.auto_radio}
+		{#if isAutoRadio(deck)}
 			{@const autoNotSynced = !!deck?.drifted}
 			<div class="sync-footer">
 				<button

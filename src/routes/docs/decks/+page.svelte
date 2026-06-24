@@ -141,8 +141,8 @@
 
 				<dt>Broadcast</dt>
 				<dd>
-					broadcasting: <code>{deck.broadcasting_channel_id ?? 'none'}</code> &middot; listening:
-					<code>{deck.listening_to_channel_id ?? 'none'}</code>
+					broadcasting: <code>{deck.broadcasting_channel_id ?? 'none'}</code> &middot; clock:
+					<code>{deck.clock ? JSON.stringify(deck.clock) : 'self'}</code>
 				</dd>
 			</dl>
 		</details>

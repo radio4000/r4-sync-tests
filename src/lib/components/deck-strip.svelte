@@ -3,6 +3,7 @@
 	import {appState, deckAccent} from '$lib/app-state.svelte'
 	import {captureEventsCollection} from '$lib/collections/capture-events'
 	import {resyncBroadcastDeck} from '$lib/broadcast'
+	import {isListening, listeningChannelId} from '$lib/player/clock'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {channelPresence} from '$lib/presence.svelte'
 	import Deck from '$lib/components/deck.svelte'
@@ -16,14 +17,14 @@
 			.sort((a, b) => a - b)
 	)
 	let listeningDeckIds = $derived(
-		deckIds.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
+		deckIds.filter((id) => isListening(appState.decks[id]))
 	)
 	let videoMixListening = $derived(
 		listeningDeckIds.some((id) =>
 			Boolean(appState.decks[id]?.video_mix && !appState.decks[id]?.compact)
 		)
 	)
-	let localDeckIds = $derived(deckIds.filter((id) => !appState.decks[id]?.listening_to_channel_id))
+	let localDeckIds = $derived(deckIds.filter((id) => !isListening(appState.decks[id])))
 	let allDecksCompact = $derived(
 		deckIds.length > 0 && deckIds.every((id) => appState.decks[id]?.compact)
 	)
@@ -44,7 +45,7 @@
 
 	// Non-compact decks in live mode — shared exit bar
 	let visibleListeningDeckIds = $derived(
-		visibleDeckIds.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
+		visibleDeckIds.filter((id) => isListening(appState.decks[id]))
 	)
 	let expandedListeningMultiDeck = $derived(
 		visibleListeningDeckIds.length > 0 &&
@@ -58,7 +59,7 @@
 	let listenPresenceCount = $derived.by(() => {
 		let total = 0
 		for (const id of visibleListeningDeckIds) {
-			const channelId = appState.decks[id]?.listening_to_channel_id
+			const channelId = listeningChannelId(appState.decks[id])
 			if (!channelId) continue
 			const slug = channelsCollection.state.get(channelId)?.slug
 			if (!slug) continue

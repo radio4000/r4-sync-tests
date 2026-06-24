@@ -1,4 +1,5 @@
 import {extractHashtags, extractMentions, channelAvatarUrl} from '$lib/utils.ts'
+import {listeningChannelId} from '$lib/player/clock'
 
 /** Prefix a bare tag with `#` (view tags come without it). */
 function prefixTag(value) {
@@ -63,7 +64,7 @@ export function deriveChannelActivityState(params) {
 			if (prefixed) activeTags.add(prefixed)
 		}
 
-		const listeningId = deck?.listening_to_channel_id
+		const listeningId = listeningChannelId(deck)
 		if (listeningId) {
 			activeChannelIds.add(listeningId)
 			const ch = channelsById.get(listeningId)

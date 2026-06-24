@@ -4,6 +4,7 @@ import {createQuery, keepPreviousData} from '@tanstack/svelte-query'
 import {inArray} from '@tanstack/db'
 import {tracksCollection, normalizeTrackMedia} from '$lib/collections/tracks'
 import {channelsCollection} from '$lib/collections/channels'
+import {isAutoRadio} from '$lib/player/clock'
 import {sdk} from '@radio4000/sdk'
 import {searchTracks} from '$lib/search-fts'
 import type {Channel, Deck, Track} from '$lib/types'
@@ -42,7 +43,7 @@ export function resolveViewStrategy(source?: ViewSource): ViewStrategy {
 /** Auto-radio decks matching a specific View identity. */
 export function getAutoDecksForView(decks: Deck[], view?: View): Deck[] {
 	const key = viewURI(view)
-	return decks.filter((d) => d.auto_radio && viewURI(d.view) === key)
+	return decks.filter((d) => isAutoRadio(d) && viewURI(d.view) === key)
 }
 
 /**

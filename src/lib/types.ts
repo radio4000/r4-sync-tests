@@ -16,6 +16,17 @@ export interface TrackMetadataFields {
 // Track joined with metadata from TrackMeta collection
 export interface TrackWithMeta extends Track, TrackMetadataFields {}
 
+/**
+ * Axis-1 clock: who drives this deck's playhead. Exactly one kind per deck;
+ * `listener` and `auto` on one deck is unrepresentable (was the both-set nonsense).
+ * Absent (`deck.clock === undefined`) means `self` — manual playback.
+ * Identity only — position/drifted/resync are computed by `getClock()` in `player/clock.ts`.
+ * Auto's source is `deck.view`, not a channel id, so only the rotation start lives here.
+ */
+export type DeckClockState =
+	| {kind: 'listener'; channel: string}
+	| {kind: 'auto'; rotationStart: number}
+
 export interface Deck {
 	id: number
 	playlist_title?: string
@@ -34,10 +45,9 @@ export interface Deck {
 	hide_queue_panel: boolean
 	queue_panel_width?: number
 	broadcasting_channel_id?: string
-	listening_to_channel_id?: string
-	auto_radio?: boolean
+	/** Axis-1 clock: who drives this deck's playhead. Absent = self (manual). See {@link DeckClockState}. */
+	clock?: DeckClockState
 	view?: import('$lib/views').View
-	auto_radio_rotation_start?: number
 	/** Listener/auto deck has drifted from its source clock. One flag for both modes — a deck is only ever one. */
 	drifted?: boolean
 	play_id?: string

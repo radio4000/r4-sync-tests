@@ -12,6 +12,7 @@ import {channelsCollection} from '$lib/collections/channels'
 import {broadcastsCollection} from '$lib/collections/broadcasts'
 import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 import {unpackEphemeralTrack} from '$lib/player/broadcast-payload'
+import {isListening, listeningChannelId} from '$lib/player/clock'
 import type {Channel, Track, BroadcastDeckState} from '$lib/types'
 
 export interface DeckDisplay {
@@ -38,7 +39,7 @@ export function createDeckDisplay(deckId: number): DeckDisplay {
 	})
 
 	const listeningBroadcastDeck = $derived.by<BroadcastDeckState | undefined>(() => {
-		const channelId = deck?.listening_to_channel_id
+		const channelId = listeningChannelId(deck)
 		if (!channelId) return undefined
 		const trackId = deck?.playlist_track
 		void broadcastsCollection.state.size
@@ -62,7 +63,7 @@ export function createDeckDisplay(deckId: number): DeckDisplay {
 	const channel = $derived(channelQuery.data?.[0] as Channel | undefined)
 
 	const broadcasterChannel = $derived.by(() => {
-		const channelId = deck?.listening_to_channel_id
+		const channelId = listeningChannelId(deck)
 		if (!channelId) return undefined
 		void channelsCollection.state.size
 		return channelsCollection.state.get(channelId) as Channel | undefined
@@ -87,10 +88,10 @@ export function createDeckDisplay(deckId: number): DeckDisplay {
 	const displayChannel = $derived(channel ?? lastChannel)
 
 	const headerChannel = $derived(
-		deck?.listening_to_channel_id ? (broadcasterChannel ?? displayChannel) : displayChannel
+		isListening(deck) ? (broadcasterChannel ?? displayChannel) : displayChannel
 	)
 	const secondaryHeaderChannel = $derived.by(() => {
-		if (!deck?.listening_to_channel_id || !headerChannel || !displayChannel) return undefined
+		if (!isListening(deck) || !headerChannel || !displayChannel) return undefined
 		const same =
 			(headerChannel.id && displayChannel.id && headerChannel.id === displayChannel.id) ||
 			(headerChannel.slug && displayChannel.slug && headerChannel.slug === displayChannel.slug)

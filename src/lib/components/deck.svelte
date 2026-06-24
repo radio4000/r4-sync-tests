@@ -1,6 +1,7 @@
 <script>
 	import {page} from '$app/state'
 	import {appState} from '$lib/app-state.svelte'
+	import {isListening, clockKind} from '$lib/player/clock'
 	import {captureEventsCollection} from '$lib/collections/capture-events'
 	import Player from '$lib/components/player.svelte'
 	import QueuePanel from '$lib/components/queue-panel.svelte'
@@ -10,14 +11,14 @@
 
 	let deck = $derived(appState.decks[deckId])
 	let showPlayer = $derived(page.url.searchParams.get('player') !== 'false')
-	let isListeningToBroadcast = $derived(Boolean(deck?.listening_to_channel_id))
+	let isListeningToBroadcast = $derived(isListening(deck))
 	let isBroadcasting = $derived(Boolean(deck?.broadcasting_channel_id))
-	let isAutoRadio = $derived(Boolean(deck?.auto_radio))
+	let isAutoRadio = $derived(clockKind(deck) === 'auto')
 	let firstListeningDeckId = $derived.by(() =>
 		Object.keys(appState.decks)
 			.map(Number)
 			.sort((a, b) => a - b)
-			.find((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
+			.find((id) => isListening(appState.decks[id]))
 	)
 
 	// For deck 1: only show when there are tracks queued/playing or any history exists.

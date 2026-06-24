@@ -29,6 +29,7 @@
 	import {queryClient} from '$lib/collections/query-client'
 	import {trackAppPresence, untrackAppPresence} from '$lib/presence.svelte'
 	import {leaveBroadcast, resyncBroadcastDeck} from '$lib/broadcast.js'
+	import {isListening, listeningChannelId} from '$lib/player/clock'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {channelPresence} from '$lib/presence.svelte'
 	import Icon from '$lib/components/icon.svelte'
@@ -50,7 +51,7 @@
 				!d.compact &&
 				((d.playlist_tracks?.length ?? 0) > 0 ||
 					Boolean(d.playlist_track) ||
-					Boolean(d.listening_to_channel_id))
+					isListening(d))
 		)
 	)
 	let allDeckIds = $derived(
@@ -60,10 +61,10 @@
 	)
 	let compactDeckIds = $derived(allDeckIds.filter((id) => Boolean(appState.decks[id]?.compact)))
 	let compactListeningDeckIds = $derived(
-		compactDeckIds.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
+		compactDeckIds.filter((id) => isListening(appState.decks[id]))
 	)
 	let compactLocalDeckIds = $derived(
-		compactDeckIds.filter((id) => !appState.decks[id]?.listening_to_channel_id)
+		compactDeckIds.filter((id) => !isListening(appState.decks[id]))
 	)
 	let compactListeningDecksSynced = $derived(
 		compactListeningDeckIds.length > 0 &&
@@ -72,7 +73,7 @@
 	let compactListenPresenceCount = $derived.by(() => {
 		let total = 0
 		for (const id of compactListeningDeckIds) {
-			const channelId = appState.decks[id]?.listening_to_channel_id
+			const channelId = listeningChannelId(appState.decks[id])
 			if (!channelId) continue
 			const slug = channelsCollection.state.get(channelId)?.slug
 			if (!slug) continue

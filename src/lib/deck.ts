@@ -1,5 +1,6 @@
 import type {Deck} from '$lib/types'
 import {viewLabel} from '$lib/views'
+import {isAutoRadio, listeningChannelId} from '$lib/player/clock'
 
 /** Deck title: use the given title, or derive one from the view/slug. */
 export function deckTitle(deck: Deck | undefined, title?: string): string {
@@ -17,7 +18,7 @@ export function deckValues(decks: Record<number, Deck>): Deck[] {
 export function findAutoDecksForChannel(decks: Record<number, Deck>, slug?: string): Deck[] {
 	if (!slug) return []
 	return deckValues(decks).filter(
-		(d) => d.auto_radio && (d.view?.sources[0]?.channels?.[0] === slug || d.playlist_slug === slug)
+		(d) => isAutoRadio(d) && (d.view?.sources[0]?.channels?.[0] === slug || d.playlist_slug === slug)
 	)
 }
 
@@ -32,7 +33,7 @@ export function pickAutoResyncDeck(
 	if (!candidates.length) return undefined
 	const active = decks[activeDeckId]
 	if (
-		active?.auto_radio &&
+		isAutoRadio(active) &&
 		(active.view?.sources[0]?.channels?.[0] === slug || active.playlist_slug === slug)
 	) {
 		return active.id
@@ -72,8 +73,8 @@ export function findListeningDeck(
 ): Deck | undefined {
 	if (!channelId) return undefined
 	const active = decks[activeDeckId]
-	if (active?.listening_to_channel_id === channelId) return active
-	return deckValues(decks).find((d) => d.listening_to_channel_id === channelId)
+	if (listeningChannelId(active) === channelId) return active
+	return deckValues(decks).find((d) => listeningChannelId(d) === channelId)
 }
 
 /** Check if any deck is broadcasting for a given channel ID. */
@@ -91,5 +92,5 @@ export function isChannelPlaying(decks: Record<number, Deck>, slug?: string): bo
 /** Check if any deck is listening to a given channel ID. */
 export function isListeningToChannel(decks: Record<number, Deck>, channelId?: string): boolean {
 	if (!channelId) return false
-	return deckValues(decks).some((d) => d.listening_to_channel_id === channelId)
+	return deckValues(decks).some((d) => listeningChannelId(d) === channelId)
 }

@@ -5,6 +5,7 @@
 	import Tag from '$lib/components/tag.svelte'
 	import PresenceCount from '$lib/components/presence-count.svelte'
 	import {deckTitle} from '$lib/deck'
+	import {clockKind} from '$lib/player/clock'
 	import {extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
 	import * as m from '$lib/paraglide/messages'
 
@@ -47,8 +48,8 @@
 	const isBroadcasting = $derived(
 		Boolean(deck?.broadcasting_channel_id && deck.broadcasting_channel_id === channel?.id)
 	)
-	const showAutoButton = $derived(Boolean(deck?.auto_radio))
-	const isListening = $derived(Boolean(deck?.listening_to_channel_id))
+	const showAutoButton = $derived(clockKind(deck) === 'auto')
+	const isListening = $derived(clockKind(deck) === 'listener')
 	const listeningWhoSlug = $derived(isListening ? channel?.slug : undefined)
 	const listeningWhomSlug = $derived(isListening ? track?.slug || deck?.playlist_slug : undefined)
 	const broadcastSyncDrifted = $derived(Boolean(deck?.drifted))

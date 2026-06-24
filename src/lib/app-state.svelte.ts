@@ -1,11 +1,13 @@
 import type {AppState, Deck} from './types.ts'
 import {logger} from '$lib/logger'
 import {LOCAL_STORAGE_KEYS} from '$lib/storage-keys'
+import {isListening} from '$lib/player/clock'
 
 function resetTransientDeckState(deck: Deck): Deck {
 	deck.is_playing = false
 	deck.broadcasting_channel_id = undefined
-	deck.listening_to_channel_id = undefined
+	// Listener clocks are transient (never persisted); auto clocks survive a reload.
+	if (isListening(deck)) deck.clock = undefined
 	deck.drifted = undefined
 	deck.play_id = undefined
 	deck.track_played_at = undefined
@@ -25,7 +27,7 @@ export function serializeAppStateForStorage(state: AppState): Record<string, unk
 	const decks: Record<number, Partial<Deck>> = {}
 
 	for (const [id, deck] of Object.entries(state.decks)) {
-		if (deck.listening_to_channel_id) continue
+		if (isListening(deck)) continue
 		decks[Number(id)] = {
 			id: deck.id,
 			playlist_title: deck.playlist_title,
@@ -40,9 +42,8 @@ export function serializeAppStateForStorage(state: AppState): Record<string, unk
 			expanded: deck.expanded,
 			hide_queue_panel: deck.hide_queue_panel,
 			queue_panel_width: deck.queue_panel_width,
-			auto_radio: deck.auto_radio,
+			clock: deck.clock,
 			view: deck.view,
-			auto_radio_rotation_start: deck.auto_radio_rotation_start,
 			speed: deck.speed
 		}
 	}
@@ -54,7 +55,7 @@ export function serializeAppStateForStorage(state: AppState): Record<string, unk
 export function serializeQueuesForStorage(decks: AppState['decks']) {
 	const queues: Record<number, {playlist_tracks: string[]; playlist_tracks_shuffled: string[]}> = {}
 	for (const [id, deck] of Object.entries(decks)) {
-		if (deck.listening_to_channel_id) continue
+		if (isListening(deck)) continue
 		queues[Number(id)] = {
 			playlist_tracks: deck.playlist_tracks,
 			playlist_tracks_shuffled: deck.playlist_tracks_shuffled
@@ -82,7 +83,6 @@ export function createDefaultDeck(id: number): Deck {
 		hide_queue_panel: false,
 		queue_panel_width: undefined,
 		broadcasting_channel_id: undefined,
-		listening_to_channel_id: undefined,
 		track_played_at: undefined,
 		seeked_at: undefined,
 		seek_position: undefined,

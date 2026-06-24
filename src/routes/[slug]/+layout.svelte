@@ -23,6 +23,7 @@
 	} from '$lib/api'
 	import {hasAutoRadioCoverage} from '$lib/player/auto-radio'
 	import {findAutoDecksForChannel, findChannelPlayingDeck, findListeningDeck} from '$lib/deck'
+	import {isListening, isAutoRadio, listeningChannelId} from '$lib/player/clock'
 	import ButtonFollow from '$lib/components/button-follow.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import ChannelCanvasBg from '$lib/components/channel-canvas-bg.svelte'
@@ -143,7 +144,7 @@
 	let isListeningToChannel = $derived(
 		Boolean(
 			channel?.id &&
-			Object.values(appState.decks).some((d) => d.listening_to_channel_id === channel.id)
+			Object.values(appState.decks).some((d) => listeningChannelId(d) === channel.id)
 		)
 	)
 	let canEdit = $derived(canEditChannel(channel?.id))
@@ -160,7 +161,7 @@
 	)
 	let isChannelPlaying = $derived(Boolean(isChannelLoaded && activeDeck?.is_playing))
 	let isAutoEnabled = $derived(
-		Boolean(activeDeck?.auto_radio && activeDeck?.playlist_slug === slug)
+		Boolean(isAutoRadio(activeDeck) && activeDeck?.playlist_slug === slug)
 	)
 	let canShowAutoButton = $derived(hasAutoRadioCoverage(allChannelTracks))
 	let activeAutoDrifted = $derived(Boolean(isAutoEnabled && activeDeck?.drifted))
@@ -277,10 +278,10 @@
 		if (!channel) return
 		const deckId = appState.active_deck_id
 		const deck = appState.decks[deckId]
-		if (deck?.listening_to_channel_id) {
+		if (isListening(deck)) {
 			leaveBroadcast(deckId)
 		}
-		if (deck?.auto_radio && deck.playlist_slug === slug) {
+		if (isAutoRadio(deck) && deck.playlist_slug === slug) {
 			void resyncAutoRadio(deckId)
 			return
 		}

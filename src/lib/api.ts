@@ -33,6 +33,7 @@ import {
 	type AutoTrack
 } from '$lib/player/auto-radio'
 import {findAutoDecksForChannel, pickAutoResyncDeck} from '$lib/deck'
+import {isListening, isAutoRadio, autoRotationStart} from '$lib/player/clock'
 import {processViewTracks} from '$lib/views.svelte'
 import {serializeView, viewLabel, normalizeView, type View} from '$lib/views'
 
@@ -174,10 +175,9 @@ export async function playTrack(
 
 	// Switching from live/auto to a normal play action should reuse this deck and clear mode state.
 	if (isNormalPlayStart(startReason)) {
-		if (deck.listening_to_channel_id) leaveBroadcast(deckId)
-		deck.auto_radio = undefined
+		if (isListening(deck)) leaveBroadcast(deckId)
+		deck.clock = undefined
 		deck.drifted = undefined
-		deck.auto_radio_rotation_start = undefined
 	}
 
 	const track = tracksCollection.get(id)
@@ -239,8 +239,8 @@ export async function playTrack(
 			url: track.url,
 			start_reason: startReason,
 			shuffle: deck.shuffle,
-			auto_radio: !!deck.auto_radio,
-			broadcast: !!deck.listening_to_channel_id
+			auto_radio: isAutoRadio(deck),
+			broadcast: isListening(deck)
 		})
 	}
 
@@ -310,7 +310,7 @@ export async function playChannel(
 	leaveBroadcast(deckId)
 	const d = getDeck(deckId)
 	if (d) {
-		d.auto_radio = undefined
+		d.clock = undefined
 		d.drifted = undefined
 	}
 	await ensureTracksLoaded(slug)
@@ -361,7 +361,7 @@ export async function shufflePlayChannel(deckId, {id, slug}) {
 	leaveBroadcast(deckId)
 	const d = getDeck(deckId)
 	if (d) {
-		d.auto_radio = undefined
+		d.clock = undefined
 		d.drifted = undefined
 	}
 	await ensureTracksLoaded(slug)
@@ -439,7 +439,7 @@ export function addToPlaylist(deckId, trackIds) {
 		deck.playlist_tracks_shuffled = shuffleArray(deck.playlist_tracks)
 	}
 	deck.view = undefined
-	deck.auto_radio = undefined
+	if (isAutoRadio(deck)) deck.clock = undefined
 	deck.drifted = undefined
 	log.log('addToPlaylist', {
 		deckId,
@@ -462,7 +462,7 @@ export function playNext(deckId, trackIds) {
 	if (!currentId) {
 		deck.playlist_tracks = ids
 		deck.view = undefined
-		deck.auto_radio = undefined
+		if (isAutoRadio(deck)) deck.clock = undefined
 		deck.drifted = undefined
 		return
 	}
@@ -475,7 +475,7 @@ export function playNext(deckId, trackIds) {
 		)
 	}
 	deck.view = undefined
-	deck.auto_radio = undefined
+	if (isAutoRadio(deck)) deck.clock = undefined
 	deck.drifted = undefined
 	log.log('play_next', {deckId, ids, after: currentId})
 }
@@ -493,7 +493,7 @@ export function removeFromQueue(deckId, trackId) {
 		deck.playlist_tracks_shuffled = queueRemove(deck.playlist_tracks_shuffled, trackId)
 	}
 	deck.view = undefined
-	deck.auto_radio = undefined
+	if (isAutoRadio(deck)) deck.clock = undefined
 	deck.drifted = undefined
 	log.log('remove_from_queue', {deckId, trackId})
 }
@@ -523,9 +523,9 @@ export function toggleVideo(deckId) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.hide_video_player
-	if (deck.listening_to_channel_id) {
+	if (isListening(deck)) {
 		for (const d of Object.values(appState.decks)) {
-			if (d.listening_to_channel_id) d.hide_video_player = newValue
+			if (isListening(d)) d.hide_video_player = newValue
 		}
 	} else {
 		deck.hide_video_player = newValue
@@ -538,9 +538,9 @@ export function toggleDeckCompact(deckId) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.compact
-	if (deck.listening_to_channel_id) {
+	if (isListening(deck)) {
 		for (const d of Object.values(appState.decks)) {
-			if (d.listening_to_channel_id) {
+			if (isListening(d)) {
 				d.compact = newValue
 				if (newValue && d.expanded) d.expanded = false
 			}
@@ -556,9 +556,9 @@ export function togglePlayerExpanded(deckId) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.expanded
-	if (deck.listening_to_channel_id) {
+	if (isListening(deck)) {
 		for (const d of Object.values(appState.decks)) {
-			if (d.listening_to_channel_id) {
+			if (isListening(d)) {
 				d.expanded = newValue
 				if (newValue && d.compact) d.compact = false
 				if (newValue && d.hide_video_player) d.hide_video_player = false
@@ -885,9 +885,8 @@ export async function joinAutoRadio(deckId: number, tracks: Track[], view?: View
 	await playTrack(deckId, snap.currentTrack.id, null, 'play_channel')
 	// playTrack → setPlaylist clears deck.view; restore it so resyncAutoRadio can run
 	if (appState.decks[deckId]) {
-		appState.decks[deckId].auto_radio = true
+		appState.decks[deckId].clock = {kind: 'auto', rotationStart: rotationStartUnix}
 		appState.decks[deckId].drifted = false
-		appState.decks[deckId].auto_radio_rotation_start = rotationStartUnix
 		if (view) appState.decks[deckId].view = view
 	}
 
@@ -929,19 +928,18 @@ async function seekToAutoRadioOffset(
 export function leaveAutoRadio(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
-	deck.auto_radio = undefined
+	deck.clock = undefined
 	deck.drifted = undefined
-	deck.auto_radio_rotation_start = undefined
 }
 
 export async function resyncAutoRadio(deckId: number) {
 	const deck = getDeck(deckId)
-	if (!deck?.auto_radio || !deck.view || deck.auto_radio_rotation_start == null) return
+	const rotationStartUnix = autoRotationStart(deck)
+	if (!deck?.view || rotationStartUnix == null) return
 
 	const view = deck.view
 	const slug = view.sources[0]?.channels?.[0]
 	if (!slug) return
-	const rotationStartUnix = deck.auto_radio_rotation_start
 
 	// Re-filter from local collection using the same view as joinAutoRadio
 	const channelTracks = [...tracksCollection.state.values()].filter((t) => t.slug === slug)
@@ -970,9 +968,8 @@ export async function resyncAutoRadio(deckId: number) {
 	// Restore auto-radio flags after loadDeckView/playTrack
 	const d = getDeck(deckId)
 	if (d) {
-		d.auto_radio = true
+		d.clock = {kind: 'auto', rotationStart: rotationStartUnix}
 		d.drifted = false
-		d.auto_radio_rotation_start = rotationStartUnix
 		if (label) d.playlist_title = label
 	}
 
