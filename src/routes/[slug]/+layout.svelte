@@ -252,7 +252,7 @@
 				return
 			}
 			if (isChannelLive) {
-				await joinBroadcast(appState.active_deck_id, channel.id)
+				await joinBroadcast(channel.id)
 				return
 			}
 		} finally {
@@ -324,7 +324,7 @@
 								type="button"
 								class="avatar-btn"
 								title={m.channel_card_join_broadcast()}
-								onclick={() => joinBroadcast(appState.active_deck_id, displayChannel.id)}
+								onclick={() => joinBroadcast(displayChannel.id)}
 							>
 								<ChannelAvatar id={displayChannel.image} alt={displayChannel.name} size={80} />
 							</button>

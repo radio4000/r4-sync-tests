@@ -29,7 +29,7 @@
 	function triggerPrimaryAction(event) {
 		event?.preventDefault()
 		if (isBroadcasting) {
-			joinBroadcast(appState.active_deck_id, channel.id)
+			joinBroadcast(channel.id)
 			return
 		}
 		if (isPlaying) {
@@ -134,7 +134,7 @@
 							<button
 								type="button"
 								role="menuitem"
-								onclick={() => joinBroadcast(appState.active_deck_id, channel.id)}
+								onclick={() => joinBroadcast(channel.id)}
 							>
 								<Icon icon="signal" />
 								{m.channel_card_join_broadcast()}

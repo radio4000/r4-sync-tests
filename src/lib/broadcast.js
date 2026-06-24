@@ -120,23 +120,15 @@ export function getBroadcastingChannelId() {
 }
 
 /**
- * @param {number} deckId
+ * Tune into a channel's broadcast. Additive: ensures this channel's listener
+ * decks exist and match the broadcast, leaving your self/auto decks and any
+ * other channel's listener decks untouched. Switching channels no longer wipes
+ * your session — drop a channel explicitly with leaveBroadcast/removeDeck.
  * @param {string} channelId
  */
-export async function joinBroadcast(deckId, channelId) {
-	log.log(`joinBroadcast @${label(channelId)} deck:${deckId}`)
+export async function joinBroadcast(channelId) {
+	log.log(`joinBroadcast @${label(channelId)}`)
 	try {
-		// If switching channels without leaving first, tear down old listeners.
-		const previousListeningChannels = new Set(
-			Object.values(appState.decks)
-				.map((deck) => listeningChannelId(deck))
-				.filter((id) => Boolean(id && id !== channelId))
-		)
-		for (const previousChannelId of previousListeningChannels) {
-			stopBroadcastStateListener(previousChannelId)
-			stopBroadcastTableListener(previousChannelId)
-		}
-
 		const {data} = /** @type {{data: Broadcast}} */ (
 			await sdk.supabase
 				.from('broadcast')
@@ -158,22 +150,12 @@ export async function joinBroadcast(deckId, channelId) {
 			}
 		}
 
-		// Tear down all existing decks before applying broadcast state
-		for (const id of getSortedDeckIds()) {
-			stopBroadcastSync(id)
-			clearUserInitiatedPlay(id)
-			removeDeck(id)
-		}
-
-		// Use decks jsonb if available (multi-deck), fall back to single-deck fields
+		// Reconcile only this channel's listener decks. Use the decks jsonb
+		// (multi-deck) or treat the legacy single-deck row as a one-element broadcast.
 		if (Array.isArray(data?.decks) && data.decks.length) {
 			await applyBroadcastState(channelId, data.decks)
 		} else if (data?.track_id) {
-			const deck = addDeck()
-			deck.compact = true
-			deck.clock = {kind: 'listener', channel: channelId}
-			deck.hide_queue_panel = true
-			await playBroadcastTrack(deck.id, data)
+			await applyBroadcastState(channelId, [data])
 		}
 
 		// Set active deck to the first listener deck
