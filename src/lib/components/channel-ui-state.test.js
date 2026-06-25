@@ -11,7 +11,7 @@ describe('deriveChannelActivityState', () => {
 					playlist_track: 't1',
 					is_playing: true
 				},
-				2: {view: {tags: ['dub']}, clock: {kind: 'listener', channel: 'c2'}}
+				2: {view: {tags: ['dub']}, clock: {kind: 'mirror', channel: 'c2'}}
 			},
 			tracksState: new Map([['t1', {id: 't1', slug: 'alpha', tags: ['techno']}]]),
 			channelsState: new Map([

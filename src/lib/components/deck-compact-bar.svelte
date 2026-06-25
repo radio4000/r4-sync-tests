@@ -2,8 +2,6 @@
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {appState, canEditChannel, removeDeck} from '$lib/app-state.svelte'
-	import {channelsCollection} from '$lib/collections/channels'
-	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {
 		togglePlayPause,
 		next,
@@ -16,7 +14,7 @@
 	} from '$lib/api'
 	import {getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
-	import {isListening, isAutoRadio, listeningChannelId} from '$lib/player/clock'
+	import {isMirroring, isAutoRadio} from '$lib/player/clock'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {parseUrl} from 'media-now/parse-url'
 	import * as m from '$lib/paraglide/messages'
@@ -27,21 +25,19 @@
 	import VolumeControl from '$lib/components/volume-control.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
-	import {channelPresence} from '$lib/presence.svelte'
-	import {viewLabel} from '$lib/views'
 
 	/** @type {{deckId: number, showEdgeControls?: boolean}} */
 	let {deckId, showEdgeControls = true} = $props()
 
 	let deck = $derived(appState.decks[deckId])
 	let isActiveDeck = $derived(appState.active_deck_id === deckId)
-	let listeningDeckIds = $derived(
+	let mirrorDeckIds = $derived(
 		Object.keys(appState.decks)
 			.map(Number)
 			.sort((a, b) => a - b)
-			.filter((id) => isListening(appState.decks[id]))
+			.filter((id) => isMirroring(appState.decks[id]))
 	)
-	let isListeningGroupControlDeck = $derived(!isListening(deck) || listeningDeckIds[0] === deckId)
+	let mirrorGroupControlDeck = $derived(!isMirroring(deck) || mirrorDeckIds[0] === deckId)
 
 	const display = createDeckDisplay(() => deckId)
 	const track = $derived(display.track)
@@ -49,33 +45,7 @@
 	const displayChannel = $derived(display.displayChannel)
 	const headerChannel = $derived(display.headerChannel)
 	const secondaryChannel = $derived(display.secondaryHeaderChannel)
-	const listenSlug = $derived.by(() => {
-		const id = listeningChannelId(deck)
-		if (!id) return undefined
-		return (
-			channelsCollection.state.get(id)?.slug ?? broadcastsCollection.state.get(id)?.channels?.slug
-		)
-	})
-	const broadcastSlug = $derived(
-		appState.broadcasting_channel_id && !isListening(deck)
-			? channelsCollection.state.get(appState.broadcasting_channel_id)?.slug
-			: undefined
-	)
-	const autoUri = $derived(
-		isAutoRadio(deck) && deck.playlist_slug
-			? viewLabel(deck.view ?? {sources: [{channels: [deck.playlist_slug]}]}) ||
-					`@${deck.playlist_slug}`
-			: undefined
-	)
-	const modePresenceCount = $derived(
-		isListening(deck) && listenSlug
-			? (channelPresence[listenSlug]?.broadcast ?? 0)
-			: broadcastSlug
-				? (channelPresence[broadcastSlug]?.broadcast ?? 0)
-				: autoUri && deck?.playlist_slug
-					? (channelPresence[deck.playlist_slug]?.byUri?.[autoUri] ?? 0)
-					: 0
-	)
+	const modePresenceCount = $derived(display.presenceCount)
 	let canEditTrackChannel = $derived(
 		Boolean(displayChannel?.id && canEditChannel(displayChannel.id))
 	)
@@ -114,7 +84,7 @@
 			{mediaDuration}
 			trackDuration={displayTrack?.duration}
 			isPlaying={Boolean(deck?.is_playing)}
-			disabled={isListening(deck) || isAutoRadio(deck)}
+			disabled={isMirroring(deck) || isAutoRadio(deck)}
 			onseek={(val) => {
 				if (deck) deck.media_current_time = val
 				const mediaElement = getMediaPlayer(deckId)
@@ -123,7 +93,7 @@
 		/>
 	{/if}
 	<div class="header-info" class:active-track-bg={Boolean(displayTrack)}>
-		{#if showEdgeControls && (!isListening(deck) || isListeningGroupControlDeck)}
+		{#if showEdgeControls && (!isMirroring(deck) || mirrorGroupControlDeck)}
 			<button
 				class="close-deck"
 				onclick={() => {
@@ -172,7 +142,7 @@
 			</div>
 		{/if}
 		<menu class="controls">
-			{#if !isListening(deck) && !isAutoRadio(deck)}
+			{#if !isMirroring(deck) && !isAutoRadio(deck)}
 				<button
 					onclick={() => previous(deckId, 'user_prev')}
 					aria-label={m.player_compact_prev()}
@@ -233,10 +203,10 @@
 						<span class="live-count">{modePresenceCount}</span>
 					{/if}
 				</button>
-			{:else if !isListening(deck)}
+			{:else if !isMirroring(deck)}
 				<VolumeControl {deckId} />
 			{/if}
-			{#if showEdgeControls && isListeningGroupControlDeck}
+			{#if showEdgeControls && mirrorGroupControlDeck}
 				<button
 					class="expand"
 					onclick={() => toggleDeckCompact(deckId)}

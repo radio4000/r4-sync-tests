@@ -134,7 +134,7 @@ How filtered tracks become playback:
               │     Remote:        realtime subscription pushes changes
               │     Listener side: joinBroadcast → mirror deck state → player
               │                    leaveBroadcast → stop mirroring
-              │     Drift:         listener seeks/skips → listening_drifted
+              │     Drift:         mirror deck seeks/skips → deck.drifted
               │
               └── Auto-radio (no DJ)
                     tracks → toAutoTracks (need duration)

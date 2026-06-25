@@ -3,7 +3,7 @@
 	import {appState, deckAccent} from '$lib/app-state.svelte'
 	import {captureEventsCollection} from '$lib/collections/capture-events'
 	import {resyncBroadcastDeck} from '$lib/broadcast'
-	import {isListening, listeningChannelId} from '$lib/player/clock'
+	import {isMirroring, mirroredChannelId} from '$lib/player/clock'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {channelPresence} from '$lib/presence.svelte'
 	import Deck from '$lib/components/deck.svelte'
@@ -16,13 +16,13 @@
 			.map(Number)
 			.sort((a, b) => a - b)
 	)
-	let listeningDeckIds = $derived(deckIds.filter((id) => isListening(appState.decks[id])))
+	let mirrorDeckIds = $derived(deckIds.filter((id) => isMirroring(appState.decks[id])))
 	let videoMixListening = $derived(
-		listeningDeckIds.some((id) =>
+		mirrorDeckIds.some((id) =>
 			Boolean(appState.decks[id]?.video_mix && !appState.decks[id]?.compact)
 		)
 	)
-	let localDeckIds = $derived(deckIds.filter((id) => !isListening(appState.decks[id])))
+	let localDeckIds = $derived(deckIds.filter((id) => !isMirroring(appState.decks[id])))
 	let allDecksCompact = $derived(
 		deckIds.length > 0 && deckIds.every((id) => appState.decks[id]?.compact)
 	)
@@ -43,7 +43,7 @@
 
 	// Non-compact decks in live mode — shared exit bar
 	let visibleListeningDeckIds = $derived(
-		visibleDeckIds.filter((id) => isListening(appState.decks[id]))
+		visibleDeckIds.filter((id) => isMirroring(appState.decks[id]))
 	)
 	let expandedListeningMultiDeck = $derived(
 		visibleListeningDeckIds.length > 0 &&
@@ -57,7 +57,7 @@
 	let listenPresenceCount = $derived.by(() => {
 		let total = 0
 		for (const id of visibleListeningDeckIds) {
-			const channelId = listeningChannelId(appState.decks[id])
+			const channelId = mirroredChannelId(appState.decks[id])
 			if (!channelId) continue
 			const slug = channelsCollection.state.get(channelId)?.slug
 			if (!slug) continue
@@ -88,12 +88,12 @@
 				{/each}
 			</section>
 		{/if}
-		{#if listeningDeckIds.length}
+		{#if mirrorDeckIds.length}
 			<section
 				class={['broadcasts', videoMixListening && 'video-mix']}
 				aria-label={m.decks_broadcast_listeners()}
 			>
-				{#each listeningDeckIds as deckId (deckId)}
+				{#each mirrorDeckIds as deckId (deckId)}
 					<div class="deck-item" style:--deck-accent={deckAccent(deckIds, deckId)}>
 						<Deck {deckId} />
 					</div>

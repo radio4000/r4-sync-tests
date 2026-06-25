@@ -1,7 +1,7 @@
 <script>
 	import {page} from '$app/state'
 	import {appState} from '$lib/app-state.svelte'
-	import {isListening, clockKind} from '$lib/player/clock'
+	import {isMirroring, clockKind} from '$lib/player/clock'
 	import {captureEventsCollection} from '$lib/collections/capture-events'
 	import Player from '$lib/components/player.svelte'
 	import QueuePanel from '$lib/components/queue-panel.svelte'
@@ -11,14 +11,14 @@
 
 	let deck = $derived(appState.decks[deckId])
 	let showPlayer = $derived(page.url.searchParams.get('player') !== 'false')
-	let isListeningToBroadcast = $derived(isListening(deck))
-	let isBroadcasting = $derived(Boolean(appState.broadcasting_channel_id && !isListening(deck)))
+	let mirroring = $derived(isMirroring(deck))
+	let isBroadcasting = $derived(Boolean(appState.broadcasting_channel_id && !isMirroring(deck)))
 	let isAutoRadio = $derived(clockKind(deck) === 'auto')
 	let firstListeningDeckId = $derived.by(() =>
 		Object.keys(appState.decks)
 			.map(Number)
 			.sort((a, b) => a - b)
-			.find((id) => isListening(appState.decks[id]))
+			.find((id) => isMirroring(appState.decks[id]))
 	)
 
 	// For deck 1: only show when there are tracks queued/playing or any history exists.
@@ -37,7 +37,7 @@
 
 	// Inline deck width from stored value
 	let videoMixOpacity = $derived.by(() => {
-		if (!deck?.video_mix || !isListeningToBroadcast) return undefined
+		if (!deck?.video_mix || !mirroring) return undefined
 		if (deck.muted) return 0
 		const volume = Number.isFinite(deck.volume) ? deck.volume : 1
 		return Math.max(0, Math.min(1, volume))
@@ -47,7 +47,7 @@
 		/** @type {string[]} */
 		const styles = []
 		if (deck?.queue_panel_width) styles.push(`--deck-width: ${deck.queue_panel_width}px`)
-		if (deck?.video_mix && isListeningToBroadcast) {
+		if (deck?.video_mix && mirroring) {
 			styles.push(`--video-mix-opacity: ${videoMixOpacity ?? 1}`)
 			styles.push(`--video-mix-z: ${videoMixZ}`)
 		}
@@ -100,8 +100,8 @@
 			deck: true,
 			expanded: deck?.expanded,
 			compact: deck?.compact,
-			listening: isListeningToBroadcast,
-			'video-mix': Boolean(deck?.video_mix && isListeningToBroadcast),
+			listening: mirroring,
+			'video-mix': Boolean(deck?.video_mix && mirroring),
 			broadcasting: isBroadcasting,
 			auto: isAutoRadio,
 			'active-deck': isActiveDeck,
@@ -117,7 +117,7 @@
 		<div class="resize-handle" onpointerdown={onResizeStart}></div>
 		<div class="deck-body">
 			<Player {deckId} {scrollToActive} {deckEl}>
-				{#if !isListeningToBroadcast && !isAutoRadio}
+				{#if !mirroring && !isAutoRadio}
 					<QueuePanel {deckId} bind:scrollToActive />
 				{/if}
 			</Player>

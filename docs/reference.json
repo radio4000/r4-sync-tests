@@ -26,6 +26,10 @@
 		{"name": "appState.decks", "desc": "Record<number, Deck> — per-deck player state."},
 		{"name": "appState.next_deck_id", "desc": "Next deck ID to assign."},
 		{"name": "appState.active_deck_id", "desc": "Currently focused deck ID."},
+		{
+			"name": "appState.broadcasting_channel_id",
+			"desc": "Channel you're broadcasting as, or undefined (one at a time)."
+		},
 
 		{
 			"name": "appState.channels_display",
@@ -72,27 +76,23 @@
 		{"name": "deck.expanded", "desc": "Fullscreen player UI."},
 		{"name": "deck.hide_queue_panel", "desc": "Hide/show sidebar."},
 		{"name": "deck.queue_panel_width", "desc": "Sidebar width."},
-		{"name": "deck.broadcasting_channel_id", "desc": "Channel this deck is broadcasting."},
-		{"name": "deck.listening_to_channel_id", "desc": "Channel this deck is listening to."},
+		{
+			"name": "deck.clock",
+			"desc": "Tagged union: who drives the playhead. Absent=manual; {kind:'mirror',channel}; {kind:'auto',rotationStart}. Read via player/clock.ts."
+		},
 		{"name": "deck.play_id", "desc": "UUID for current play session (capture events)."},
 		{"name": "deck.track_played_at", "desc": "Timestamp when track started playing."},
 		{"name": "deck.seeked_at", "desc": "Timestamp of last seek."},
 		{"name": "deck.seek_position", "desc": "Seek position in seconds."},
 		{"name": "deck.media_current_time", "desc": "Last known media current time (seconds)."},
 		{"name": "deck.media_duration", "desc": "Last known media duration (seconds)."},
-		{"name": "deck.auto_radio", "desc": "Auto-radio active flag."},
 		{
-			"name": "deck.auto_radio_drifted",
-			"desc": "Computed drift from expected schedule (2s tolerance)."
+			"name": "deck.drifted",
+			"desc": "Computed drift from the deck's clock (mirror or auto), 2s tolerance. One flag — a deck has one clock."
 		},
 		{
 			"name": "deck.view",
 			"desc": "Stored View identity/filters for matching and auto-radio resync."
-		},
-		{"name": "deck.auto_radio_rotation_start", "desc": "Epoch from oldest track (unix seconds)."},
-		{
-			"name": "deck.listening_drifted",
-			"desc": "Computed drift from expected broadcast position (2s tolerance)."
 		}
 	],
 
@@ -448,7 +448,10 @@
 		},
 		{"name": "startBroadcast(channelId, trackId?)", "desc": "Start broadcasting."},
 		{"name": "stopBroadcast(channelId)", "desc": "Stop broadcasting."},
-		{"name": "joinBroadcast(deckId, channelId)", "desc": "Listen to broadcast on a deck."},
+		{
+			"name": "joinBroadcast(channelId)",
+			"desc": "Tune into a channel's broadcast. Additive — ensures this channel's mirror decks exist, leaves other decks alone."
+		},
 		{
 			"name": "resyncBroadcastDeck(deckId)",
 			"desc": "Resync drifted listening deck to broadcast position."
@@ -606,6 +609,14 @@
 
 	"src/lib/player/broadcast-payload.js": [
 		{
+			"name": "packPlaybackFields(deck)",
+			"desc": "Snapshot a deck's playback fields onto the broadcast wire (fills defaults)."
+		},
+		{
+			"name": "pickPlaybackFields(state)",
+			"desc": "Copy only valid playback fields off untrusted wire state onto a deck patch."
+		},
+		{
 			"name": "packEphemeralTrack(track)",
 			"desc": "Serialize non-DB track fields for broadcast wire format."
 		},
@@ -615,11 +626,28 @@
 		}
 	],
 
+	"src/lib/player/clock.ts": [
+		{
+			"name": "clockKind(deck)",
+			"desc": "Which clock drives the deck: 'manual' | 'mirror' | 'auto'."
+		},
+		{
+			"name": "isMirroring(deck)",
+			"desc": "True when this deck mirrors a channel's live broadcast."
+		},
+		{"name": "mirroredChannelId(deck)", "desc": "Channel id this deck mirrors, else undefined."},
+		{"name": "isAutoRadio(deck)", "desc": "True when the auto-radio formula drives this deck."},
+		{
+			"name": "autoRotationStart(deck)",
+			"desc": "Auto-radio rotation start (unix seconds), else undefined."
+		}
+	],
+
 	"src/lib/player/deck-display.svelte.ts": [
 		{"name": "DeckDisplay", "desc": "Reactive track/channel display state for a deck."},
 		{
-			"name": "createDeckDisplay(deckId)",
-			"desc": "Build DeckDisplay with track/broadcast/header fallbacks."
+			"name": "createDeckDisplay(getDeckId)",
+			"desc": "Build DeckDisplay (track/broadcast/header fallbacks) from a reactive deckId getter."
 		}
 	],
 

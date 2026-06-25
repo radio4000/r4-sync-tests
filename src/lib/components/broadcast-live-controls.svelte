@@ -10,7 +10,7 @@
 	 *  deckId: number,
 	 *  isLive: boolean,
 	 *  canEdit: boolean,
-	 *  isListening?: boolean,
+	 *  isMirroring?: boolean,
 	 *  presenceCount?: number,
 	 *  onJoin?: () => void,
 	 *  onLeave?: () => void,
@@ -21,7 +21,7 @@
 		deckId,
 		isLive,
 		canEdit,
-		isListening = false,
+		isMirroring = false,
 		presenceCount = 0,
 		onJoin,
 		onLeave
@@ -46,13 +46,13 @@
 		{:else if channelId}
 			<button
 				type="button"
-				class:active={isListening}
-				onclick={() => (isListening ? onLeave?.() : onJoin?.())}
-				title={isListening ? m.broadcasts_leave() : m.broadcasts_join()}
-				aria-label={isListening ? m.broadcasts_leave() : m.broadcasts_join()}
+				class:active={isMirroring}
+				onclick={() => (isMirroring ? onLeave?.() : onJoin?.())}
+				title={isMirroring ? m.broadcasts_leave() : m.broadcasts_join()}
+				aria-label={isMirroring ? m.broadcasts_leave() : m.broadcasts_join()}
 			>
 				<Icon icon="signal" />
-				{isListening ? m.broadcasts_leave() : m.broadcasts_join()}
+				{isMirroring ? m.broadcasts_leave() : m.broadcasts_join()}
 			</button>
 		{/if}
 	</div>

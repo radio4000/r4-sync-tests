@@ -13,6 +13,20 @@
 
 `deck-strip.svelte` loops all decks, splitting them into local and broadcast-listening groups. `+layout.svelte` separately loops compact deck IDs into `deck-compact-bar.svelte` at the layout bottom.
 
+## `deck.clock` — who drives the playhead
+
+A deck's playhead is driven by exactly one source. `deck.clock` is a tagged union storing that identity:
+
+- absent — `manual`: you control it
+- `{kind: 'mirror', channel}` — mirrors a broadcaster's live stream (see [broadcast](broadcast.md))
+- `{kind: 'auto', rotationStart}` — the auto-radio formula drives it (see [auto-radio](auto-radio.md))
+
+`mirror` and `auto` on one deck is unrepresentable — a deck is only ever one. `deck.drifted` is the single flag (computed in `player.svelte`) for "this mirror/auto deck deviated from its clock". Read clock identity through the helpers in `player/clock.ts` (`clockKind`, `isMirroring`, `mirroredChannelId`, `isAutoRadio`, `autoRotationStart`) rather than poking `deck.clock.kind`.
+
+## Display derivation
+
+`player.svelte` and `deck-compact-bar.svelte` both need "what track/channel is this deck showing". `createDeckDisplay(getDeckId)` (`player/deck-display.svelte.ts`) is the one reactive source: it centralises the `track ?? broadcastTrack ?? lastTrack` fallback, the `channel ?? lastChannel` fallback, and the mirror-header rule (`headerChannel`/`secondaryHeaderChannel`). Pass a `getDeckId` getter so it stays reactive when the deck id changes.
+
 ## `Deck` layout flags
 
 Four booleans on the `Deck` type. `compact`/`expanded` are mutually exclusive. The other two are independent.

@@ -17,15 +17,14 @@ export interface TrackMetadataFields {
 export interface TrackWithMeta extends Track, TrackMetadataFields {}
 
 /**
- * Axis-1 clock: who drives this deck's playhead. Exactly one kind per deck;
- * `listener` and `auto` on one deck is unrepresentable (was the both-set nonsense).
- * Absent (`deck.clock === undefined`) means `self` — manual playback.
- * Identity only — position/drifted/resync are computed by `getClock()` in `player/clock.ts`.
- * Auto's source is `deck.view`, not a channel id, so only the rotation start lives here.
+ * Clock: who drives this deck's playhead. Exactly one kind per deck — a deck
+ * can't both mirror a broadcast and run auto-radio at once. Absent
+ * (`deck.clock === undefined`) means manual playback. Identity only; position
+ * and drift are computed elsewhere. Auto's source is `deck.view`, so only the
+ * rotation start lives here; mirror stores the channel it follows.
  */
 export type DeckClockState =
-	| {kind: 'listener'; channel: string}
-	| {kind: 'auto'; rotationStart: number}
+	{kind: 'mirror'; channel: string} | {kind: 'auto'; rotationStart: number}
 
 export interface Deck {
 	id: number
@@ -44,10 +43,10 @@ export interface Deck {
 	expanded: boolean
 	hide_queue_panel: boolean
 	queue_panel_width?: number
-	/** Axis-1 clock: who drives this deck's playhead. Absent = self (manual). See {@link DeckClockState}. */
+	/** Clock: who drives this deck's playhead. Absent = manual playback. See {@link DeckClockState}. */
 	clock?: DeckClockState
 	view?: import('$lib/views').View
-	/** Listener/auto deck has drifted from its source clock. One flag for both modes — a deck is only ever one. */
+	/** Mirror/auto deck has drifted from its source clock. One flag for both modes — a deck is only ever one. */
 	drifted?: boolean
 	play_id?: string
 	track_played_at?: string
@@ -63,7 +62,7 @@ export interface AppState {
 	decks: Record<number, Deck>
 	next_deck_id: number
 	active_deck_id: number
-	/** Axis-2 publish: the channel you're broadcasting your workspace to, or undefined. Client-level, transient. */
+	/** The channel you're broadcasting as, or undefined (one at a time). Client-level, transient. */
 	broadcasting_channel_id?: string
 	theme?: string
 	custom_css_variables: Record<string, string>

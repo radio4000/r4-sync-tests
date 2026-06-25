@@ -1,6 +1,6 @@
 import type {Deck} from '$lib/types'
 import {viewLabel} from '$lib/views'
-import {isAutoRadio, listeningChannelId} from '$lib/player/clock'
+import {isAutoRadio, mirroredChannelId} from '$lib/player/clock'
 
 /** Deck title: use the given title, or derive one from the view/slug. */
 export function deckTitle(deck: Deck | undefined, title?: string): string {
@@ -66,16 +66,16 @@ export function findChannelPlayingDeck(
 	return deckValues(decks).find((d) => d.playlist_slug === slug && d.is_playing)
 }
 
-/** Find a deck listening to a channel (by channel ID), preferring active deck. */
-export function findListeningDeck(
+/** Find a deck mirroring a channel (by channel ID), preferring active deck. */
+export function findMirroringDeck(
 	decks: Record<number, Deck>,
 	activeDeckId: number,
 	channelId?: string
 ): Deck | undefined {
 	if (!channelId) return undefined
 	const active = decks[activeDeckId]
-	if (listeningChannelId(active) === channelId) return active
-	return deckValues(decks).find((d) => listeningChannelId(d) === channelId)
+	if (mirroredChannelId(active) === channelId) return active
+	return deckValues(decks).find((d) => mirroredChannelId(d) === channelId)
 }
 
 /** Check if any deck is playing a given channel slug. */
@@ -84,8 +84,8 @@ export function isChannelPlaying(decks: Record<number, Deck>, slug?: string): bo
 	return deckValues(decks).some((d) => d.playlist_slug === slug && d.is_playing)
 }
 
-/** Check if any deck is listening to a given channel ID. */
-export function isListeningToChannel(decks: Record<number, Deck>, channelId?: string): boolean {
+/** Check if any deck is mirroring a given channel ID. */
+export function isMirroringChannel(decks: Record<number, Deck>, channelId?: string): boolean {
 	if (!channelId) return false
-	return deckValues(decks).some((d) => listeningChannelId(d) === channelId)
+	return deckValues(decks).some((d) => mirroredChannelId(d) === channelId)
 }

@@ -1,33 +1,29 @@
 /**
- * Axis-1 clock — who drives a deck's playhead: self / listener / auto.
+ * Clock — who drives a deck's playhead: manual / mirror / auto.
  *
- * `deck.clock` stores identity only (see {@link DeckClockState} in types.ts);
- * `self` is the absence of a clock. These are the cheap identity reads used
- * across the app — prefer them over poking `deck.clock.kind` directly.
- *
- * The MediaPlayer-style derived adapter (`getClock(deck) -> {position, drifted,
- * resync()}`) is intentionally not here yet: while `drifted` is still computed
- * in player.svelte and stored on `deck.drifted`, the adapter would have no
- * callers. It lands when drift moves from stored to computed.
+ * `deck.clock` stores identity only (see {@link DeckClockState} in types.ts).
+ * An absent clock means `manual` — you're driving the deck yourself. These are
+ * the cheap identity reads used across the app — prefer them over poking
+ * `deck.clock.kind` directly.
  */
 
 import type {Deck} from '$lib/types'
 
-export type ClockKind = 'self' | 'listener' | 'auto'
+export type ClockKind = 'manual' | 'mirror' | 'auto'
 
-/** Which kind of clock drives this deck. Absent `deck.clock` = self (manual). */
+/** Which clock drives this deck. Absent `deck.clock` = manual playback. */
 export function clockKind(deck?: Deck | null): ClockKind {
-	return deck?.clock?.kind ?? 'self'
+	return deck?.clock?.kind ?? 'manual'
 }
 
-/** True when a peer's broadcast drives this deck. */
-export function isListening(deck?: Deck | null): boolean {
-	return deck?.clock?.kind === 'listener'
+/** True when this deck mirrors another channel's live broadcast. */
+export function isMirroring(deck?: Deck | null): boolean {
+	return deck?.clock?.kind === 'mirror'
 }
 
-/** The channel id this deck listens to, or undefined when it isn't a listener. */
-export function listeningChannelId(deck?: Deck | null): string | undefined {
-	return deck?.clock?.kind === 'listener' ? deck.clock.channel : undefined
+/** The channel id this deck mirrors, or undefined when it isn't mirroring. */
+export function mirroredChannelId(deck?: Deck | null): string | undefined {
+	return deck?.clock?.kind === 'mirror' ? deck.clock.channel : undefined
 }
 
 /** True when the auto-radio formula drives this deck. */

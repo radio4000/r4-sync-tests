@@ -22,8 +22,8 @@
 		togglePlayPause
 	} from '$lib/api'
 	import {hasAutoRadioCoverage} from '$lib/player/auto-radio'
-	import {findAutoDecksForChannel, findChannelPlayingDeck, findListeningDeck} from '$lib/deck'
-	import {isListening, isAutoRadio, listeningChannelId} from '$lib/player/clock'
+	import {findAutoDecksForChannel, findChannelPlayingDeck, findMirroringDeck} from '$lib/deck'
+	import {isMirroring, isAutoRadio, mirroredChannelId} from '$lib/player/clock'
 	import ButtonFollow from '$lib/components/button-follow.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import ChannelCanvasBg from '$lib/components/channel-canvas-bg.svelte'
@@ -141,9 +141,9 @@
 	// --- Deriveds ---
 
 	let isChannelLive = $derived(Boolean(channelBroadcastQuery.data))
-	let isListeningToChannel = $derived(
+	let isMirroringChannel = $derived(
 		Boolean(
-			channel?.id && Object.values(appState.decks).some((d) => listeningChannelId(d) === channel.id)
+			channel?.id && Object.values(appState.decks).some((d) => mirroredChannelId(d) === channel.id)
 		)
 	)
 	let canEdit = $derived(canEditChannel(channel?.id))
@@ -152,7 +152,7 @@
 		findChannelPlayingDeck(appState.decks, appState.active_deck_id, channel?.slug)
 	)
 	let channelListeningDeck = $derived(
-		findListeningDeck(appState.decks, appState.active_deck_id, channel?.id)
+		findMirroringDeck(appState.decks, appState.active_deck_id, channel?.id)
 	)
 	let activeDeck = $derived(appState.decks[appState.active_deck_id])
 	let isChannelLoaded = $derived(
@@ -245,7 +245,7 @@
 				return
 			}
 
-			if (isListeningToChannel) {
+			if (isMirroringChannel) {
 				leaveBroadcast(appState.active_deck_id)
 				return
 			}
@@ -276,7 +276,7 @@
 		if (!channel) return
 		const deckId = appState.active_deck_id
 		const deck = appState.decks[deckId]
-		if (isListening(deck)) {
+		if (isMirroring(deck)) {
 			leaveBroadcast(deckId)
 		}
 		if (isAutoRadio(deck) && deck.playlist_slug === slug) {
@@ -402,13 +402,13 @@
 
 				<div class="channel-controls">
 					<menu class="channel-actions" role="group" aria-label="Channel actions">
-						{#if canEdit || isChannelLive || isListeningToChannel}
+						{#if canEdit || isChannelLive || isMirroringChannel}
 							<button
 								type="button"
 								class={[
 									'mode-action',
 									'live',
-									{active: canEdit ? isChannelLive : isListeningToChannel}
+									{active: canEdit ? isChannelLive : isMirroringChannel}
 								]}
 								onclick={onLiveAction}
 								disabled={liveLoading}
@@ -417,7 +417,7 @@
 										? isChannelLive
 											? m.broadcast_stop_button()
 											: m.broadcast_start_button()
-										: isListeningToChannel
+										: isMirroringChannel
 											? m.broadcasts_leave()
 											: m.broadcasts_join()
 								})}
@@ -426,7 +426,7 @@
 								<span>
 									{#if canEdit}
 										{isChannelLive ? m.broadcast_stop_button() : m.broadcast_start_button()}
-									{:else if isListeningToChannel}
+									{:else if isMirroringChannel}
 										{m.status_live_short()}
 									{:else}
 										{m.broadcasts_join()}

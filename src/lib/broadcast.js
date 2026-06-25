@@ -15,7 +15,7 @@ import {broadcastsCollection} from '$lib/collections/broadcasts'
 import {channelsCollection} from '$lib/collections/channels'
 import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 import {isDbId} from '$lib/utils'
-import {isListening, listeningChannelId} from '$lib/player/clock'
+import {isMirroring, mirroredChannelId} from '$lib/player/clock'
 import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
 import {
 	packEphemeralTrack,
@@ -120,9 +120,9 @@ export function getBroadcastingChannelId() {
 }
 
 /**
- * Tune into a channel's broadcast. Additive: ensures this channel's listener
- * decks exist and match the broadcast, leaving your self/auto decks and any
- * other channel's listener decks untouched. Switching channels no longer wipes
+ * Tune into a channel's broadcast. Additive: ensures this channel's mirror
+ * decks exist and match the broadcast, leaving your manual/auto decks and any
+ * other channel's mirror decks untouched. Switching channels no longer wipes
  * your session — drop a channel explicitly with leaveBroadcast/removeDeck.
  * @param {string} channelId
  */
@@ -150,17 +150,21 @@ export async function joinBroadcast(channelId) {
 			}
 		}
 
-		// Reconcile only this channel's listener decks. Use the decks jsonb
+		// Reconcile only this channel's mirror decks. Use the decks jsonb
 		// (multi-deck) or treat the legacy single-deck row as a one-element broadcast.
 		if (Array.isArray(data?.decks) && data.decks.length) {
 			await applyBroadcastState(channelId, data.decks)
 		} else if (data?.track_id) {
+			// Legacy single-deck row (no decks jsonb): show it as a compact bar,
+			// like the pre-jsonb path did. Multi-deck listeners stay full-size.
 			await applyBroadcastState(channelId, [data])
+			const id = getSortedDeckIds().find((i) => mirroredChannelId(appState.decks[i]) === channelId)
+			if (id != null) appState.decks[id].compact = true
 		}
 
-		// Set active deck to the first listener deck
+		// Set active deck to the first mirror deck
 		const listenerIds = getSortedDeckIds().filter(
-			(id) => listeningChannelId(appState.decks[id]) === channelId
+			(id) => mirroredChannelId(appState.decks[id]) === channelId
 		)
 		if (listenerIds.length) {
 			appState.active_deck_id = listenerIds[0]
@@ -176,13 +180,13 @@ export async function joinBroadcast(channelId) {
 }
 
 /**
- * Re-sync a single listening deck to the current broadcast state without
- * rebuilding the local listener deck layout.
+ * Re-sync a single mirror deck to the current broadcast state without
+ * rebuilding the local mirror deck layout.
  * @param {number} deckId
  */
 export async function resyncBroadcastDeck(deckId) {
 	const deck = appState.decks[deckId]
-	const channelId = listeningChannelId(deck)
+	const channelId = mirroredChannelId(deck)
 	if (!channelId) return
 
 	log.log(`resyncBroadcastDeck @${label(channelId)} deck:${deckId}`)
@@ -208,7 +212,7 @@ export async function resyncBroadcastDeck(deckId) {
 	if (!Array.isArray(decks) || !decks.length) return
 
 	const localManagedIds = getSortedDeckIds().filter(
-		(id) => listeningChannelId(appState.decks[id]) === channelId
+		(id) => mirroredChannelId(appState.decks[id]) === channelId
 	)
 	const localIndex = Math.max(0, localManagedIds.indexOf(deckId))
 	const matchedState =
@@ -222,19 +226,17 @@ export async function resyncBroadcastDeck(deckId) {
 
 /** @param {number} deckId */
 export function leaveBroadcast(deckId) {
-	const channelId = listeningChannelId(appState.decks[deckId])
+	const channelId = mirroredChannelId(appState.decks[deckId])
 	stopBroadcastSync(deckId)
 	if (channelId) {
 		stopBroadcastStateListener(channelId)
 		stopBroadcastTableListener(channelId)
 		closeListeningDecksForChannel(channelId)
 	} else {
-		// Fallback: if invoked on a non-listening deck, preserve old behavior.
+		// Fallback: a manual deck (no clock) — just stop it. Never touch an auto-radio
+		// deck here; leaving a broadcast must not end auto-radio.
 		const deck = appState.decks[deckId]
-		if (deck) {
-			deck.clock = undefined
-			deck.is_playing = false
-		}
+		if (deck && !deck.clock) deck.is_playing = false
 	}
 	log.log(`left deck ${deckId}`)
 }
@@ -396,7 +398,7 @@ async function playBroadcastTrack(deckId, broadcast) {
 	}
 	if (appState.decks[deckId]) {
 		applyRemoteState(deckId, {
-			clock: {kind: 'listener', channel: channel_id},
+			clock: {kind: 'mirror', channel: channel_id},
 			drifted: false,
 			...pickPlaybackFields(broadcast)
 		})
@@ -428,7 +430,7 @@ function getSortedDeckIds() {
 }
 
 function getBroadcasterDeckIds() {
-	return getSortedDeckIds().filter((id) => !isListening(appState.decks[id]))
+	return getSortedDeckIds().filter((id) => !isMirroring(appState.decks[id]))
 }
 
 async function evaluateBroadcastLiveness(channelId) {
@@ -484,9 +486,9 @@ async function evaluateBroadcastLiveness(channelId) {
 }
 
 function getBroadcastDeckState() {
-	// Mirror the broadcaster workspace: send all local (non-listener) decks.
-	// Previous channel/track-based filtering could drop some open decks, causing
-	// listeners to open fewer decks than the broadcaster.
+	// Send all the broadcaster's local (non-mirror) decks. Previous channel/track-based
+	// filtering could drop some open decks, causing listeners to open fewer decks than
+	// the broadcaster.
 	let ids = getBroadcasterDeckIds()
 	if (!ids.length && appState.decks[appState.active_deck_id]) {
 		ids = [appState.active_deck_id]
@@ -648,7 +650,7 @@ function stopBroadcastTableListener(channelId) {
 
 function closeListeningDecksForChannel(channelId) {
 	const decksToClose = Object.entries(appState.decks)
-		.filter(([, deck]) => listeningChannelId(deck) === channelId)
+		.filter(([, deck]) => mirroredChannelId(deck) === channelId)
 		.map(([id]) => Number(id))
 	for (const id of decksToClose) {
 		stopBroadcastSync(id)
@@ -662,16 +664,16 @@ async function applyBroadcastState(channelId, decks) {
 
 	const incomingTrackIds = new Set(decks.map((d) => d?.track_id).filter(Boolean))
 	let managedIds = getSortedDeckIds().filter(
-		(id) => listeningChannelId(appState.decks[id]) === channelId
+		(id) => mirroredChannelId(appState.decks[id]) === channelId
 	)
 
 	// Add managed decks if needed for this specific broadcast channel.
 	while (managedIds.length < decks.length) {
 		const deck = addDeck()
-		deck.clock = {kind: 'listener', channel: channelId}
+		deck.clock = {kind: 'mirror', channel: channelId}
 		deck.hide_queue_panel = true
 		managedIds = getSortedDeckIds().filter(
-			(id) => listeningChannelId(appState.decks[id]) === channelId
+			(id) => mirroredChannelId(appState.decks[id]) === channelId
 		)
 	}
 
@@ -688,7 +690,7 @@ async function applyBroadcastState(channelId, decks) {
 			removeDeck(removeId)
 		}
 		managedIds = getSortedDeckIds().filter(
-			(id) => listeningChannelId(appState.decks[id]) === channelId
+			(id) => mirroredChannelId(appState.decks[id]) === channelId
 		)
 		removed = true
 	}
@@ -696,7 +698,7 @@ async function applyBroadcastState(channelId, decks) {
 	// Let Svelte tear down removed deck components and their media elements
 	if (removed) await tick()
 
-	// Map broadcast state to listener decks by track_id, then fill positionally
+	// Map broadcast state to mirror decks by track_id, then fill positionally
 	/** @type {Set<number>} */
 	const usedIds = new Set()
 	/** @type {(number | null)[]} */
@@ -735,7 +737,7 @@ async function applyBroadcastState(channelId, decks) {
 }
 
 /**
- * Apply one broadcast deck state onto one local listener deck while preserving
+ * Apply one broadcast deck state onto one local mirror deck while preserving
  * local deck layout/UI fields such as compact/expanded/sidebar sizing.
  * @param {number} deckId
  * @param {string} channelId
@@ -747,7 +749,7 @@ async function syncDeckToBroadcastState(deckId, channelId, state) {
 
 	if (!state?.track_id) {
 		applyRemoteState(deckId, {
-			clock: {kind: 'listener', channel: channelId},
+			clock: {kind: 'mirror', channel: channelId},
 			drifted: false,
 			playlist_track: undefined,
 			is_playing: false
@@ -756,10 +758,10 @@ async function syncDeckToBroadcastState(deckId, channelId, state) {
 	}
 
 	const trackChanged =
-		deck.playlist_track !== state.track_id || listeningChannelId(deck) !== channelId
+		deck.playlist_track !== state.track_id || mirroredChannelId(deck) !== channelId
 
 	applyRemoteState(deckId, {
-		clock: {kind: 'listener', channel: channelId},
+		clock: {kind: 'mirror', channel: channelId},
 		drifted: false,
 		...pickPlaybackFields(state)
 	})
@@ -807,13 +809,13 @@ async function syncDeckToBroadcastState(deckId, channelId, state) {
 	await seekWhenReady(deckId, seekTime, seekJobId)
 }
 
-/** Validate that each listener deck's clock points to an active broadcast (checks all decks) */
+/** Validate that each mirror deck's clock points to an active broadcast (checks all decks) */
 export async function validateListeningState() {
-	const listeningDeckIds = Object.keys(appState.decks)
+	const mirrorDeckIds = Object.keys(appState.decks)
 		.map(Number)
-		.filter((id) => isListening(appState.decks[id]))
-	for (const id of listeningDeckIds) {
-		const channelId = listeningChannelId(appState.decks[id])
+		.filter((id) => isMirroring(appState.decks[id]))
+	for (const id of mirrorDeckIds) {
+		const channelId = mirroredChannelId(appState.decks[id])
 		if (!channelId) continue
 		try {
 			const {data} = await sdk.supabase

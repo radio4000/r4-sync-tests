@@ -25,7 +25,7 @@
 	import {leaveBroadcast, getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast.js'
 	import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
-	import {isListening, isAutoRadio, autoRotationStart, listeningChannelId} from '$lib/player/clock'
+	import {isMirroring, isAutoRadio, autoRotationStart} from '$lib/player/clock'
 	import {appState, canEditChannel, removeDeck, deckAccent} from '$lib/app-state.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import Icon from '$lib/components/icon.svelte'
@@ -37,8 +37,6 @@
 	import {logger} from '$lib/logger'
 	import {parseUrl} from 'media-now/parse-url'
 	import {tracksCollection, updateTrack} from '$lib/collections/tracks'
-	import {channelsCollection} from '$lib/collections/channels'
-	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {isDbId, trackImageUrl, extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
 	import Tag from '$lib/components/tag.svelte'
@@ -48,10 +46,8 @@
 		trackAutoRadioPresence,
 		untrackAutoRadioPresence,
 		trackBroadcastPresence,
-		untrackBroadcastPresence,
-		channelPresence
+		untrackBroadcastPresence
 	} from '$lib/presence.svelte'
-	import {viewLabel} from '$lib/views'
 	/** @typedef {import('$lib/types').Track} Track */
 	/** @typedef {import('$lib/types').Channel} Channel */
 
@@ -63,17 +59,17 @@
 	let deck = $derived(appState.decks[deckId])
 	let isActiveDeck = $derived(appState.active_deck_id === deckId)
 	let hasMultipleDecks = $derived(Object.keys(appState.decks).length > 1)
-	let listeningDeckIds = $derived(
+	let mirrorDeckIds = $derived(
 		Object.keys(appState.decks)
 			.map(Number)
 			.sort((a, b) => a - b)
-			.filter((id) => isListening(appState.decks[id]))
+			.filter((id) => isMirroring(appState.decks[id]))
 	)
-	let isListeningGroupControlDeck = $derived(!isListening(deck) || listeningDeckIds[0] === deckId)
-	let hasListeningMultiDeck = $derived(listeningDeckIds.length > 1)
+	let mirrorGroupControlDeck = $derived(!isMirroring(deck) || mirrorDeckIds[0] === deckId)
+	let hasMirrorMultiDeck = $derived(mirrorDeckIds.length > 1)
 	let listeningVideoMixActive = $derived.by(() => {
-		if (!hasListeningMultiDeck) return false
-		return listeningDeckIds.some((id) => Boolean(appState.decks[id]?.video_mix))
+		if (!hasMirrorMultiDeck) return false
+		return mirrorDeckIds.some((id) => Boolean(appState.decks[id]?.video_mix))
 	})
 	let deckIds = $derived(Object.keys(appState.decks).map(Number))
 	let accentColor = $derived(deckAccent(deckIds, deckId))
@@ -130,22 +126,12 @@
 
 	let didPlay = $state(false)
 	let userHasPlayed = $state(false)
-	const isListeningToBroadcast = $derived(isListening(deck))
-	const isSyncedListeningMode = $derived(isListeningToBroadcast || isAutoRadio(deck))
-	let showDeckActions = $derived(!isListeningToBroadcast || isListeningGroupControlDeck)
+	const mirroring = $derived(isMirroring(deck))
+	const isSyncedMode = $derived(mirroring || isAutoRadio(deck))
+	let showDeckActions = $derived(!mirroring || mirrorGroupControlDeck)
 
-	const listenSlug = $derived.by(() => {
-		const id = listeningChannelId(deck)
-		if (!id) return undefined
-		return (
-			channelsCollection.state.get(id)?.slug ?? broadcastsCollection.state.get(id)?.channels?.slug
-		)
-	})
-	const broadcastSlug = $derived(
-		appState.broadcasting_channel_id && !isListening(deck)
-			? channelsCollection.state.get(appState.broadcasting_channel_id)?.slug
-			: undefined
-	)
+	const listenSlug = $derived(display.listenSlug)
+	const broadcastSlug = $derived(display.broadcastSlug)
 
 	const broadcastingChannel = $derived(display.broadcasterChannel)
 	const headerChannel = $derived(display.headerChannel)
@@ -169,21 +155,7 @@
 		}))
 	})
 
-	const autoUri = $derived(
-		isAutoRadio(deck) && deck.playlist_slug
-			? viewLabel(deck.view ?? {sources: [{channels: [deck.playlist_slug]}]}) ||
-					`@${deck.playlist_slug}`
-			: undefined
-	)
-	const headerPresenceCount = $derived(
-		isListening(deck) && listenSlug
-			? (channelPresence[listenSlug]?.broadcast ?? 0)
-			: broadcastSlug
-				? (channelPresence[broadcastSlug]?.broadcast ?? 0)
-				: autoUri && deck?.playlist_slug
-					? (channelPresence[deck.playlist_slug]?.byUri?.[autoUri] ?? 0)
-					: 0
-	)
+	const headerPresenceCount = $derived(display.presenceCount)
 
 	// Track previous track ID to detect changes for autoplay
 	let prevTrackId = $state(/** @type {string|undefined} */ (undefined))
@@ -268,7 +240,7 @@
 	}
 
 	function handleEndTrack() {
-		if (isListening(deck)) return
+		if (isMirroring(deck)) return
 		next(deckId, 'track_completed')
 	}
 
@@ -303,18 +275,18 @@
 
 	function toggleListeningVideoMix() {
 		const next = !listeningVideoMixActive
-		for (const id of listeningDeckIds) {
+		for (const id of mirrorDeckIds) {
 			const listeningDeck = appState.decks[id]
-			if (!isListening(listeningDeck)) continue
+			if (!isMirroring(listeningDeck)) continue
 			listeningDeck.video_mix = next
 			if (next) listeningDeck.hide_video_player = false
 		}
 	}
 
 	$effect(() => {
-		if (deck?.video_mix && !isListeningToBroadcast) deck.video_mix = false
-		if (hasListeningMultiDeck) return
-		for (const id of listeningDeckIds) {
+		if (deck?.video_mix && !mirroring) deck.video_mix = false
+		if (hasMirrorMultiDeck) return
+		for (const id of mirrorDeckIds) {
 			const listeningDeck = appState.decks[id]
 			if (listeningDeck?.video_mix) listeningDeck.video_mix = false
 		}
@@ -476,7 +448,7 @@
 
 	// Broadcast drift — O(1) arithmetic per tick
 	$effect(() => {
-		if (!isListening(deck)) return
+		if (!isMirroring(deck)) return
 		const t = mediaCurrentTime
 		const tr = track
 		if (!tr) return
@@ -489,10 +461,7 @@
 	})
 </script>
 
-<div
-	class="player"
-	class:video-mix={Boolean(deck?.video_mix && isListeningToBroadcast && hasListeningMultiDeck)}
->
+<div class="player" class:video-mix={Boolean(deck?.video_mix && mirroring && hasMirrorMultiDeck)}>
 	<!-- 1. Top bar: logo + player controls -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<header class="header" onclick={() => (appState.active_deck_id = deckId)}>
@@ -526,7 +495,7 @@
 				</div>
 			{/if}
 			<menu class="layout-controls top-layout-controls">
-				{#if !isListeningToBroadcast}
+				{#if !mirroring}
 					<button
 						class="close-deck"
 						onclick={() => {
@@ -539,10 +508,10 @@
 					>
 						<Icon icon="close" />
 					</button>
-				{:else if isListeningGroupControlDeck}
+				{:else if mirrorGroupControlDeck}
 					<button
 						class="close-deck"
-						onclick={() => listeningDeckIds.forEach((id) => leaveBroadcast(id))}
+						onclick={() => mirrorDeckIds.forEach((id) => leaveBroadcast(id))}
 						{@attach tooltip({content: m.broadcasts_leave(), position: 'top'})}
 					>
 						<Icon icon="close" />
@@ -562,7 +531,7 @@
 								{deck?.hide_video_player ? m.player_hidden() : m.player_visible()}
 								<Icon icon="tv" size={14} />
 							</button>
-							{#if !isListeningToBroadcast && !isAutoRadio(deck)}
+							{#if !mirroring && !isAutoRadio(deck)}
 								<button
 									onclick={() => toggleQueuePanel(deckId)}
 									class:active={!deck?.hide_queue_panel}
@@ -572,7 +541,7 @@
 									<Icon icon="unordered-list" size={14} />
 								</button>
 							{/if}
-							{#if isListeningToBroadcast && hasListeningMultiDeck}
+							{#if mirroring && hasMirrorMultiDeck}
 								<button
 									onclick={toggleListeningVideoMix}
 									class:active={listeningVideoMixActive}
@@ -667,7 +636,7 @@
 				{mediaDuration}
 				trackDuration={track?.duration}
 				isPlaying={Boolean(deck?.is_playing)}
-				disabled={isListeningToBroadcast || isAutoRadio(deck)}
+				disabled={mirroring || isAutoRadio(deck)}
 				onseek={(val) => {
 					if (deck) deck.media_current_time = val
 					if (mediaElement) mediaElement.currentTime = val
@@ -677,10 +646,10 @@
 		<!-- 4. Channel/track info + mode info -->
 		<footer
 			class="track-panel"
-			class:active-track={Boolean(displayTrack) && !(isListeningToBroadcast && broadcastingChannel)}
+			class:active-track={Boolean(displayTrack) && !(mirroring && broadcastingChannel)}
 			onclick={() => (appState.active_deck_id = deckId)}
 		>
-			{#if isListeningToBroadcast && broadcastingChannel}
+			{#if mirroring && broadcastingChannel}
 				{#if displayTrack}
 					<div class="listening-track-panel active-track-bg">
 						<TrackCard
@@ -701,16 +670,16 @@
 					canEdit={Boolean(channel && canEditChannel(channel.id))}
 					menuValign="top"
 					menuAlign="end"
-					onLocate={isSyncedListeningMode ? undefined : scrollToActive}
-					disableDoubleClickPlay={isSyncedListeningMode}
-					linkTitleToTrack={isSyncedListeningMode}
+					onLocate={isSyncedMode ? undefined : scrollToActive}
+					disableDoubleClickPlay={isSyncedMode}
+					linkTitleToTrack={isSyncedMode}
 				/>
 			{/if}
 		</footer>
 
-		{#if !isListeningToBroadcast || isAutoRadio(deck)}
+		{#if !mirroring || isAutoRadio(deck)}
 			<menu class="controls">
-				{#if !isListeningToBroadcast && !isAutoRadio(deck)}
+				{#if !mirroring && !isAutoRadio(deck)}
 					{@render btnPrev()}
 					{@render btnPlay()}
 					{@render btnNext()}

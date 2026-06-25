@@ -46,17 +46,14 @@
 	const derivedTitle = $derived(deckTitle(deck, channel?.name))
 	const slug = $derived(deck?.playlist_slug)
 	const isPlaying = $derived(Boolean(deck?.is_playing))
+	// On air: broadcasting ships every non-mirror deck, so each one shows the signal.
 	const isBroadcasting = $derived(
-		Boolean(
-			channel?.id &&
-			appState.broadcasting_channel_id === channel.id &&
-			clockKind(deck) !== 'listener'
-		)
+		Boolean(deck && appState.broadcasting_channel_id) && clockKind(deck) !== 'mirror'
 	)
 	const showAutoButton = $derived(clockKind(deck) === 'auto')
-	const isListening = $derived(clockKind(deck) === 'listener')
-	const listeningWhoSlug = $derived(isListening ? channel?.slug : undefined)
-	const listeningWhomSlug = $derived(isListening ? track?.slug || deck?.playlist_slug : undefined)
+	const isMirroring = $derived(clockKind(deck) === 'mirror')
+	const mirrorWhoSlug = $derived(isMirroring ? channel?.slug : undefined)
+	const mirrorWhomSlug = $derived(isMirroring ? track?.slug || deck?.playlist_slug : undefined)
 	const broadcastSyncDrifted = $derived(Boolean(deck?.drifted))
 	const broadcastSyncTitle = $derived(
 		broadcastSyncDrifted ? m.player_sync_broadcast() : m.player_broadcast_synced()
@@ -65,7 +62,7 @@
 	const slugHref = (s) => (s ? resolve('/[slug]', {slug: s}) : undefined)
 	const resolvedSlugHref = $derived(slugHref(slug))
 	const resolvedChannelSlugHref = $derived(slugHref(channel?.slug))
-	const resolvedListeningWhomHref = $derived(slugHref(listeningWhomSlug))
+	const resolvedMirrorWhomHref = $derived(slugHref(mirrorWhomSlug))
 	const derivedTags = $derived.by(() => {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local dedupe, not reactive state
 		const tags = new Set(
@@ -84,9 +81,7 @@
 		}))
 	})
 
-	const hasDistinctWhom = $derived(
-		Boolean(listeningWhomSlug && listeningWhomSlug !== listeningWhoSlug)
-	)
+	const hasDistinctWhom = $derived(Boolean(mirrorWhomSlug && mirrorWhomSlug !== mirrorWhoSlug))
 	const resolvedTitleHref = $derived(titleHref ?? (slug ? `/${slug}` : undefined))
 </script>
 
@@ -100,8 +95,8 @@
 	</svelte:element>
 
 	<div class="meta-row">
-		{#if listeningWhoSlug}
-			<a class="slug-link" href={resolvedChannelSlugHref}>@{listeningWhoSlug}</a>
+		{#if mirrorWhoSlug}
+			<a class="slug-link" href={resolvedChannelSlugHref}>@{mirrorWhoSlug}</a>
 			{#if showModeMeta && onBroadcastSyncClick}
 				<button
 					type="button"
@@ -118,7 +113,7 @@
 				</button>
 			{/if}
 			{#if hasDistinctWhom}
-				<a class="slug-link" href={resolvedListeningWhomHref}>@{listeningWhomSlug}</a>
+				<a class="slug-link" href={resolvedMirrorWhomHref}>@{mirrorWhomSlug}</a>
 			{/if}
 		{:else if resolvedSlugHref || resolvedChannelSlugHref}
 			<a class="slug-link" href={resolvedSlugHref ?? resolvedChannelSlugHref}>

@@ -142,7 +142,7 @@
 				<dt>Broadcast</dt>
 				<dd>
 					broadcasting: <code>{appState.broadcasting_channel_id ?? 'none'}</code> &middot; clock:
-					<code>{deck.clock ? JSON.stringify(deck.clock) : 'self'}</code>
+					<code>{deck.clock ? JSON.stringify(deck.clock) : 'manual'}</code>
 				</dd>
 			</dl>
 		</details>

@@ -1,12 +1,12 @@
 import type {AppState, Deck} from './types.ts'
 import {logger} from '$lib/logger'
 import {LOCAL_STORAGE_KEYS} from '$lib/storage-keys'
-import {isListening} from '$lib/player/clock'
+import {isMirroring} from '$lib/player/clock'
 
 function resetTransientDeckState(deck: Deck): Deck {
 	deck.is_playing = false
-	// Listener clocks are transient (never persisted); auto clocks survive a reload.
-	if (isListening(deck)) deck.clock = undefined
+	// Mirror clocks are transient (never persisted); auto clocks survive a reload.
+	if (isMirroring(deck)) deck.clock = undefined
 	deck.drifted = undefined
 	deck.play_id = undefined
 	deck.track_played_at = undefined
@@ -28,7 +28,7 @@ export function serializeAppStateForStorage(state: AppState): Record<string, unk
 	const decks: Record<number, Partial<Deck>> = {}
 
 	for (const [id, deck] of Object.entries(state.decks)) {
-		if (isListening(deck)) continue
+		if (isMirroring(deck)) continue
 		decks[Number(id)] = {
 			id: deck.id,
 			playlist_title: deck.playlist_title,
@@ -56,7 +56,7 @@ export function serializeAppStateForStorage(state: AppState): Record<string, unk
 export function serializeQueuesForStorage(decks: AppState['decks']) {
 	const queues: Record<number, {playlist_tracks: string[]; playlist_tracks_shuffled: string[]}> = {}
 	for (const [id, deck] of Object.entries(decks)) {
-		if (isListening(deck)) continue
+		if (isMirroring(deck)) continue
 		queues[Number(id)] = {
 			playlist_tracks: deck.playlist_tracks,
 			playlist_tracks_shuffled: deck.playlist_tracks_shuffled

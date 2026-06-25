@@ -28,7 +28,7 @@ Steps:
 3. Computes weekly shuffle (with view seed if provided)
 4. Starts the scheduled track via `playTrack`
 5. Sets playlist first (label from `viewToQuery(view)`, e.g. `@ko002 #jazz`)
-6. Marks deck as `auto_radio` and stores rotation params
+6. Sets the clock: `deck.clock = {kind: 'auto', rotationStart}`
 7. Seeks to the computed offset once the player is ready
 
 The infinity button appears on:
@@ -44,9 +44,9 @@ Drift is computed continuously in `player.svelte` while playing:
 
 - Auto-radio drift: compare current playback (`deck.playlist_track` + `currentTime`) to the expected schedule snapshot from `playbackState(...)`.
 - Broadcast drift: compare current playback to `calculateSeekTime(...)` from `broadcast.js`.
-- Both use a `2s` tolerance.
+- Both use a `2s` tolerance and write the same `deck.drifted` flag — a deck has only one clock, so one flag covers both modes.
 
-Range seek and other UI controls do not directly set `auto_radio_drifted` anymore.
+Range seek and other UI controls do not directly set `deck.drifted`.
 
 The Auto button uses the same `infinite` icon in both states:
 
@@ -59,22 +59,22 @@ Accessibility: with `prefers-reduced-motion: reduce`, the synced icon falls back
 
 In deck player UI, Auto mode appears as a full-width action row below the channel header and above the video. It combines icon, status text, presence count, and resync action in one button.
 
-`resyncAutoRadio` now re-applies the stored view (`processViewTracks`) before recomputing the deterministic shuffle, so filtered/tag/search auto-radio resyncs correctly.
+`resyncAutoRadio` re-applies the stored view (`processViewTracks`) before recomputing the deterministic shuffle, so filtered/tag/search auto-radio resyncs correctly.
 
 ## Deck state
 
 Auto-radio uses these `Deck` fields:
 
-- `auto_radio` — active flag
-- `auto_radio_drifted` — listener deviated from schedule
+- `clock` — `{kind: 'auto', rotationStart}` when active. `rotationStart` is the epoch from the oldest track (unix seconds). Read via `isAutoRadio(deck)` / `autoRotationStart(deck)` from `player/clock.ts`.
+- `drifted` — deck deviated from schedule (shared with broadcast; a deck has one clock)
 - `view` — stored view identity/filters used for matching and resync
-- `auto_radio_rotation_start` — epoch from oldest track (unix seconds)
 
-`setPlaylist` clears `auto_radio`, so the flags are always set _after_ the playlist call.
+`playTrack` clears `deck.clock`, so the clock is always set _after_ the play call.
 
 ## Files
 
 - `player/auto-radio.ts` — pure functions: `weeklyShuffle`, `playbackState`, `toAutoTracks`, `epochFromTracks`, `hashString`, `AutoRadio` class
+- `player/clock.ts` — `deck.clock` identity reads (`isAutoRadio`, `autoRotationStart`)
 - `player/auto-radio.test.ts` — determinism, viewSeed, epochFromTracks, hashString tests
 - `api.ts` — `joinAutoRadio`, `resyncAutoRadio`
 - `components/auto-radio-button.svelte` — shared infinity auto button UI across headers/pages/search

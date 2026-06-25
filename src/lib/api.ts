@@ -33,7 +33,7 @@ import {
 	type AutoTrack
 } from '$lib/player/auto-radio'
 import {findAutoDecksForChannel, pickAutoResyncDeck} from '$lib/deck'
-import {isListening, isAutoRadio, autoRotationStart} from '$lib/player/clock'
+import {isMirroring, isAutoRadio, autoRotationStart} from '$lib/player/clock'
 import {processViewTracks} from '$lib/views.svelte'
 import {serializeView, viewLabel, normalizeView, type View} from '$lib/views'
 
@@ -173,7 +173,7 @@ export async function playTrack(
 
 	// Switching from live/auto to a normal play action should reuse this deck and clear mode state.
 	if (isNormalPlayStart(startReason)) {
-		if (isListening(deck)) leaveBroadcast(deckId)
+		if (isMirroring(deck)) leaveBroadcast(deckId)
 		deck.clock = undefined
 		deck.drifted = undefined
 	}
@@ -238,7 +238,7 @@ export async function playTrack(
 			start_reason: startReason,
 			shuffle: deck.shuffle,
 			auto_radio: isAutoRadio(deck),
-			broadcast: isListening(deck)
+			broadcast: isMirroring(deck)
 		})
 	}
 
@@ -521,9 +521,9 @@ export function toggleVideo(deckId) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.hide_video_player
-	if (isListening(deck)) {
+	if (isMirroring(deck)) {
 		for (const d of Object.values(appState.decks)) {
-			if (isListening(d)) d.hide_video_player = newValue
+			if (isMirroring(d)) d.hide_video_player = newValue
 		}
 	} else {
 		deck.hide_video_player = newValue
@@ -536,9 +536,9 @@ export function toggleDeckCompact(deckId) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.compact
-	if (isListening(deck)) {
+	if (isMirroring(deck)) {
 		for (const d of Object.values(appState.decks)) {
-			if (isListening(d)) {
+			if (isMirroring(d)) {
 				d.compact = newValue
 				if (newValue && d.expanded) d.expanded = false
 			}
@@ -554,9 +554,9 @@ export function togglePlayerExpanded(deckId) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.expanded
-	if (isListening(deck)) {
+	if (isMirroring(deck)) {
 		for (const d of Object.values(appState.decks)) {
-			if (isListening(d)) {
+			if (isMirroring(d)) {
 				d.expanded = newValue
 				if (newValue && d.compact) d.compact = false
 				if (newValue && d.hide_video_player) d.hide_video_player = false
