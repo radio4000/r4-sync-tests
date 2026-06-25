@@ -1,6 +1,6 @@
 # Broadcast lifecycle refactor — why look
 
-`broadcast.js` holds **9 module-level Maps** + **5 hand-rolled `start*/stop*` pairs** doing the same job in five costumes. The state refactor (deck.clock, client-level publish flag) is done; this is the remaining mess, and it's a different axis: not *what's stored*, but *subscription/lifecycle bookkeeping*.
+`broadcast.js` holds **9 module-level Maps** + **5 hand-rolled `start*/stop*` pairs** doing the same job in five costumes. The state refactor (deck.clock, client-level publish flag) is done; this is the remaining mess, and it's a different axis: not _what's stored_, but _subscription/lifecycle bookkeeping_.
 
 ## The tell
 

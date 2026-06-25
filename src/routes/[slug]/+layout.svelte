@@ -143,8 +143,7 @@
 	let isChannelLive = $derived(Boolean(channelBroadcastQuery.data))
 	let isListeningToChannel = $derived(
 		Boolean(
-			channel?.id &&
-			Object.values(appState.decks).some((d) => listeningChannelId(d) === channel.id)
+			channel?.id && Object.values(appState.decks).some((d) => listeningChannelId(d) === channel.id)
 		)
 	)
 	let canEdit = $derived(canEditChannel(channel?.id))

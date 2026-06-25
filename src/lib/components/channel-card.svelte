@@ -131,11 +131,7 @@
 									: m.common_play()}
 						</button>
 						{#if isBroadcasting}
-							<button
-								type="button"
-								role="menuitem"
-								onclick={() => joinBroadcast(channel.id)}
-							>
+							<button type="button" role="menuitem" onclick={() => joinBroadcast(channel.id)}>
 								<Icon icon="signal" />
 								{m.channel_card_join_broadcast()}
 							</button>

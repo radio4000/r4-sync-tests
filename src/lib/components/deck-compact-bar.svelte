@@ -41,9 +41,7 @@
 			.sort((a, b) => a - b)
 			.filter((id) => isListening(appState.decks[id]))
 	)
-	let isListeningGroupControlDeck = $derived(
-		!isListening(deck) || listeningDeckIds[0] === deckId
-	)
+	let isListeningGroupControlDeck = $derived(!isListening(deck) || listeningDeckIds[0] === deckId)
 
 	const display = createDeckDisplay(deckId)
 	const track = $derived(display.track)
@@ -55,8 +53,7 @@
 		const id = listeningChannelId(deck)
 		if (!id) return undefined
 		return (
-			channelsCollection.state.get(id)?.slug ??
-			broadcastsCollection.state.get(id)?.channels?.slug
+			channelsCollection.state.get(id)?.slug ?? broadcastsCollection.state.get(id)?.channels?.slug
 		)
 	})
 	const broadcastSlug = $derived(

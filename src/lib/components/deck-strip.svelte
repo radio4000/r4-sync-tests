@@ -16,9 +16,7 @@
 			.map(Number)
 			.sort((a, b) => a - b)
 	)
-	let listeningDeckIds = $derived(
-		deckIds.filter((id) => isListening(appState.decks[id]))
-	)
+	let listeningDeckIds = $derived(deckIds.filter((id) => isListening(appState.decks[id])))
 	let videoMixListening = $derived(
 		listeningDeckIds.some((id) =>
 			Boolean(appState.decks[id]?.video_mix && !appState.decks[id]?.compact)

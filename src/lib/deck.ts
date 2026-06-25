@@ -18,7 +18,8 @@ export function deckValues(decks: Record<number, Deck>): Deck[] {
 export function findAutoDecksForChannel(decks: Record<number, Deck>, slug?: string): Deck[] {
 	if (!slug) return []
 	return deckValues(decks).filter(
-		(d) => isAutoRadio(d) && (d.view?.sources[0]?.channels?.[0] === slug || d.playlist_slug === slug)
+		(d) =>
+			isAutoRadio(d) && (d.view?.sources[0]?.channels?.[0] === slug || d.playlist_slug === slug)
 	)
 }
 

@@ -49,9 +49,7 @@
 		Object.values(appState.decks).some(
 			(d) =>
 				!d.compact &&
-				((d.playlist_tracks?.length ?? 0) > 0 ||
-					Boolean(d.playlist_track) ||
-					isListening(d))
+				((d.playlist_tracks?.length ?? 0) > 0 || Boolean(d.playlist_track) || isListening(d))
 		)
 	)
 	let allDeckIds = $derived(

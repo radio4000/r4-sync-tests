@@ -71,29 +71,39 @@ function logDedup(key, msg) {
 	log.debug(msg)
 }
 
-/** Supabase realtime channels keyed by deckId
- * @type {Map<number, any>}
+/**
+ * One registry of live realtime resources, keyed by `role:channelId`. The role
+ * prefix keeps producer and consumer subs apart even though they share the
+ * realtime channel name `broadcast-state:${id}` with opposite event directions.
+ * Each entry owns its own `stop()`, so teardown lives beside setup and can't
+ * drift; look an entry up by key to reach a retained handle (e.g. `.channel`).
+ * @type {Map<string, {stop: () => void} & Record<string, any>>}
  */
-const broadcastChannels = new Map()
+const subs = new Map()
 
-/** Broadcaster realtime state channels keyed by channelId
- * @type {Map<string, {channel: any, intervalId: ReturnType<typeof setInterval>}>}
+/**
+ * Open a resource under `key` if not already open. `create` returns the entry
+ * (with its own `stop()`); idempotent like the old `if (map.has) return` guard.
+ * @param {string} key
+ * @param {() => {stop: () => void} & Record<string, any>} create
  */
-const broadcastStateChannels = new Map()
-/** Broadcaster cleanup monitors keyed by channelId
- * @type {Map<string, {intervalId: ReturnType<typeof setInterval>, idleSinceMs: number | null, stopping: boolean}>}
- */
-const broadcastLivenessMonitors = new Map()
+function openSub(key, create) {
+	const existing = subs.get(key)
+	if (existing) return existing
+	const entry = create()
+	subs.set(key, entry)
+	return entry
+}
 
-/** Listener realtime state channels keyed by channelId
- * @type {Map<string, any>}
- */
-const broadcastStateListeners = new Map()
+/** Tear down the resource under `key`, if any. @param {string} key */
+function closeSub(key) {
+	const entry = subs.get(key)
+	if (entry) {
+		entry.stop()
+		subs.delete(key)
+	}
+}
 
-/** Broadcast table listeners keyed by channelId (for state refresh)
- * @type {Map<string, any>}
- */
-const broadcastTableListeners = new Map()
 const broadcastStateSeqByChannel = new Map()
 const lastReceivedStateSeqByChannel = new Map()
 const seekJobSeqByDeck = new Map()
@@ -107,7 +117,7 @@ export function isUserBroadcasting(channelId) {
 
 /** @param {string} channelId */
 export function notifyBroadcastState(channelId) {
-	if (!broadcastStateChannels.has(channelId)) {
+	if (!subs.has(`state:${channelId}`)) {
 		startBroadcastState(channelId)
 		return
 	}
@@ -307,12 +317,7 @@ export async function stopBroadcast(channelId) {
 
 /** @param {number} deckId */
 function stopBroadcastSync(deckId) {
-	const channel = broadcastChannels.get(deckId)
-	if (channel) {
-		log.log('stopping_sync', {deckId})
-		channel.unsubscribe()
-		broadcastChannels.delete(deckId)
-	}
+	// Invalidate any in-flight seek job for this deck (see seekWhenReady).
 	seekJobSeqByDeck.delete(deckId)
 }
 
@@ -435,28 +440,8 @@ function getBroadcasterDeckIds() {
 	return getSortedDeckIds().filter((id) => !isListening(appState.decks[id]))
 }
 
-function startBroadcastLivenessMonitor(channelId) {
-	if (broadcastLivenessMonitors.has(channelId)) return
-	const intervalId = setInterval(() => {
-		void evaluateBroadcastLiveness(channelId)
-	}, BROADCAST_LIVENESS_INTERVAL_MS)
-	const monitor = {
-		intervalId,
-		idleSinceMs: null,
-		stopping: false
-	}
-	broadcastLivenessMonitors.set(channelId, monitor)
-}
-
-function stopBroadcastLivenessMonitor(channelId) {
-	const monitor = broadcastLivenessMonitors.get(channelId)
-	if (!monitor) return
-	clearInterval(monitor.intervalId)
-	broadcastLivenessMonitors.delete(channelId)
-}
-
 async function evaluateBroadcastLiveness(channelId) {
-	const monitor = broadcastLivenessMonitors.get(channelId)
+	const monitor = subs.get(`state:${channelId}`)?.liveness
 	if (!monitor || monitor.stopping) return
 
 	const deckIds = getBroadcasterDeckIds()
@@ -534,13 +519,11 @@ function getBroadcastDeckState() {
 	})
 }
 
-/** @type {Map<string, ReturnType<typeof setTimeout>>} */
-const tableWriteTimers = new Map()
 const TABLE_WRITE_INTERVAL_MS = 15000
 
 function broadcastStateUpdate(channelId) {
 	const state = getBroadcastDeckState()
-	const entry = broadcastStateChannels.get(channelId)
+	const entry = subs.get(`state:${channelId}`)
 	if (!entry) return
 	const seq = (broadcastStateSeqByChannel.get(channelId) ?? 0) + 1
 	broadcastStateSeqByChannel.set(channelId, seq)
@@ -552,128 +535,130 @@ function broadcastStateUpdate(channelId) {
 	})
 
 	// Debounced table write so late joiners get a fresh snapshot
-	if (!tableWriteTimers.has(channelId)) {
-		tableWriteTimers.set(
-			channelId,
-			setTimeout(() => {
-				tableWriteTimers.delete(channelId)
-				upsertRemoteBroadcast(channelId).catch((err) => {
-					log.warn('table_write_failed', {channelId, error: /** @type {Error} */ (err).message})
-				})
-			}, TABLE_WRITE_INTERVAL_MS)
-		)
+	if (!entry.tableWriteTimer) {
+		entry.tableWriteTimer = setTimeout(() => {
+			entry.tableWriteTimer = null
+			upsertRemoteBroadcast(channelId).catch((err) => {
+				log.warn('table_write_failed', {channelId, error: /** @type {Error} */ (err).message})
+			})
+		}, TABLE_WRITE_INTERVAL_MS)
 	}
 }
 
 function startBroadcastState(channelId) {
-	if (broadcastStateChannels.has(channelId)) return
-	const channel = sdk.supabase
-		.channel(`broadcast-state:${channelId}`)
-		.on('broadcast', {event: 'request_state'}, () => {
-			log.log(`state_request @${label(channelId)}`)
-			broadcastStateUpdate(channelId)
-		})
-		.subscribe((status) => {
-			if (status === 'SUBSCRIBED') {
-				log.log(`state_channel_subscribed @${label(channelId)}`)
+	openSub(`state:${channelId}`, () => {
+		const channel = sdk.supabase
+			.channel(`broadcast-state:${channelId}`)
+			.on('broadcast', {event: 'request_state'}, () => {
+				log.log(`state_request @${label(channelId)}`)
 				broadcastStateUpdate(channelId)
+			})
+			.subscribe((status) => {
+				if (status === 'SUBSCRIBED') {
+					log.log(`state_channel_subscribed @${label(channelId)}`)
+					broadcastStateUpdate(channelId)
+				}
+			})
+		const intervalId = setInterval(broadcastStateUpdate, 5000, channelId)
+		const livenessId = setInterval(
+			() => void evaluateBroadcastLiveness(channelId),
+			BROADCAST_LIVENESS_INTERVAL_MS
+		)
+		/**
+		 * @type {{channel: any, liveness: {idleSinceMs: number | null, stopping: boolean},
+		 *   tableWriteTimer: ReturnType<typeof setTimeout> | null, stop: () => void}}
+		 */
+		const entry = {
+			channel,
+			liveness: {idleSinceMs: null, stopping: false},
+			tableWriteTimer: null,
+			stop() {
+				channel.unsubscribe()
+				clearInterval(intervalId)
+				clearInterval(livenessId)
+				if (entry.tableWriteTimer) clearTimeout(entry.tableWriteTimer)
 			}
-		})
-
-	const intervalId = setInterval(broadcastStateUpdate, 5000, channelId)
-	broadcastStateChannels.set(channelId, {channel, intervalId})
-	startBroadcastLivenessMonitor(channelId)
+		}
+		return entry
+	})
 }
 
 function stopBroadcastState(channelId) {
-	const entry = broadcastStateChannels.get(channelId)
-	if (entry) {
-		entry.channel.unsubscribe()
-		clearInterval(entry.intervalId)
-		broadcastStateChannels.delete(channelId)
-	}
-	const timer = tableWriteTimers.get(channelId)
-	if (timer) {
-		clearTimeout(timer)
-		tableWriteTimers.delete(channelId)
-	}
-	stopBroadcastLivenessMonitor(channelId)
+	closeSub(`state:${channelId}`)
 }
 
 function startBroadcastStateListener(channelId) {
-	if (broadcastStateListeners.has(channelId)) return
-	const channel = sdk.supabase
-		.channel(`broadcast-state:${channelId}`)
-		.on('broadcast', {event: 'state'}, (payload) => {
-			const seq = payload?.payload?.seq ?? payload?.seq
-			if (typeof seq === 'number') {
-				const lastSeq = lastReceivedStateSeqByChannel.get(channelId) ?? 0
-				if (seq <= lastSeq) return
-				lastReceivedStateSeqByChannel.set(channelId, seq)
-			}
-			const decks = payload?.payload?.decks ?? payload?.decks
-			logDedup(`recv:${channelId}`, `state_receive @${label(channelId)} ${deckSummary(decks)}`)
-			applyBroadcastState(channelId, decks)
-		})
-		.subscribe((status) => {
-			if (status === 'SUBSCRIBED') {
-				log.log(`state_listener_subscribed @${label(channelId)}`)
-				channel.send({type: 'broadcast', event: 'request_state', payload: {channel_id: channelId}})
-			}
-		})
-	broadcastStateListeners.set(channelId, channel)
-}
-
-function stopBroadcastStateListener(channelId) {
-	const channel = broadcastStateListeners.get(channelId)
-	if (channel) {
-		channel.unsubscribe()
-		broadcastStateListeners.delete(channelId)
-	}
-	lastReceivedStateSeqByChannel.delete(channelId)
-}
-
-function startBroadcastTableListener(channelId) {
-	if (broadcastTableListeners.has(channelId)) return
-	const channel = sdk.supabase
-		.channel(`broadcast-table:${channelId}`)
-		.on(
-			'postgres_changes',
-			{
-				event: '*',
-				schema: 'public',
-				table: 'broadcast',
-				filter: `channel_id=eq.${channelId}`
-			},
-			(payload) => {
-				if (payload?.eventType === 'DELETE') {
-					log.log(`table_delete @${label(channelId)} closing listeners`)
-					stopBroadcastStateListener(channelId)
-					stopBroadcastTableListener(channelId)
-					closeListeningDecksForChannel(channelId)
-					return
+	openSub(`listener:${channelId}`, () => {
+		const channel = sdk.supabase
+			.channel(`broadcast-state:${channelId}`)
+			.on('broadcast', {event: 'state'}, (payload) => {
+				const seq = payload?.payload?.seq ?? payload?.seq
+				if (typeof seq === 'number') {
+					const lastSeq = lastReceivedStateSeqByChannel.get(channelId) ?? 0
+					if (seq <= lastSeq) return
+					lastReceivedStateSeqByChannel.set(channelId, seq)
 				}
-				log.debug(`table_change @${label(channelId)}`)
-				const stateChannel = broadcastStateListeners.get(channelId)
-				if (stateChannel) {
-					stateChannel.send({
+				const decks = payload?.payload?.decks ?? payload?.decks
+				logDedup(`recv:${channelId}`, `state_receive @${label(channelId)} ${deckSummary(decks)}`)
+				applyBroadcastState(channelId, decks)
+			})
+			.subscribe((status) => {
+				if (status === 'SUBSCRIBED') {
+					log.log(`state_listener_subscribed @${label(channelId)}`)
+					channel.send({
 						type: 'broadcast',
 						event: 'request_state',
 						payload: {channel_id: channelId}
 					})
 				}
-			}
-		)
-		.subscribe()
-	broadcastTableListeners.set(channelId, channel)
+			})
+		return {channel, stop: () => channel.unsubscribe()}
+	})
+}
+
+function stopBroadcastStateListener(channelId) {
+	closeSub(`listener:${channelId}`)
+	lastReceivedStateSeqByChannel.delete(channelId)
+}
+
+function startBroadcastTableListener(channelId) {
+	openSub(`table:${channelId}`, () => {
+		const channel = sdk.supabase
+			.channel(`broadcast-table:${channelId}`)
+			.on(
+				'postgres_changes',
+				{
+					event: '*',
+					schema: 'public',
+					table: 'broadcast',
+					filter: `channel_id=eq.${channelId}`
+				},
+				(payload) => {
+					if (payload?.eventType === 'DELETE') {
+						log.log(`table_delete @${label(channelId)} closing listeners`)
+						stopBroadcastStateListener(channelId)
+						stopBroadcastTableListener(channelId)
+						closeListeningDecksForChannel(channelId)
+						return
+					}
+					log.debug(`table_change @${label(channelId)}`)
+					const stateChannel = subs.get(`listener:${channelId}`)?.channel
+					if (stateChannel) {
+						stateChannel.send({
+							type: 'broadcast',
+							event: 'request_state',
+							payload: {channel_id: channelId}
+						})
+					}
+				}
+			)
+			.subscribe()
+		return {channel, stop: () => channel.unsubscribe()}
+	})
 }
 
 function stopBroadcastTableListener(channelId) {
-	const channel = broadcastTableListeners.get(channelId)
-	if (channel) {
-		channel.unsubscribe()
-		broadcastTableListeners.delete(channelId)
-	}
+	closeSub(`table:${channelId}`)
 }
 
 function closeListeningDecksForChannel(channelId) {

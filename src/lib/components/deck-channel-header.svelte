@@ -49,8 +49,8 @@
 	const isBroadcasting = $derived(
 		Boolean(
 			channel?.id &&
-				appState.broadcasting_channel_id === channel.id &&
-				clockKind(deck) !== 'listener'
+			appState.broadcasting_channel_id === channel.id &&
+			clockKind(deck) !== 'listener'
 		)
 	)
 	const showAutoButton = $derived(clockKind(deck) === 'auto')
