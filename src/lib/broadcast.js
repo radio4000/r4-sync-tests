@@ -17,7 +17,12 @@ import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 import {isDbId} from '$lib/utils'
 import {isListening, listeningChannelId} from '$lib/player/clock'
 import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
-import {packEphemeralTrack, unpackEphemeralTrack} from '$lib/player/broadcast-payload'
+import {
+	packEphemeralTrack,
+	unpackEphemeralTrack,
+	packPlaybackFields,
+	pickPlaybackFields
+} from '$lib/player/broadcast-payload'
 export {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
 import {capture} from '$lib/analytics'
 
@@ -27,20 +32,6 @@ import {capture} from '$lib/analytics'
 const log = logger.ns('broadcast').seal()
 const BROADCAST_IDLE_STOP_MS = 10000
 const BROADCAST_LIVENESS_INTERVAL_MS = 1000
-
-/** Extract type-validated broadcast fields for deck state */
-function pickBroadcastFields(broadcast) {
-	/** @type {Partial<import('$lib/types').Deck>} */
-	const fields = {}
-	if (broadcast.track_played_at) fields.track_played_at = broadcast.track_played_at
-	if (broadcast.seeked_at) fields.seeked_at = broadcast.seeked_at
-	if (broadcast.seek_position != null) fields.seek_position = broadcast.seek_position
-	if (typeof broadcast.volume === 'number') fields.volume = broadcast.volume
-	if (typeof broadcast.muted === 'boolean') fields.muted = broadcast.muted
-	if (typeof broadcast.is_playing === 'boolean') fields.is_playing = broadcast.is_playing
-	if (typeof broadcast.speed === 'number') fields.speed = broadcast.speed
-	return fields
-}
 
 /** Get slug for a channel ID, or short ID if not found */
 function label(channelId) {
@@ -407,7 +398,7 @@ async function playBroadcastTrack(deckId, broadcast) {
 		applyRemoteState(deckId, {
 			clock: {kind: 'listener', channel: channel_id},
 			drifted: false,
-			...pickBroadcastFields(broadcast)
+			...pickPlaybackFields(broadcast)
 		})
 
 		// Apply to media element — delay slightly so YouTube has time to initialize after load
@@ -507,13 +498,7 @@ function getBroadcastDeckState() {
 		return {
 			index,
 			track_id: trackId,
-			track_played_at: deck?.track_played_at ?? null,
-			is_playing: deck?.is_playing ?? false,
-			seeked_at: deck?.seeked_at ?? null,
-			seek_position: deck?.seek_position ?? null,
-			volume: deck?.volume ?? 0,
-			muted: deck?.muted ?? false,
-			speed: deck?.speed ?? 1,
+			...packPlaybackFields(deck),
 			...packEphemeralTrack(nonDbTrack)
 		}
 	})
@@ -776,7 +761,7 @@ async function syncDeckToBroadcastState(deckId, channelId, state) {
 	applyRemoteState(deckId, {
 		clock: {kind: 'listener', channel: channelId},
 		drifted: false,
-		...pickBroadcastFields(state)
+		...pickPlaybackFields(state)
 	})
 	if (trackChanged) {
 		await playBroadcastTrack(deckId, {
