@@ -28,8 +28,8 @@ export interface DeckDisplay {
 	readonly secondaryHeaderChannel: Channel | undefined
 }
 
-export function createDeckDisplay(deckId: number): DeckDisplay {
-	const deck = $derived(appState.decks[deckId])
+export function createDeckDisplay(getDeckId: () => number): DeckDisplay {
+	const deck = $derived(appState.decks[getDeckId()])
 
 	const track = $derived.by(() => {
 		const id = deck?.playlist_track

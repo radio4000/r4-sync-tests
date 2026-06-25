@@ -83,7 +83,7 @@
 	let soundcloudPlayer = $state()
 	let audioPlayer = $state()
 
-	const display = createDeckDisplay(deckId)
+	const display = createDeckDisplay(() => deckId)
 	const track = $derived(display.track)
 	const channel = $derived(display.channel)
 	const displayTrack = $derived(display.displayTrack)

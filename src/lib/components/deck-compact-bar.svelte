@@ -43,7 +43,7 @@
 	)
 	let isListeningGroupControlDeck = $derived(!isListening(deck) || listeningDeckIds[0] === deckId)
 
-	const display = createDeckDisplay(deckId)
+	const display = createDeckDisplay(() => deckId)
 	const track = $derived(display.track)
 	const displayTrack = $derived(display.displayTrack)
 	const displayChannel = $derived(display.displayChannel)
