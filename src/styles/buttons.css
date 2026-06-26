@@ -24,7 +24,7 @@ button,
 
 	background: var(--button-bg, var(--gray-3));
 	color: var(--button-color, var(--gray-12));
-	border: 1px solid transparent;
+	border: 1px solid var(--gray-4);
 	border-radius: var(--border-radius);
 	box-shadow: none;
 
