@@ -592,7 +592,7 @@
 	"theme_override_button_color_label_light": "버튼 텍스트 (라이트)",
 	"theme_override_button_text_desc": "버튼 글자색 재정의",
 	"theme_pointer_cursor_label": "상호작용 요소에 포인터 커서 사용",
-	"theme_reset_button": "레이아웃과 테마를 기본값으로 재설정",
+	"theme_reset_button": "테마를 기본값으로 재설정",
 	"theme_scale_label": "배율",
 	"theme_share_heading": "테마 공유",
 	"theme_theme_label": "테마",

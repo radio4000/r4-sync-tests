@@ -1,5 +1,15 @@
 import * as m from '$lib/paraglide/messages'
 
+type ColorVar = {
+	name: string
+	label: () => string
+	description: () => string
+	default: string
+	theme: 'light' | 'dark'
+	/** Real CSS var a button falls back to when this override is unset. */
+	fallbackVar?: string
+}
+
 export const fontFamilies = [
 	{value: '', label: 'Radio Canada (default)'},
 	{value: 'Radio Canada', label: 'Radio Canada'},
@@ -11,7 +21,7 @@ export const fontFamilies = [
 	{value: 'system-ui', label: 'System'}
 ]
 
-export const baseColors = [
+export const baseColors: ColorVar[] = [
 	{
 		name: '--accent-light',
 		label: () => m.theme_color_accent_light_label(),
@@ -42,12 +52,13 @@ export const baseColors = [
 	}
 ]
 
-export const overrides = [
+export const overrides: ColorVar[] = [
 	{
 		name: '--button-bg-light',
 		label: () => m.theme_override_button_bg_label_light(),
 		description: () => m.theme_override_button_bg_desc(),
 		default: '#fff',
+		fallbackVar: '--gray-3',
 		theme: 'light'
 	},
 	{
@@ -55,6 +66,7 @@ export const overrides = [
 		label: () => m.theme_override_button_bg_label_dark(),
 		description: () => m.theme_override_button_bg_desc(),
 		default: '#000',
+		fallbackVar: '--gray-3',
 		theme: 'dark'
 	},
 	{
@@ -62,6 +74,7 @@ export const overrides = [
 		label: () => m.theme_override_button_color_label_light(),
 		description: () => m.theme_override_button_text_desc(),
 		default: '#000',
+		fallbackVar: '--gray-12',
 		theme: 'light'
 	},
 	{
@@ -69,6 +82,7 @@ export const overrides = [
 		label: () => m.theme_override_button_color_label_dark(),
 		description: () => m.theme_override_button_text_desc(),
 		default: '#fff',
+		fallbackVar: '--gray-12',
 		theme: 'dark'
 	}
 ]

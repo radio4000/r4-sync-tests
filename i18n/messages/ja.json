@@ -659,7 +659,7 @@
 	"theme_override_button_color_label_light": "ボタンテキスト（ライト）",
 	"theme_override_button_text_desc": "ボタンテキストの色を上書き",
 	"theme_pointer_cursor_label": "操作できる要素でポインターカーソルを使う",
-	"theme_reset_button": "レイアウトとテーマをデフォルトにリセット",
+	"theme_reset_button": "テーマをデフォルトにリセット",
 	"theme_scale_label": "スケール",
 	"theme_share_heading": "テーマを共有",
 	"theme_theme_label": "テーマ",

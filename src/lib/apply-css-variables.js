@@ -24,7 +24,7 @@ export function applyCustomCssVariables(customVariables = {}) {
 
 	// Handle button overrides (merge light/dark into light-dark())
 	for (const [target, fallback] of [
-		['--button-bg', 'var(--gray-1)'],
+		['--button-bg', 'var(--gray-3)'],
 		['--button-color', 'var(--gray-12)']
 	]) {
 		const lightVal = customVariables[`${target}-light`]

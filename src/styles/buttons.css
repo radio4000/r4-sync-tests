@@ -73,7 +73,7 @@ a.active {
 
 button.active,
 .btn.active {
-	background: var(--gray-12);
+	background: light-dark(var(--accent-9), var(--accent-10));
 	color: var(--accent-1);
 
 	svg,

@@ -659,7 +659,7 @@
 	"theme_override_button_color_label_light": "texto do botão (claro)",
 	"theme_override_button_text_desc": "Substituir cor do texto do botão",
 	"theme_pointer_cursor_label": "Usar cursor de ponteiro em elementos interativos",
-	"theme_reset_button": "Restaurar layout e tema para os padrões",
+	"theme_reset_button": "Restaurar tema para os padrões",
 	"theme_scale_label": "escala",
 	"theme_share_heading": "Compartilhar tema",
 	"theme_theme_label": "Tema",

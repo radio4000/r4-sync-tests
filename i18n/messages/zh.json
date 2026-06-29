@@ -592,7 +592,7 @@
 	"theme_override_button_color_label_light": "按钮文字（浅色）",
 	"theme_override_button_text_desc": "覆盖按钮文字颜色",
 	"theme_pointer_cursor_label": "在可交互元素上使用手形光标",
-	"theme_reset_button": "将布局和主题重置为默认值",
+	"theme_reset_button": "将主题重置为默认值",
 	"theme_scale_label": "缩放",
 	"theme_share_heading": "分享主题",
 	"theme_theme_label": "主题",

@@ -498,13 +498,16 @@ export function removeFromQueue(deckId, trackId) {
 	log.log('remove_from_queue', {deckId, trackId})
 }
 
+/** @param value 'light', 'dark', or undefined for system */
+export function setTheme(value: string | undefined) {
+	document.documentElement.classList.toggle('dark', value === 'dark')
+	document.documentElement.classList.toggle('light', value === 'light')
+	appState.theme = value
+}
+
 export function toggleTheme() {
 	const cycle: Array<string | undefined> = [undefined, 'light', 'dark']
-	const current = appState.theme
-	const next = cycle[(cycle.indexOf(current) + 1) % cycle.length]
-	document.documentElement.classList.toggle('dark', next === 'dark')
-	document.documentElement.classList.toggle('light', next === 'light')
-	appState.theme = next
+	setTheme(cycle[(cycle.indexOf(appState.theme) + 1) % cycle.length])
 }
 
 /** @param {number} deckId */
