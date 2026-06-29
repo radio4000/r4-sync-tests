@@ -592,7 +592,7 @@
 	"theme_override_button_color_label_light": "текст кнопки (світлий)",
 	"theme_override_button_text_desc": "Перевизначити колір тексту кнопки",
 	"theme_pointer_cursor_label": "Використовувати курсор-вказівник на інтерактивних елементах",
-	"theme_reset_button": "Скинути макет і тему до типових",
+	"theme_reset_button": "Скинути тему до типових",
 	"theme_scale_label": "масштаб",
 	"theme_share_heading": "Поділитися темою",
 	"theme_theme_label": "Тема",

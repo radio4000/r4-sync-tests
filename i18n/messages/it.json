@@ -659,7 +659,7 @@
 	"theme_override_button_color_label_light": "testo pulsante (chiaro)",
 	"theme_override_button_text_desc": "Sovrascrivi il colore del testo dei pulsanti",
 	"theme_pointer_cursor_label": "Usa il cursore pointer sugli elementi interattivi",
-	"theme_reset_button": "Reimposta layout e tema ai predefiniti",
+	"theme_reset_button": "Reimposta tema ai predefiniti",
 	"theme_scale_label": "scala",
 	"theme_share_heading": "Condividi tema",
 	"theme_theme_label": "Tema",

@@ -1,18 +1,13 @@
 <script>
-	import {browser} from '$app/environment'
+	import {untrack} from 'svelte'
 	import {Debounced} from 'runed'
 	import {appState} from '$lib/app-state.svelte'
+	import {setTheme} from '$lib/api'
 	import {applyCustomCssVariables} from '$lib/apply-css-variables'
-	import {
-		fontFamilies,
-		baseColors,
-		overrides,
-		grays,
-		accents
-	} from '$lib/components/theme-editor.data'
+	import {fontFamilies, baseColors, overrides} from '$lib/components/theme-editor.data'
 	import InputColor from '$lib/components/input-color.svelte'
 	import InputRange from '$lib/components/input-range.svelte'
-	import ThemeToggle from '$lib/components/theme-toggle.svelte'
+	import Icon from '$lib/components/icon.svelte'
 	import * as m from '$lib/paraglide/messages'
 	import {logger} from '$lib/logger'
 
@@ -20,34 +15,61 @@
 
 	const uid = 'theme-editor'
 
+	// Strip the trailing " (light)"/" (dark)" — the column header already names the mode.
+	const labelModeSuffix = /\s*\(.+?\)\s*$/
+
 	/** @type {{name: string, value: string} | null} */
 	let pendingUpdate = $state(null)
 	const debouncedUpdate = new Debounced(() => pendingUpdate, 300)
 
-	// Persist debounced updates to appState
+	// untrack the writes so reset (which reassigns custom_css_variables) can't
+	// re-trigger this effect and re-inject the last edit.
 	$effect(() => {
 		const update = debouncedUpdate.current
 		if (!update) return
-		if (update.value) {
-			appState.custom_css_variables[update.name] = update.value
-		} else {
-			delete appState.custom_css_variables[update.name]
-		}
+		untrack(() => {
+			if (update.value) {
+				appState.custom_css_variables[update.name] = update.value
+			} else {
+				delete appState.custom_css_variables[update.name]
+			}
+		})
 	})
 
-	const prefersLight = $derived(
-		browser ? window.matchMedia('(prefers-color-scheme: light)').matches : true
-	)
-	const currentTheme = $derived(appState.theme ?? (prefersLight ? 'light' : 'dark'))
+	const themes = ['light', 'dark']
+	const colorVars = [...baseColors, ...overrides]
+	const colorsFor = (theme) => colorVars.filter((v) => v.theme === theme)
+	const cleanLabel = (variable) => variable.label().replace(labelModeSuffix, '')
 
-	const isActiveVariable = (variable) => {
-		// if (variable.theme === 'both') return true
-		if (!currentTheme) return variable
-		return variable.theme === currentTheme
-	}
+	const themeOptions = [
+		{value: undefined, label: 'System', icon: 'eye'},
+		{value: 'light', label: 'Light', icon: 'sun'},
+		{value: 'dark', label: 'Dark', icon: 'moon'}
+	]
 
 	const customVariables = $derived(appState.custom_css_variables || {})
-	const getCurrentValue = (variable) => customVariables[variable.name] || variable.default
+
+	// Button swatches have no source var; resolve their fallback (--gray-3/--gray-12)
+	// per color-scheme so the swatch shows the real default after the gray base changes.
+	let resolvedDefaults = $state({})
+	$effect(() => {
+		void customVariables // re-resolve when any var changes
+		const probe = document.createElement('span')
+		probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none'
+		document.body.appendChild(probe)
+		const next = {}
+		for (const variable of colorVars) {
+			if (!variable.fallbackVar) continue
+			probe.style.colorScheme = variable.theme
+			probe.style.color = `var(${variable.fallbackVar})`
+			next[variable.name] = getComputedStyle(probe).color
+		}
+		probe.remove()
+		resolvedDefaults = next
+	})
+
+	const getCurrentValue = (variable) =>
+		customVariables[variable.name] || resolvedDefaults[variable.name] || variable.default
 
 	const updateVariable = (name, value) => {
 		const trimmed = value.trim()
@@ -58,6 +80,7 @@
 	}
 	const resetToDefaults = () => {
 		appState.custom_css_variables = {}
+		appState.font_family = undefined
 		applyCustomCssVariables($state.snapshot(appState.custom_css_variables))
 	}
 
@@ -107,10 +130,22 @@
 	<section class="box">
 		<form class="form">
 			<fieldset>
-				<p>{m.theme_theme_label()}</p>
-				<ThemeToggle />
+				<label for={`${uid}-theme`}>{m.theme_theme_label()}</label>
+				<menu class="theme-switch" id={`${uid}-theme`}>
+					{#each themeOptions as opt (opt.label)}
+						<button
+							type="button"
+							class:active={(appState.theme ?? 'system') === (opt.value ?? 'system')}
+							aria-pressed={(appState.theme ?? 'system') === (opt.value ?? 'system')}
+							onclick={() => setTheme(opt.value)}
+						>
+							<Icon icon={opt.icon} strokeWidth={1.7} />
+							{opt.label}
+						</button>
+					{/each}
+				</menu>
 			</fieldset>
-			<fieldset>
+			<fieldset class="row">
 				<label for={`${uid}--scaling`}
 					>{m.theme_scale_label()} <span>{customVariables['--scaling'] || '1'}</span>
 				</label>
@@ -172,7 +207,7 @@
 				/>
 			</fieldset>
 
-			<fieldset>
+			<fieldset class="row">
 				<label for={`${uid}-font-family`}>{m.theme_font_label()}</label>
 				<select
 					id={`${uid}-font-family`}
@@ -190,40 +225,30 @@
 	</section>
 
 	<h2>{m.theme_create_heading()}</h2>
-	<section class="box">
-		<form class="form color-form">
-			{#each baseColors as variable, i (variable.name + i)}
-				<fieldset class:inactive={!isActiveVariable(variable)}>
-					<InputColor
-						label={variable.label()}
-						value={getCurrentValue(variable)}
-						onchange={(e) => updateVariable(variable.name, e.target.value)}
-						disabled={!getCurrentValue(variable)}
-					/>
-					<!--<small>{variable.description()}</small>-->
-				</fieldset>
-			{/each}
+	<div class="theme-split">
+		{#each themes as theme (theme)}
+			<section class="box theme-column" style:color-scheme={theme}>
+				<header class="theme-column-header">{theme}</header>
+				<form class="form color-form">
+					{#each colorsFor(theme) as variable (variable.name)}
+						<fieldset>
+							<InputColor
+								label={cleanLabel(variable)}
+								value={getCurrentValue(variable)}
+								onchange={(e) => updateVariable(variable.name, e.target.value)}
+							/>
+						</fieldset>
+					{/each}
+				</form>
+			</section>
+		{/each}
+	</div>
+	<button type="button" onclick={resetToDefaults} class="theme-reset"
+		>{m.theme_reset_button()}</button
+	>
 
-			{#each overrides as variable (variable.name)}
-				<fieldset class:inactive={!isActiveVariable(variable)}>
-					<InputColor
-						label={variable.label()}
-						value={getCurrentValue(variable)}
-						onchange={(e) => updateVariable(variable.name, e.target.value)}
-						disabled={!getCurrentValue(variable)}
-					/>
-					<!--<small>{variable.description()}</small>-->
-				</fieldset>
-			{/each}
-
-			<button type="button" onclick={resetToDefaults} style:align-self="start"
-				>{m.theme_reset_button()}</button
-			>
-		</form>
-	</section>
-
-	<h2>{m.theme_share_heading()}</h2>
-	<section class="box">
+	<details class="theme-share">
+		<summary>{m.theme_share_heading()}</summary>
 		<form class="form share-form">
 			<fieldset>
 				<label for="{uid}-export" class="visually-hidden">{m.theme_copy_button()}</label>
@@ -243,47 +268,34 @@
 				>
 			</fieldset>
 		</form>
-	</section>
+	</details>
 </div>
 
-<section class="palette-group">
-	<header class="palette-header"><code>--gray</code></header>
-	<div class="color-grid">
-		{#each grays as name, i (name)}
-			<div class="color-swatch" title={name}>
-				<figure style="background-color: var({name})"></figure>
-				<code>{i + 1}</code>
-			</div>
-		{/each}
-	</div>
-</section>
-
-<section class="palette-group">
-	<header class="palette-header"><code>--accent</code></header>
-	<div class="color-grid">
-		{#each accents as name, i (name)}
-			<div class="color-swatch" title={name}>
-				<figure style="background-color: var({name})"></figure>
-				<code>{i + 1}</code>
-			</div>
-		{/each}
-	</div>
-</section>
-
 <style>
+	.focused {
+		display: flex;
+		flex-flow: column;
+		gap: var(--space-3);
+	}
+
 	.box {
 		border: 1px solid var(--gray-6);
 		border-radius: var(--border-radius);
-		padding: 0.75rem;
-		margin-bottom: 1rem;
+		padding: var(--space-2);
 	}
 
 	h2 {
-		margin-block: 0 0.5rem;
+		margin: 0;
 	}
 
 	fieldset {
 		align-items: flex-start;
+	}
+
+	fieldset.row {
+		flex-flow: row;
+		align-items: center;
+		gap: var(--space-2);
 	}
 
 	fieldset:has(input[type='checkbox']) {
@@ -299,6 +311,28 @@
 		font-size: var(--font-4);
 	}
 
+	.theme-switch {
+		display: flex;
+		gap: var(--space-1);
+		margin: 0;
+		padding: 0;
+
+		button {
+			flex: 1;
+			gap: var(--space-1);
+		}
+	}
+
+	.theme-share summary {
+		font-size: var(--font-5);
+		font-weight: 600;
+		cursor: var(--interactive-cursor, pointer);
+	}
+
+	.theme-share[open] summary {
+		margin-bottom: var(--space-2);
+	}
+
 	.share-form fieldset {
 		flex-flow: row;
 	}
@@ -307,41 +341,34 @@
 		flex: 1;
 	}
 
-	.inactive {
-		display: none;
-	}
-
-	.color-grid {
+	.theme-split {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(3rem, 1fr));
-		gap: var(--space-1);
-		margin: 0;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-2);
+	}
 
-		figure {
-			height: clamp(2.25rem, 9vw, 4rem);
-		}
-
-		code {
-			font-size: var(--font-3);
-			font-family: inherit;
-			padding: var(--space-1) var(--space-1);
-			text-align: center;
-			display: block;
+	@media (max-width: 520px) {
+		.theme-split {
+			grid-template-columns: 1fr;
 		}
 	}
 
-	.color-swatch {
-		border: 1px solid var(--gray-4);
-		border-radius: var(--border-radius);
-		overflow: hidden;
-		background: var(--gray-2);
+	/* gray-1/gray-12 resolve per the column's forced color-scheme, so each
+	   column previews its own mode */
+	.theme-column {
+		margin-bottom: 0;
+		background: var(--gray-1);
+		color: var(--gray-12);
 	}
 
-	.palette-group {
-		margin: 0.5rem;
+	.theme-column-header {
+		text-transform: capitalize;
+		font-size: var(--font-4);
+		font-weight: 600;
+		margin-bottom: 0.5rem;
 	}
 
-	.palette-header {
-		margin: 0 0 var(--space-1);
+	.theme-reset {
+		align-self: start;
 	}
 </style>
