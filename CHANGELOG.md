@@ -2,6 +2,7 @@
 
 ## June 2026
 
+- #Deck Track progress bar with scrub and remaining time is on by default
 - #Home Featured tracks rotate daily and include more channels
 - #Explore Explore defaults to channels with more than 10 tracks
 - #Map Channel map gets high-contrast markers, instant tile switching, and an auto-opening pin
