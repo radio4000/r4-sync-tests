@@ -1,6 +1,6 @@
 :root {
 	/* Default base colors for generating a color scale.
-	   Keep in sync with theme-editor.svelte baseColors defaults. */
+	   Keep in sync with theme-editor.data.ts base color defaults. */
 	--gray-light: oklch(0.67 0.012 70);
 	--accent-light: oklch(0.5 0.25 290);
 

@@ -4,7 +4,7 @@
 	import {appState} from '$lib/app-state.svelte'
 	import {setTheme} from '$lib/api'
 	import {applyCustomCssVariables} from '$lib/apply-css-variables'
-	import {fontFamilies, baseColors, overrides} from '$lib/components/theme-editor.data'
+	import {fontFamilies, colorVars} from '$lib/components/theme-editor.data'
 	import InputColor from '$lib/components/input-color.svelte'
 	import InputRange from '$lib/components/input-range.svelte'
 	import Icon from '$lib/components/icon.svelte'
@@ -34,8 +34,23 @@
 	})
 
 	const themes = ['light', 'dark']
-	const colorVars = [...baseColors, ...overrides]
+	const themeTitle = (theme) => (theme === 'light' ? 'Light' : 'Dark')
 	const colorsFor = (theme) => colorVars.filter((v) => v.theme === theme)
+
+	function resolveFallbackColors(vars) {
+		const probe = document.createElement('span')
+		probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none'
+		document.body.appendChild(probe)
+		const resolved = {}
+		for (const variable of vars) {
+			if (!variable.fallbackVar) continue
+			probe.style.colorScheme = variable.theme
+			probe.style.color = `var(${variable.fallbackVar})`
+			resolved[variable.name] = getComputedStyle(probe).color
+		}
+		probe.remove()
+		return resolved
+	}
 
 	const themeOptions = [
 		{value: undefined, label: 'System', icon: 'eye'},
@@ -45,27 +60,16 @@
 
 	const customVariables = $derived(appState.custom_css_variables || {})
 
-	// Button swatches have no source var; resolve their fallback (--gray-3/--gray-12)
-	// per color-scheme so the swatch shows the real default after the gray base changes.
+	// Button overrides fall back to --gray-3/--gray-12; resolve per color-scheme
+	// so swatches track live scale changes when gray bases are edited.
 	let resolvedDefaults = $state({})
 	$effect(() => {
-		void customVariables // re-resolve when any var changes
-		const probe = document.createElement('span')
-		probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none'
-		document.body.appendChild(probe)
-		const next = {}
-		for (const variable of colorVars) {
-			if (!variable.fallbackVar) continue
-			probe.style.colorScheme = variable.theme
-			probe.style.color = `var(${variable.fallbackVar})`
-			next[variable.name] = getComputedStyle(probe).color
-		}
-		probe.remove()
-		resolvedDefaults = next
+		void customVariables
+		resolvedDefaults = resolveFallbackColors(colorVars)
 	})
 
 	const getCurrentValue = (variable) =>
-		customVariables[variable.name] || resolvedDefaults[variable.name] || variable.default
+		customVariables[variable.name] ?? resolvedDefaults[variable.name] ?? variable.default
 
 	const updateVariable = (name, value) => {
 		const trimmed = value.trim()
@@ -224,7 +228,7 @@
 	<div class="theme-split">
 		{#each themes as theme (theme)}
 			<section class="box theme-column" style:color-scheme={theme}>
-				<header class="theme-column-header">{theme}</header>
+				<h3>{themeTitle(theme)}</h3>
 				<form class="form color-form">
 					{#each colorsFor(theme) as variable (variable.name)}
 						<fieldset>
@@ -357,10 +361,7 @@
 		color: var(--gray-12);
 	}
 
-	.theme-column-header {
-		text-transform: capitalize;
-		font-size: var(--font-4);
-		font-weight: 600;
+	.theme-column h3 {
 		margin-bottom: 0.5rem;
 	}
 
