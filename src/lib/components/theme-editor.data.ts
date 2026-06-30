@@ -6,8 +6,8 @@ type ColorVar = {
 	theme: 'light' | 'dark'
 	/** Base scale source — must match theme-1.css. */
 	default?: string
-	/** Resolved at runtime when unset; matches buttons.css fallbacks. */
-	fallbackVar?: string
+	/** Read default from computed .btn styles; matches buttons.css. */
+	probeStyle?: 'backgroundColor' | 'color'
 }
 
 export const fontFamilies = [
@@ -52,25 +52,25 @@ const overrides: ColorVar[] = [
 	{
 		name: '--button-bg-light',
 		label: () => m.theme_override_button_bg_label_light(),
-		fallbackVar: '--gray-3',
+		probeStyle: 'backgroundColor',
 		theme: 'light'
 	},
 	{
 		name: '--button-bg-dark',
 		label: () => m.theme_override_button_bg_label_dark(),
-		fallbackVar: '--gray-3',
+		probeStyle: 'backgroundColor',
 		theme: 'dark'
 	},
 	{
 		name: '--button-color-light',
 		label: () => m.theme_override_button_color_label_light(),
-		fallbackVar: '--gray-12',
+		probeStyle: 'color',
 		theme: 'light'
 	},
 	{
 		name: '--button-color-dark',
 		label: () => m.theme_override_button_color_label_dark(),
-		fallbackVar: '--gray-12',
+		probeStyle: 'color',
 		theme: 'dark'
 	}
 ]

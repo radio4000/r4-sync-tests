@@ -38,15 +38,15 @@
 	const colorsFor = (theme) => colorVars.filter((v) => v.theme === theme)
 
 	function resolveFallbackColors(vars) {
-		const probe = document.createElement('span')
+		const probe = document.createElement('button')
+		probe.className = 'btn'
 		probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none'
 		document.body.appendChild(probe)
 		const resolved = {}
 		for (const variable of vars) {
-			if (!variable.fallbackVar) continue
+			if (!variable.probeStyle) continue
 			probe.style.colorScheme = variable.theme
-			probe.style.color = `var(${variable.fallbackVar})`
-			resolved[variable.name] = getComputedStyle(probe).color
+			resolved[variable.name] = getComputedStyle(probe)[variable.probeStyle]
 		}
 		probe.remove()
 		return resolved
@@ -60,8 +60,7 @@
 
 	const customVariables = $derived(appState.custom_css_variables || {})
 
-	// Button overrides fall back to --gray-3/--gray-12; resolve per color-scheme
-	// so swatches track live scale changes when gray bases are edited.
+	// Button override swatches read defaults from computed .btn styles.
 	let resolvedDefaults = $state({})
 	$effect(() => {
 		void customVariables

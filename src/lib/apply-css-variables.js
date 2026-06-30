@@ -1,52 +1,47 @@
+// All vars this editor manages. Base scale sources (accent-*/gray-*) drive the
+// rest in CSS; button light/dark merge lives in buttons.css via light-dark().
+const managedVars = [
+	'--accent-light',
+	'--accent-dark',
+	'--gray-light',
+	'--gray-dark',
+	'--button-bg-light',
+	'--button-bg-dark',
+	'--button-color-light',
+	'--button-color-dark',
+	'--scaling',
+	'--border-radius',
+	'--media-radius'
+]
+
 export function applyCustomCssVariables(customVariables = {}) {
 	const root = document.documentElement
 
 	// Reset everything if empty
 	if (!Object.keys(customVariables).length) {
-		// Clear base colors (scales will fallback to defaults in CSS)
-		root.style.removeProperty('--gray-light')
-		root.style.removeProperty('--gray-dark')
-		root.style.removeProperty('--accent-light')
-		root.style.removeProperty('--accent-dark')
-		// Clear other custom properties
-		root.style.removeProperty('--button-bg')
-		root.style.removeProperty('--button-color')
-		root.style.removeProperty('--scaling')
-		root.style.removeProperty('--border-radius')
-		root.style.removeProperty('--media-radius')
-		return
-	}
-
-	// Set base colors directly - CSS will handle the scales
-	for (const prop of ['--accent-light', '--accent-dark', '--gray-light', '--gray-dark']) {
-		if (customVariables[prop]) root.style.setProperty(prop, customVariables[prop])
-	}
-
-	// Handle button overrides (merge light/dark into light-dark())
-	for (const [target, fallback] of [
-		['--button-bg', 'var(--gray-3)'],
-		['--button-color', 'var(--gray-12)']
-	]) {
-		const lightVal = customVariables[`${target}-light`]
-		const darkVal = customVariables[`${target}-dark`]
-		if (lightVal || darkVal) {
-			root.style.setProperty(target, `light-dark(${lightVal || fallback}, ${darkVal || fallback})`)
-		}
-	}
-
-	// Apply all other custom variables (non-generated ones like scaling, border-radius)
-	Object.entries(customVariables).forEach(([name, value]) => {
-		const systemVariables = [
-			'--gray-light',
-			'--gray-dark',
-			'--accent-light',
-			'--accent-dark',
+		for (const prop of baseColorVars) root.style.removeProperty(prop)
+		for (const prop of [
 			'--button-bg-light',
 			'--button-bg-dark',
 			'--button-color-light',
-			'--button-color-dark'
-		]
-		if (value && !systemVariables.includes(name)) {
+			'--button-color-dark',
+			'--scaling',
+			'--border-radius',
+			'--media-radius'
+		]) {
+			root.style.removeProperty(prop)
+		}
+		return
+	}
+
+	for (const [name, value] of Object.entries(customVariables)) {
+		if (value) root.style.setProperty(name, value)
+	}
+
+	// Everything else (button overrides, scaling, radii, …).
+	// Button light/dark merge lives in buttons.css via light-dark().
+	Object.entries(customVariables).forEach(([name, value]) => {
+		if (value && !baseColorVars.includes(name)) {
 			root.style.setProperty(name, value)
 		}
 	})
