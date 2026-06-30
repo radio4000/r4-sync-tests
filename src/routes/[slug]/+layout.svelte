@@ -14,15 +14,13 @@
 	import {tracksCollection, checkTracksFreshness, ensureTracksLoaded} from '$lib/collections/tracks'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
+	import {getMediaPlayer, playChannel, shufflePlayChannel, toggleChannelPlay} from '$lib/api'
 	import {
-		getMediaPlayer,
-		joinAutoRadio,
-		playChannel,
-		resyncAutoRadio,
-		togglePlayPause
-	} from '$lib/api'
-	import {hasAutoRadioCoverage} from '$lib/player/auto-radio'
-	import {findAutoDecksForChannel, findChannelPlayingDeck, findListeningDeck} from '$lib/deck'
+		findAutoDecksForChannel,
+		findChannelDeck,
+		findChannelPlayingDeck,
+		findListeningDeck
+	} from '$lib/deck'
 	import ButtonFollow from '$lib/components/button-follow.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import ChannelCanvasBg from '$lib/components/channel-canvas-bg.svelte'
@@ -154,16 +152,14 @@
 	let channelListeningDeck = $derived(
 		findListeningDeck(appState.decks, appState.active_deck_id, channel?.id)
 	)
-	let activeDeck = $derived(appState.decks[appState.active_deck_id])
-	let isChannelLoaded = $derived(
-		Boolean(channel?.slug && activeDeck?.playlist_slug === channel.slug)
+	// The deck the play button shows and acts on — resolved by channel, not "active",
+	// so display and action never drift to different decks. Same helper toggleChannelPlay uses.
+	let channelDeck = $derived(
+		findChannelDeck(appState.decks, appState.active_deck_id, channel?.slug)
 	)
-	let isChannelPlaying = $derived(Boolean(isChannelLoaded && activeDeck?.is_playing))
-	let isAutoEnabled = $derived(
-		Boolean(activeDeck?.auto_radio && activeDeck?.playlist_slug === slug)
-	)
-	let canShowAutoButton = $derived(hasAutoRadioCoverage(allChannelTracks))
-	let activeAutoDrifted = $derived(Boolean(isAutoEnabled && activeDeck?.auto_radio_drifted))
+	let isChannelPlaying = $derived(Boolean(channelDeck?.is_playing))
+	let isAutoEnabled = $derived(Boolean(channelDeck?.auto_radio))
+	let activeAutoDrifted = $derived(Boolean(isAutoEnabled && channelDeck?.auto_radio_drifted))
 	let autoPresenceCount = $derived(
 		channel?.slug ? (channelPresence[channel.slug]?.byUri?.[`@${channel.slug}`] ?? 0) : 0
 	)
@@ -173,9 +169,22 @@
 	let playLoading = $state(false)
 	let liveLoading = $state(false)
 	let userChannelSlug = $derived(appState.channel?.slug ?? '')
-	let playTooltip = $derived(isChannelPlaying ? m.player_tooltip_pause() : m.player_tooltip_play())
+	let playTooltip = $derived(
+		activeAutoDrifted
+			? m.auto_radio_resync()
+			: isChannelPlaying
+				? m.player_tooltip_pause()
+				: m.player_tooltip_play()
+	)
 	let playLabel = $derived(
-		playTooltip
+		(isChannelPlaying ? m.player_tooltip_pause() : m.player_tooltip_play())
+			.replace(/\s*<kbd>[^<]*<\/kbd>/gi, '')
+			.replace(/<[^>]+>/g, '')
+			.trim()
+	)
+	let shuffleLabel = $derived(
+		m
+			.player_tooltip_shuffle()
 			.replace(/\s*<kbd>[^<]*<\/kbd>/gi, '')
 			.replace(/<[^>]+>/g, '')
 			.trim()
@@ -259,34 +268,26 @@
 		}
 	}
 
+	// Decision tree (resync/pause/resume/start) lives in toggleChannelPlay.
+	// Pass tid so track-detail pages start from the viewed track.
 	async function onPlayAction() {
 		if (!channel || playLoading) return
-		if (isChannelLoaded) {
-			togglePlayPause(appState.active_deck_id)
-			return
-		}
 		playLoading = true
 		try {
-			await playChannel(appState.active_deck_id, channel, tid)
+			await toggleChannelPlay(channel, tid)
 		} finally {
 			playLoading = false
 		}
 	}
 
-	async function onAutoAction() {
-		if (!channel) return
-		const deckId = appState.active_deck_id
-		const deck = appState.decks[deckId]
-		if (deck?.listening_to_channel_id) {
-			leaveBroadcast(deckId)
+	async function onShuffleAction() {
+		if (!channel || playLoading) return
+		playLoading = true
+		try {
+			await shufflePlayChannel(appState.active_deck_id, channel)
+		} finally {
+			playLoading = false
 		}
-		if (deck?.auto_radio && deck.playlist_slug === slug) {
-			void resyncAutoRadio(deckId)
-			return
-		}
-		await ensureTracksLoaded(slug)
-		const tracks = [...tracksCollection.state.values()].filter((t) => t.slug === slug)
-		await joinAutoRadio(deckId, tracks, {sources: [{channels: [slug]}]})
 	}
 
 	// --- Context providers ---
@@ -439,32 +440,33 @@
 							</button>
 						{/if}
 
-						{#if canShowAutoButton}
-							<button
-								type="button"
-								class={['mode-action', 'auto', {active: isAutoEnabled, drifted: activeAutoDrifted}]}
-								onclick={onAutoAction}
-								{@attach tooltip({
-									content: activeAutoDrifted ? m.auto_radio_resync() : m.auto_radio_join()
-								})}
-							>
-								<Icon icon="infinite" size={14} />
-								<span>Auto</span>
-								{#if autoPresenceCount > 0}
-									<PresenceCount count={autoPresenceCount} />
-								{/if}
-							</button>
-						{/if}
-
 						<button
 							type="button"
-							class={['mode-action', 'play', {active: isChannelPlaying}]}
+							class={[
+								'mode-action',
+								'play',
+								{active: isChannelPlaying, drifted: activeAutoDrifted}
+							]}
 							onclick={onPlayAction}
 							disabled={playLoading}
 							{@attach tooltip({content: playTooltip})}
 						>
 							<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={14} />
 							<span>{playLabel}</span>
+							{#if autoPresenceCount > 0}
+								<PresenceCount count={autoPresenceCount} />
+							{/if}
+						</button>
+
+						<button
+							type="button"
+							class={['mode-action', 'shuffle']}
+							onclick={onShuffleAction}
+							disabled={playLoading}
+							{@attach tooltip({content: m.channels_tooltip_shuffle()})}
+						>
+							<Icon icon="shuffle" size={14} />
+							<span>{shuffleLabel}</span>
 						</button>
 					</menu>
 				</div>
@@ -576,10 +578,6 @@
 		line-height: 1.1;
 		margin: 0;
 		transition: color 0.15s;
-	}
-
-	.info :global(.channel-page-title.active) {
-		color: var(--accent-9);
 	}
 
 	.info :global(.meta-row) {

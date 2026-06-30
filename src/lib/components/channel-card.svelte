@@ -3,7 +3,8 @@
 	import {relativeDateDetailed} from '$lib/dates'
 	import * as m from '$lib/paraglide/messages'
 	import {trimWithEllipsis} from '$lib/utils'
-	import {playChannel, togglePlayPause} from '$lib/api'
+	import {toggleChannelPlay} from '$lib/api'
+	import {findChannelDeck} from '$lib/deck'
 	import {joinBroadcast} from '$lib/broadcast.js'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import ChannelAvatar from './channel-avatar.svelte'
@@ -21,22 +22,29 @@
 		(broadcastsCollection.state.size, broadcastsCollection.state.has(channel.id))
 	)
 
-	const isPlaying = $derived(
-		Object.values(appState.decks).some((d) => d.playlist_slug === channel.slug && d.is_playing)
+	// Resolve the deck holding this channel once, then drive both display and action
+	// from it — so "pause" on the button always toggles the deck it's showing.
+	const channelDeck = $derived(
+		findChannelDeck(appState.decks, appState.active_deck_id, channel.slug)
 	)
+	const isPlaying = $derived(Boolean(channelDeck?.is_playing))
+
+	let playLoading = $state(false)
 
 	/** @param {MouseEvent} [event] */
-	function triggerPrimaryAction(event) {
+	async function triggerPrimaryAction(event) {
 		event?.preventDefault()
 		if (isBroadcasting) {
 			joinBroadcast(appState.active_deck_id, channel.id)
 			return
 		}
-		if (isPlaying) {
-			togglePlayPause(appState.active_deck_id)
-			return
+		if (playLoading) return
+		playLoading = true
+		try {
+			await toggleChannelPlay(channel)
+		} finally {
+			playLoading = false
 		}
-		playChannel(appState.active_deck_id, channel)
 	}
 
 	/** @param {MouseEvent} e */

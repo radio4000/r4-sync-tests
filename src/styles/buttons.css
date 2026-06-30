@@ -241,7 +241,7 @@ button.icon-label-right {
 	background: var(--color-red);
 }
 
-.mode-action.auto.drifted {
+.mode-action.drifted {
 	color: var(--orange-9);
 }
 

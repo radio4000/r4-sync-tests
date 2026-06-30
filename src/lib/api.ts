@@ -32,7 +32,7 @@ import {
 	epochFromTracks,
 	type AutoTrack
 } from '$lib/player/auto-radio'
-import {findAutoDecksForChannel, pickAutoResyncDeck} from '$lib/deck'
+import {findAutoDecksForChannel, findChannelDeck, pickAutoResyncDeck} from '$lib/deck'
 import {processViewTracks} from '$lib/views.svelte'
 import {serializeView, viewLabel, normalizeView, type View} from '$lib/views'
 
@@ -327,11 +327,7 @@ export async function playChannel(
 	await playTrack(deckId, trackId ?? ids[0], null, 'play_channel')
 }
 
-/**
- * @param {string} trackId
- * @param {string} [slug]
- */
-export async function playTrackInNewDeck(trackId, slug) {
+export async function playTrackInNewDeck(trackId: string, slug?: string) {
 	const deck = addDeck()
 	deck.compact = true
 	appState.active_deck_id = deck.id
@@ -341,22 +337,14 @@ export async function playTrackInNewDeck(trackId, slug) {
 	await playTrack(deck.id, trackId, null, 'user_click_track')
 }
 
-/**
- * @param {{id: string, slug: string}} channel
- * @param {string} [trackId]
- */
-export async function playChannelInNewDeck(channel, trackId) {
+export async function playChannelInNewDeck(channel: {id: string; slug: string}, trackId?: string) {
 	const deck = addDeck()
 	appState.active_deck_id = deck.id
 	await playChannel(deck.id, channel, trackId)
 }
 
-/**
- * Play channel starting from random track with shuffle enabled
- * @param {number} deckId
- * @param {{id: string, slug: string}} channel
- */
-export async function shufflePlayChannel(deckId, {id, slug}) {
+/** Play channel starting from random track with shuffle enabled */
+export async function shufflePlayChannel(deckId: number, {id, slug}: {id: string; slug: string}) {
 	log.log('shuffle_play_channel', {deckId, id, slug})
 	leaveBroadcast(deckId)
 	const d = getDeck(deckId)
@@ -421,11 +409,7 @@ export function loadDeckView(
 	deck.view = normalizeView(view)
 }
 
-/**
- * @param {number} deckId
- * @param {string[]} trackIds
- */
-export function addToPlaylist(deckId, trackIds) {
+export function addToPlaylist(deckId: number, trackIds: string[]) {
 	const deck = getDeck(deckId)
 	if (!deck) {
 		log.warn('addToPlaylist: no deck', {deckId})
@@ -449,12 +433,8 @@ export function addToPlaylist(deckId, trackIds) {
 	})
 }
 
-/**
- * Queue track(s) to play after the current track
- * @param {number} deckId
- * @param {string | string[]} trackIds
- */
-export function playNext(deckId, trackIds) {
+/** Queue track(s) to play after the current track */
+export function playNext(deckId: number, trackIds: string | string[]) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const ids = Array.isArray(trackIds) ? trackIds : [trackIds]
@@ -480,12 +460,8 @@ export function playNext(deckId, trackIds) {
 	log.log('play_next', {deckId, ids, after: currentId})
 }
 
-/**
- * Remove track from queue
- * @param {number} deckId
- * @param {string} trackId
- */
-export function removeFromQueue(deckId, trackId) {
+/** Remove track from queue */
+export function removeFromQueue(deckId: number, trackId: string) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	deck.playlist_tracks = queueRemove(deck.playlist_tracks, trackId)
@@ -510,16 +486,14 @@ export function toggleTheme() {
 	setTheme(cycle[(cycle.indexOf(appState.theme) + 1) % cycle.length])
 }
 
-/** @param {number} deckId */
-export function toggleQueuePanel(deckId) {
+export function toggleQueuePanel(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	deck.hide_queue_panel = !deck.hide_queue_panel
 	maybeBroadcastNotify()
 }
 
-/** @param {number} deckId */
-export function toggleVideo(deckId) {
+export function toggleVideo(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.hide_video_player
@@ -533,8 +507,7 @@ export function toggleVideo(deckId) {
 	maybeBroadcastNotify()
 }
 
-/** @param {number} deckId */
-export function toggleDeckCompact(deckId) {
+export function toggleDeckCompact(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.compact
@@ -551,8 +524,7 @@ export function toggleDeckCompact(deckId) {
 	}
 }
 
-/** @param {number} deckId */
-export function togglePlayerExpanded(deckId) {
+export function togglePlayerExpanded(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.expanded
@@ -571,8 +543,7 @@ export function togglePlayerExpanded(deckId) {
 	}
 }
 
-/** @param {KeyboardEvent} [event] */
-export function openSearch(event) {
+export function openSearch(event?: KeyboardEvent) {
 	event?.preventDefault()
 	const hasVisibleDeck = Object.values(appState.decks).some((d) => !d.compact)
 	if (hasVisibleDeck) {
@@ -585,8 +556,7 @@ export function openSearch(event) {
 	goto('/search')
 }
 
-/** @param {number} deckId */
-export async function togglePlayPause(deckId) {
+export async function togglePlayPause(deckId: number) {
 	const deck = getDeck(deckId)
 	let player = getMediaPlayer(deckId)
 	if (!player) {
@@ -613,12 +583,8 @@ export async function togglePlayPause(deckId) {
 	maybeBroadcastNotify()
 }
 
-/**
- * Play from this track to end of list
- * @param {number} deckId
- * @param {string} trackId
- */
-export function playFromHere(deckId, trackId) {
+/** Play from this track to end of list */
+export function playFromHere(deckId: number, trackId: string) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const idx = deck.playlist_tracks.indexOf(trackId)
@@ -631,11 +597,8 @@ export function playFromHere(deckId, trackId) {
 	log.log('play_from_here', {deckId, trackId, remaining: fromHere.length})
 }
 
-/**
- * Clear the queue but keep current track
- * @param {number} deckId
- */
-export function clearQueue(deckId) {
+/** Clear the queue but keep current track */
+export function clearQueue(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const current = deck.playlist_track
@@ -677,11 +640,8 @@ export function applyRemoteState(deckId: number, state: Partial<Deck>) {
 	Object.assign(deck, state)
 }
 
-/**
- * Toggle shuffle mode on/off
- * @param {number} deckId
- */
-export function toggleShuffle(deckId) {
+/** Toggle shuffle mode on/off */
+export function toggleShuffle(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	deck.shuffle = !deck.shuffle
@@ -693,11 +653,8 @@ export function toggleShuffle(deckId) {
 	}
 }
 
-/**
- * Shuffle remaining tracks in place
- * @param {number} deckId
- */
-export function shuffleRemaining(deckId) {
+/** Shuffle remaining tracks in place */
+export function shuffleRemaining(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const current = deck.playlist_track
@@ -707,11 +664,8 @@ export function shuffleRemaining(deckId) {
 	log.log('shuffle_remaining', {deckId, current})
 }
 
-/**
- * Rotate queue: move played tracks to end
- * @param {number} deckId
- */
-export function rotateQueue(deckId) {
+/** Rotate queue: move played tracks to end */
+export function rotateQueue(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const current = deck.playlist_track
@@ -780,11 +734,7 @@ export function togglePlay(player: MediaPlayer) {
 	}
 }
 
-/**
- * @param {number} deckId
- * @param {number} seconds
- */
-export function seekTo(deckId, seconds) {
+export function seekTo(deckId: number, seconds: number) {
 	const mediaEl = getMediaPlayer(deckId)
 	if (!mediaEl) {
 		log.warn('seekTo: no media element found')
@@ -841,8 +791,7 @@ export function previous(deckId: number, endReason: PlayEndReason) {
 	}
 }
 
-/** @param {number} deckId */
-export function eject(deckId) {
+export function eject(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	clearAllQueue(deckId)
@@ -983,6 +932,50 @@ export async function resyncAutoRadio(deckId: number) {
 	} else {
 		await seekToAutoRadioOffset(deckId, shuffled, totalDuration, rotationStartUnix)
 	}
+}
+
+/**
+ * Default "tap play" for a channel. Starts live auto-radio when the channel has
+ * enough duration data, otherwise falls back to latest-first playback.
+ * Always targets the active deck — auto-radio is keyed by the active deck
+ * (see {@link toggleChannelAutoRadio}), so there is no deck to thread through.
+ */
+export async function playChannelAuto(channel: {id: string; slug: string}) {
+	const tracks = await loadChannelTracks(channel.slug)
+	if (hasAutoRadioCoverage(tracks)) {
+		await toggleChannelAutoRadio(channel.slug, tracks)
+	} else {
+		await playChannel(appState.active_deck_id, channel)
+	}
+}
+
+/**
+ * Primary "tap play" for a channel — keyed by the channel, not a deck. Resolves the
+ * deck holding the channel via {@link findChannelDeck} (the same helper surfaces use
+ * for display), so the deck shown and the deck acted on are always the same one.
+ * If a deck already holds this channel: focus it, then resync a drifted auto-radio
+ * else pause/resume. Otherwise start fresh on the active deck from `trackId`, or
+ * smartly via {@link playChannelAuto} (auto-radio if the channel has coverage, else
+ * latest-first).
+ */
+export async function toggleChannelPlay(channel: {id: string; slug: string}, trackId?: string) {
+	const deck = findChannelDeck(appState.decks, appState.active_deck_id, channel.slug)
+	if (deck) {
+		// Focus the resolved deck so global controls (spacebar, player surface) follow
+		// the deck the user just acted on — avoids a second silent stream of the channel.
+		appState.active_deck_id = deck.id
+		// Already this channel: resync a drifted auto-radio, else pause/resume.
+		if (deck.auto_radio && deck.auto_radio_drifted) await resyncAutoRadio(deck.id)
+		else togglePlayPause(deck.id)
+		return
+	}
+	// Fresh start on the active deck. leaveBroadcast is required for the auto path —
+	// joinAutoRadio never leaves a broadcast. The playChannel path leaves it again
+	// internally; the double-call is harmless.
+	const deckId = appState.active_deck_id
+	leaveBroadcast(deckId)
+	if (trackId) await playChannel(deckId, channel, trackId)
+	else await playChannelAuto(channel)
 }
 
 export async function toggleChannelAutoRadio(slug: string, tracks?: Track[]) {
