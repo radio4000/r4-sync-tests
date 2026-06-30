@@ -2,8 +2,30 @@ import {channelsCollection} from '$lib/collections/channels'
 import {queryClient} from '$lib/collections/query-client'
 import {fetchRecentTracksForSlugs} from '$lib/collections/tracks'
 import {sdk} from '@radio4000/sdk'
-import {featuredScore} from '$lib/utils'
+import {featuredScore, seededRandom, shuffleArray} from '$lib/utils'
+import {daysAgoIso} from '$lib/dates'
 import type {Channel} from '$lib/types'
+
+/** Today as a stable seed (YYYY-MM-DD) for daily-rotating picks. */
+export function dailySeed(): string {
+	return new Date().toISOString().slice(0, 10)
+}
+
+/**
+ * Pick featured channels from a pool: score a quality window, then shuffle it
+ * down to `count`. Pass a stable `seed` (e.g. dailySeed()) for daily rotation,
+ * or a random one to reshuffle. Without a seed, picks randomly each call.
+ * Shared by the homepage and the /featured explore page so both rotate alike.
+ */
+export function pickFeatured(
+	pool: Channel[],
+	{count = 12, window = 40, seed}: {count?: number; window?: number; seed?: string} = {}
+): Channel[] {
+	const top = pool
+		.toSorted((a, b) => featuredScore(b) - featuredScore(a))
+		.slice(0, Math.max(window, count))
+	return shuffleArray(top, seed ? seededRandom(seed) : Math.random).slice(0, count)
+}
 
 /**
  * Load the quality channel pool and return it.
@@ -11,7 +33,7 @@ import type {Channel} from '$lib/types'
  * channelsCollection so other parts of the app can use these channels.
  */
 export async function getFeaturedPool(days = 30): Promise<Channel[]> {
-	const since = new Date(Date.now() - days * 86400000).toISOString()
+	const since = daysAgoIso(days)
 	try {
 		const data = await queryClient.fetchQuery({
 			queryKey: ['channels', 'featured-pool'],
@@ -42,14 +64,14 @@ export async function getFeaturedPool(days = 30): Promise<Channel[]> {
 }
 
 /**
- * Load top `count` featured channels by score and fetch their recent tracks.
+ * Load the featured channel pool and fetch each channel's recent tracks.
  * Results land in tracksCollection.state — read from there after awaiting.
- * Returns the picked channels.
+ * Returns the pool channels (sorted by score).
  */
-export async function loadFeaturedChannelTracks(count = 3, days = 30): Promise<Channel[]> {
+export async function loadFeaturedChannelTracks(days = 30): Promise<Channel[]> {
 	const pool = await getFeaturedPool(days)
-	const since = new Date(Date.now() - days * 86400000).toISOString()
-	const picked = pool.toSorted((a, b) => featuredScore(b) - featuredScore(a)).slice(0, count)
+	const since = daysAgoIso(days)
+	const picked = pool.toSorted((a, b) => featuredScore(b) - featuredScore(a))
 	if (picked.length) {
 		await fetchRecentTracksForSlugs(
 			picked.map((ch) => ch.slug),

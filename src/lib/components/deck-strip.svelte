@@ -123,7 +123,7 @@
 		flex-direction: column;
 		flex-shrink: 0;
 		min-height: 0;
-		margin: var(--interface-margin);
+		margin: var(--space-1);
 		overflow: clip;
 		border-radius: var(--border-radius);
 		border-left: 1px solid var(--gray-4);
@@ -146,7 +146,7 @@
 		.deck-sections {
 			display: flex;
 			flex-direction: row;
-			gap: 0.3rem;
+			gap: var(--space-1);
 			flex: 1 1 auto;
 			min-height: 0;
 			overflow-x: auto;
@@ -199,7 +199,7 @@
 		/* Video mix: stack listening deck videos into one layered viewport */
 		.broadcasts.video-mix {
 			--video-mix-stage-height: clamp(16rem, 62dvh, 80dvh);
-			--video-mix-stage-gap: 0.2rem;
+			--video-mix-stage-gap: var(--space-1);
 			isolation: isolate;
 			position: relative;
 		}
@@ -229,8 +229,8 @@
 
 		/* Compact the per-deck chrome so the shared video stage can grow */
 		.broadcasts.video-mix :global(.deck.listening.video-mix .header-top) {
-			padding: 0.2rem 0.35rem;
-			gap: 0.25rem;
+			padding: var(--space-1) var(--space-1);
+			gap: var(--space-1);
 		}
 
 		.broadcasts.video-mix :global(.deck.listening.video-mix .bottom-chrome) {
@@ -242,8 +242,8 @@
 		}
 
 		.broadcasts.video-mix :global(.deck.listening.video-mix .controls) {
-			padding: 0.22rem 0.35rem 0.3rem;
-			gap: 0.15rem;
+			padding: 0.22rem var(--space-1) var(--space-1);
+			gap: var(--space-1);
 		}
 
 		.broadcasts.video-mix :global(.deck.listening.video-mix .video-hidden-placeholder) {
@@ -314,7 +314,7 @@
 
 		.exit-mode-bar {
 			display: flex;
-			padding: 0.3rem 0.4rem 0.4rem;
+			padding: var(--space-1) 0.5rem 0.5rem;
 			flex-shrink: 0;
 		}
 
@@ -323,9 +323,9 @@
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			gap: 0.3rem;
+			gap: var(--space-1);
 			font-size: var(--font-2);
-			padding: 0.25rem 0.6rem;
+			padding: var(--space-1) var(--space-2);
 			border-radius: var(--border-radius);
 			white-space: nowrap;
 		}
@@ -494,7 +494,7 @@
 			}
 
 			.exit-mode-bar {
-				padding-top: 0.2rem;
+				padding-top: var(--space-1);
 			}
 
 			/* One visible non-compact deck should fill height even when video is hidden */

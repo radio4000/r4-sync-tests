@@ -88,7 +88,7 @@
 		border-bottom: 0;
 
 		a {
-			padding: 0.25rem 1rem 0.2rem 1rem;
+			padding: var(--space-1) 1rem var(--space-1) 1rem;
 			font-size: var(--font-4);
 			text-transform: capitalize;
 

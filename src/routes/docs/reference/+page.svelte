@@ -119,7 +119,7 @@
 		padding-inline-start: 1rem;
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 1rem;
+		gap: var(--space-1) 1rem;
 	}
 	.name {
 		font-family: monospace;

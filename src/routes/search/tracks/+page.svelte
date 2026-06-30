@@ -38,6 +38,7 @@
 	const viewQuery = queryView(() => view)
 	const tracks = $derived(viewQuery.tracks)
 	const totalCount = $derived(viewQuery.count)
+	const resultCount = $derived(totalCount || tracks.length)
 	const tracksLoading = $derived(viewQuery.loading)
 	const featuredChannelSlugs = $derived(getTopChannelSlugs(channelsCollection.state.values(), 6))
 	const featuredTags = $derived(getTopTagValues([...tracksCollection.state.values()], 12))
@@ -67,10 +68,9 @@
 			<section class="track-results">
 				<header>
 					<h2>
-						{totalCount || tracks.length}
-						{tracks.length === 1
-							? m.search_track_one({count: tracks.length})
-							: m.search_track_other({count: tracks.length})}
+						{resultCount === 1
+							? m.search_track_one({count: resultCount})
+							: m.search_track_other({count: resultCount})}
 					</h2>
 					<Pagination {currentPage} {pageSize} {totalCount} defaultPageSize={50} />
 					<SearchTrackMenu {tracks} title={search.value.trim()} {view} basePath="/search/tracks" />
@@ -121,7 +121,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		padding-inline: 0.5rem;
 	}
 
@@ -170,7 +170,7 @@
 	.browse-links {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 0.5rem;
+		gap: var(--space-1) 0.5rem;
 		justify-content: center;
 		color: light-dark(var(--gray-9), var(--gray-8));
 

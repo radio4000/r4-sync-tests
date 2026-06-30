@@ -59,7 +59,7 @@
 	.tooltip {
 		position: fixed;
 		margin: 0;
-		padding: 0.2rem 0.5rem;
+		padding: var(--space-1) 0.5rem;
 		font-size: var(--font-3);
 		color: var(--gray-12);
 		border: 1px solid var(--color-interface-border);

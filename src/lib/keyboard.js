@@ -106,7 +106,7 @@ function onKeyDown(event) {
 
 export function initializeKeyboardShortcuts() {
 	const keyBindings = {...DEFAULT_KEY_BINDINGS, ...appState.shortcuts}
-	/** @type {import('tinykeys').KeyBindingMap} */
+	/** @type {import('tinykeys').KeybindingsMap} */
 	const bindings = {}
 	for (const [key, actionName] of Object.entries(keyBindings)) {
 		const action = SHORTCUT_ACTIONS[actionName]

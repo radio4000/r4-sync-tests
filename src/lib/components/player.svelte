@@ -17,7 +17,8 @@
 		setUserInitiatedPlay,
 		resyncAutoRadio,
 		recordSeekPosition,
-		clearUserInitiatedPlay
+		clearUserInitiatedPlay,
+		toggleShuffle
 	} from '$lib/api'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {playbackState, toAutoTracks} from '$lib/player/auto-radio'
@@ -717,6 +718,16 @@
 					{@render btnPrev()}
 					{@render btnPlay()}
 					{@render btnNext()}
+					{#if activeQueue.length > 2}
+						<button
+							onclick={() => toggleShuffle(deckId)}
+							class:active={deck?.shuffle}
+							class="shuffle"
+							{@attach tooltip({content: m.player_tooltip_shuffle()})}
+						>
+							<Icon icon="shuffle" />
+						</button>
+					{/if}
 					<SpeedControl {deckId} {provider} />
 					<VolumeControl {deckId} />
 				{:else if deck?.auto_radio}
@@ -804,7 +815,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.5rem 0.5rem;
-		gap: 0.4rem;
+		gap: 0.5rem;
 	}
 
 	.header-channel {
@@ -812,8 +823,8 @@
 		flex-direction: row;
 		align-items: flex-start;
 		flex-wrap: wrap;
-		gap: 0.35rem;
-		row-gap: 0.2rem;
+		gap: var(--space-1);
+		row-gap: var(--space-1);
 		min-width: 0;
 		max-width: min(64vw, 26rem);
 	}
@@ -828,7 +839,7 @@
 	.header-id {
 		display: flex;
 		align-items: center;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		color: var(--gray-9);
 	}
 
@@ -849,7 +860,7 @@
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		min-width: 0;
 		width: 100%;
 		flex-shrink: 0;
@@ -860,7 +871,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		padding-inline: 0.35rem;
+		padding-inline: var(--space-1);
 		min-height: 1.35rem;
 	}
 
@@ -874,7 +885,7 @@
 	.sync-footer .sync-btn {
 		width: 100%;
 		min-height: 1.7rem;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		justify-content: center;
 	}
 
@@ -898,7 +909,7 @@
 			justify-content: space-between;
 			gap: 1rem;
 			width: 100%;
-			padding: 0.4rem 0.6rem;
+			padding: var(--space-1) var(--space-2);
 			background: none;
 			border: none;
 			border-radius: var(--border-radius);

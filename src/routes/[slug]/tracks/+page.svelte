@@ -483,7 +483,7 @@
 		padding: 0.5rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
+		gap: var(--space-1);
 	}
 
 	.tracks-page {
@@ -508,7 +508,7 @@
 
 	.filters-dialog-panel {
 		display: grid;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		h3 {
 			margin: 0;
 		}
@@ -517,7 +517,7 @@
 	.tags-menu {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		max-height: min(32vh, 20rem);
 		overflow: auto;
 		button.active {
@@ -528,14 +528,14 @@
 
 	.tags-toolbar {
 		display: grid;
-		gap: 0.35rem;
+		gap: var(--space-1);
 	}
 
 	.tags-search-row {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto auto;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 	}
 
 	.tags-sort-options {
@@ -553,7 +553,7 @@
 
 	.filter-tags {
 		flex-wrap: wrap;
-		gap: 0.35rem;
+		gap: var(--space-1);
 	}
 
 	.modal-header {
@@ -573,7 +573,7 @@
 	.modal-header-actions {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 	}
 
 	.empty {

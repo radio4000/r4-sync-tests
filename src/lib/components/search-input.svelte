@@ -72,7 +72,7 @@
 
 	div > :global(.icon) {
 		position: absolute;
-		left: 0.35rem;
+		left: var(--space-2);
 		z-index: 1;
 		opacity: 0.5;
 	}
@@ -80,7 +80,7 @@
 	input[type='search'] {
 		flex: 1;
 		min-width: 0;
-		padding-left: 1.5rem;
+		padding-left: 1.8rem;
 		padding-right: 1.5rem;
 
 		/* hide browser default clear button */
@@ -91,10 +91,10 @@
 
 	.clear {
 		position: absolute;
-		right: 0.25rem;
+		right: var(--space-1);
 		display: flex;
 		align-items: center;
-		padding: 0.15rem;
+		padding: var(--space-1);
 		background: none;
 		border: none;
 		cursor: var(--interactive-cursor, pointer);

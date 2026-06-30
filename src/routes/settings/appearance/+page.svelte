@@ -10,23 +10,13 @@
 </svelte:head>
 
 <article>
-	<header class="focused constrained">
-		<BackLink href={resolve('/settings')} />
-		<h1>{m.theme_heading()}</h1>
-	</header>
+	<div class="focused constrained">
+		<header>
+			<BackLink href={resolve('/settings')} />
+			<h1>{m.theme_heading()}</h1>
+		</header>
+	</div>
 	<main>
 		<ThemeEditor />
 	</main>
 </article>
-
-<style>
-	header {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		margin-block: 1rem;
-	}
-	h1 {
-		margin: 0;
-	}
-</style>

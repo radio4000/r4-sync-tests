@@ -24,7 +24,6 @@ test('respects concurrency limit', async () => {
 
 	const items = Array.from({length: 10}, (_, i) => i)
 
-	 
 	for await (const _ of mapChunked(
 		items,
 		async (chunk) => {

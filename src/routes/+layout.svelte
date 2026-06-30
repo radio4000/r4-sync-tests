@@ -81,10 +81,12 @@
 		return total
 	})
 
-	function compactDeckTransition() {
-		return {
-			duration: 0
-		}
+	/**
+	 * @param {Element} _node
+	 * @returns {import('svelte/transition').TransitionConfig}
+	 */
+	function compactDeckTransition(_node) {
+		return {duration: 0}
 	}
 
 	// Ensure first client render uses persisted locale before any message call runs.
@@ -381,7 +383,6 @@
 	.layout > :global(header) {
 		position: sticky;
 		top: 0;
-		margin: var(--interface-margin);
 		flex-shrink: 0;
 	}
 
@@ -447,8 +448,8 @@
 		gap: 0rem;
 		border-radius: 8px 8px 0 0;
 		overflow: hidden;
-		border-top: 1px solid var(--gray-6);
-		margin: 0 var(--interface-margin) var(--interface-margin);
+		border-top: 1px solid var(--gray-4);
+		margin: 0 var(--space-1) var(--space-1);
 		/*
 		padding: 0.4rem 0.5rem;
 		 */
@@ -465,7 +466,7 @@
 		display: grid;
 		grid-template-columns: auto 1fr auto;
 		align-items: center;
-		column-gap: 0.3rem;
+		column-gap: var(--space-1);
 		min-width: 0;
 	}
 
@@ -479,7 +480,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		padding: 0.35rem 0.6rem;
+		padding: var(--space-1) var(--space-2);
 		border-radius: var(--border-radius);
 		align-self: center;
 		min-height: 2rem;
@@ -492,8 +493,8 @@
 	.compact-group-actions {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.2rem;
-		padding: 0.25rem 0.35rem 0.25rem 0.25rem;
+		gap: var(--space-1);
+		padding: var(--space-1) var(--space-1) var(--space-1) var(--space-1);
 		align-self: center;
 	}
 
@@ -502,10 +503,10 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		font-size: var(--font-2);
 		white-space: nowrap;
-		padding: 0.2rem 0.45rem;
+		padding: var(--space-1) var(--space-2);
 		min-height: 2rem;
 	}
 

@@ -1,5 +1,6 @@
 import {createCollection} from '@tanstack/svelte-db'
 import {queryCollectionOptions, parseLoadSubsetOptions} from '@tanstack/query-db-collection'
+import {BasicIndex} from '@tanstack/db'
 import {sdk} from '@radio4000/sdk'
 import {appState} from '$lib/app-state.svelte'
 import {fetchChannelBySlug} from '$lib/api/fetch-channels'
@@ -97,6 +98,8 @@ function parseChannelParams(opts: Parameters<typeof parseLoadSubsetOptions>[0]) 
 
 export const channelsCollection = createCollection<Channel, string>({
 	...queryCollectionOptions({
+		autoIndex: 'eager',
+		defaultIndexType: BasicIndex,
 		queryKey: (opts) => {
 			// Base key probe: TanStack calls queryKey({}) once to derive the prefix
 			// that all other keys must extend.

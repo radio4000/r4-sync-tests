@@ -24,7 +24,7 @@
 	)
 </script>
 
-<nav class="explore-section-menu tabs chip-tabs" aria-label={activeLabel}>
+<nav class="explore-section-menu tabs" aria-label={activeLabel}>
 	<a href={resolve('/explore/channels/featured')} class="btn chip" class:active={isChannels}>
 		{m.explore_tab_channels()}
 	</a>
@@ -38,13 +38,6 @@
 
 <style>
 	.explore-section-menu {
-		display: flex;
-		flex-wrap: nowrap;
-		gap: 0.5rem;
 		flex-shrink: 0;
-	}
-
-	.explore-section-menu :global(.btn.chip) {
-		flex: 0 0 auto;
 	}
 </style>

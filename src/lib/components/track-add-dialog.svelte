@@ -146,13 +146,13 @@
 	.recent-tracks {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		padding-block-start: 1rem;
 		border-block-start: 1px solid var(--color-interface-border);
 	}
 
 	.recent-tracks h3 {
-		margin: 0 0 0.25rem;
+		margin: 0 0 var(--space-1);
 		font-size: var(--font-3);
 		color: var(--color-text-2);
 	}

@@ -1,5 +1,17 @@
 # Changelog
 
+## June 2026
+
+- #Home Featured tracks rotate daily and include more channels
+- #Explore Explore defaults to channels with more than 10 tracks
+- #Map Channel map gets high-contrast markers, instant tile switching, and an auto-opening pin
+- #Deck Shuffle button moved next to play
+- #Channels Channel header tinted with the channel's avatar color
+- #Theme Theme editor edits light and dark side by side; recomputed color scales and a `t` shortcut to toggle theme
+- #UI Tightened spacing across components
+- #Auth Fixed follows sync on sign-in and the login button label when a password is set
+- #Perf Faster channel switching and less homepage layout shift
+
 ## May 2026
 
 - Add N+P shortcuts for next/prev track (can be customized)

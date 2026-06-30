@@ -60,7 +60,7 @@
 	kbd {
 		border: 1px solid var(--gray-5);
 		border-radius: var(--border-radius);
-		padding: 0.2rem 0.5rem;
+		padding: var(--space-1) 0.5rem;
 		min-width: 3rem;
 		text-align: center;
 		font-family: inherit;

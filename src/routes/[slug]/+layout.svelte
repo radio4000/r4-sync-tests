@@ -25,6 +25,7 @@
 	import {findAutoDecksForChannel, findChannelPlayingDeck, findListeningDeck} from '$lib/deck'
 	import ButtonFollow from '$lib/components/button-follow.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
+	import ChannelCanvasBg from '$lib/components/channel-canvas-bg.svelte'
 	import DeckChannelHeader from '$lib/components/deck-channel-header.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
@@ -314,6 +315,7 @@
 	<div class="channel-sticky" bind:clientHeight={channelStickyHeight}>
 		{#if displayChannel}
 			<header>
+				<ChannelCanvasBg id={displayChannel.image} />
 				<div class="channel-main">
 					<div class="avatar">
 						{#if isChannelLive}
@@ -507,15 +509,24 @@
 	}
 
 	header {
+		position: relative;
 		display: grid;
 		grid-template-areas:
 			'main secondary'
 			'controls controls';
 		grid-template-columns: 1fr auto;
-		gap: 0.4rem;
-		padding: 0.5rem 0.5rem 0.4rem;
+		gap: var(--space-1);
+		padding: var(--space-2);
 		min-width: 0;
 		align-items: center;
+		background: var(--gray-2);
+		border-bottom: 1px solid var(--gray-3);
+		overflow: hidden;
+	}
+
+	header > :not(.channel-canvas-bg) {
+		position: relative;
+		z-index: 1;
 	}
 
 	@container (min-width: 500px) {
@@ -579,7 +590,7 @@
 		grid-area: controls;
 		display: flex;
 		align-items: center;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		min-width: 0;
 	}
 
@@ -587,7 +598,7 @@
 		display: flex;
 		align-items: stretch;
 		justify-content: center;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		flex: 1 1 auto;
 		min-width: 0;
 		margin: 0;
@@ -597,7 +608,7 @@
 		grid-area: secondary;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 
 	main {
@@ -612,9 +623,9 @@
 	.channel-nav {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		background: var(--gray-1);
-		padding: 0.5rem 0.5rem 0.4rem;
+		padding: 0.5rem;
 	}
 
 	.channel-nav-controls {
@@ -622,6 +633,6 @@
 		min-width: 0;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 </style>

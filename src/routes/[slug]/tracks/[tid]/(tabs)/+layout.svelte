@@ -113,7 +113,7 @@
 		<ul class="list track-current" class:playing={isTrackPlaying}>
 			<li><TrackCard {track} {canEdit} /></li>
 		</ul>
-		<nav class="track-nav chip-tabs" aria-label={m.track_meta_title()}>
+		<nav class="track-nav tabs" aria-label={m.track_meta_title()}>
 			<a
 				href={`/${data.slug}/tracks#track-${data.tid}`}
 				class="btn chip"
@@ -196,7 +196,7 @@
 		overflow-x: auto;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.35rem 0.5rem;
+		padding: var(--space-1) 0.5rem;
 	}
 
 	.meta {

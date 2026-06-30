@@ -347,8 +347,8 @@
 	.evidence {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem;
-		margin-top: 0.25rem;
+		gap: var(--space-1);
+		margin-top: var(--space-1);
 	}
 	.tag {
 		font-size: var(--font-4);
@@ -371,7 +371,7 @@
 	}
 	.actions {
 		display: flex;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 	.expanded {
 		margin-top: 0.5rem;

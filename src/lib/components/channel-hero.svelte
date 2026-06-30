@@ -21,15 +21,15 @@
 
 	figure :global(button) {
 		position: absolute;
-		top: 0.2rem;
+		top: var(--space-1);
 	}
 
 	figure :global(.play) {
-		left: 0.2rem;
+		left: var(--space-1);
 	}
 
 	figure :global(.follow) {
-		right: 0.2rem;
+		right: var(--space-1);
 	}
 
 	figure:not(:hover) :global(button) {

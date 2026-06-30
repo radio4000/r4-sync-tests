@@ -29,7 +29,7 @@
 	.app-build-info {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
+		gap: 0.5rem;
 		flex-wrap: wrap;
 	}
 

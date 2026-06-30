@@ -64,7 +64,7 @@
 	}
 
 	li {
-		margin-block: 0.4rem;
+		margin-block: 0.5rem;
 	}
 
 	p {
@@ -74,7 +74,7 @@
 	a {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
+		gap: 0.5rem;
 		margin-top: 0.75rem;
 	}
 </style>

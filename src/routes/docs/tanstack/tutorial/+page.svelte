@@ -544,12 +544,12 @@ Component (reactive, filtered)</pre>
 	ul.items {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		list-style: none;
 		padding: 0;
 
 		li {
-			padding: 0.2rem 0.5rem;
+			padding: var(--space-1) 0.5rem;
 			background: var(--gray-4);
 			border-radius: var(--border-radius);
 			font-size: var(--font-2);

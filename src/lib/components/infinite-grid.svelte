@@ -142,7 +142,7 @@
 
 	.coordinates {
 		position: absolute;
-		bottom: 0.3rem;
+		bottom: var(--space-1);
 		right: 0.5rem;
 	}
 

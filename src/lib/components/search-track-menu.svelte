@@ -107,12 +107,12 @@
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: 0.3rem;
+		gap: var(--space-1);
 	}
 
 	.filter-summary {
 		display: grid;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		min-width: min(28rem, 75vw);
 		p {
 			margin: 0;

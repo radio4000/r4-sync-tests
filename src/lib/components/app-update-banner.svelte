@@ -30,8 +30,8 @@
 	[data-sw-update] {
 		max-width: 50ch;
 		position: fixed;
-		top: var(--interface-margin);
-		right: var(--interface-margin);
+		top: var(--space-1);
+		right: var(--space-1);
 		z-index: 9999;
 		display: flex;
 		flex-flow: column;

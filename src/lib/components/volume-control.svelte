@@ -61,7 +61,7 @@
 	.volume {
 		display: flex;
 		align-items: center;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		flex: 1 1 6rem;
 		min-width: 0;
 	}
@@ -78,11 +78,11 @@
 	}
 
 	.volume :global(media-mute-button) {
-		--media-control-background: var(--button-bg, var(--gray-1));
-		--media-control-hover-background: var(--button-bg, var(--gray-1));
+		--media-control-background: var(--button-bg);
+		--media-control-hover-background: var(--button-bg);
 		--media-icon-color: currentColor;
 		--media-icon-color-hover: currentColor;
-		color: var(--button-color, var(--gray-12));
+		color: var(--button-color);
 	}
 
 	.volume :global(media-mute-button.active) {

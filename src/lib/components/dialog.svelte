@@ -48,7 +48,7 @@
 
 <style>
 	dialog {
-		--duration: 200ms;
+		--duration: 150ms;
 		border: none;
 		width: 100%;
 		max-width: 100%;

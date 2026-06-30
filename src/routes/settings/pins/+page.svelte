@@ -130,7 +130,7 @@
 	}
 	.order-buttons {
 		display: flex;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 	.invisible {
 		visibility: hidden;

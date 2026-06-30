@@ -303,7 +303,7 @@
 		flex-shrink: 0;
 	}
 	.query-group {
-		padding: 0.25rem;
+		padding: var(--space-1);
 		border-radius: 0.25rem;
 	}
 	.query-group:has([data-delete]:hover) {

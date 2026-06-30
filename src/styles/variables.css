@@ -2,14 +2,13 @@
 	color-scheme: light dark;
 
 	/* layout */
-	--interface-margin: 0.2rem;
 	--scaling: 1;
 	--space-1: calc(0.2rem * var(--scaling));
 	--space-2: calc(0.5rem * var(--scaling));
 	--space-3: calc(1rem * var(--scaling));
 	--border-radius: 0.4rem;
 	--media-radius: var(--border-radius);
-	--track-artwork-size: 2rem;
+	--track-artwork-size: 2.5rem;
 	--shadow-modal: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
 	--deck-transition-fast: 150ms;
 	--deck-transition-ease: cubic-bezier(0.2, 0, 0, 1);
@@ -42,6 +41,16 @@
 	--aside-bg: var(--color-interface-elevated);
 	--footer-bg: var(--color-interface-elevated);
 
+	/* buttons (*-light/*-dark overrides come from the theme editor) */
+	--button-bg: light-dark(
+		var(--button-bg-light, var(--gray-3)),
+		var(--button-bg-dark, var(--gray-3))
+	);
+	--button-color: light-dark(
+		var(--button-color-light, var(--gray-12)),
+		var(--button-color-dark, var(--gray-12))
+	);
+
 	/* media queries can't use variables, but still, nice to declare what we use */
 	--breakpoint-xs: 520px;
 	--breakpoint-sm: 768px;
@@ -50,7 +59,7 @@
 	--breakpoint-xl: 1640px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1280px) {
 	:root {
 		--font-root: 17px;
 	}

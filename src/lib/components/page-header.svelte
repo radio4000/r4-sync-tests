@@ -15,7 +15,7 @@
 		gap: 0.5rem;
 		margin: 0;
 		padding-inline: 0.5rem;
-		padding-block: 0.35rem;
+		padding-block: 0.5rem;
 		z-index: 20;
 		background: var(--color-interface);
 	}

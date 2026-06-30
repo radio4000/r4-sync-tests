@@ -319,7 +319,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		padding-inline: 0.5rem;
 	}
 

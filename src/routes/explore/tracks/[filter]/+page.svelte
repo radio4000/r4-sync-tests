@@ -5,6 +5,7 @@
 	import {tracksCollection, fetchRecentTracks} from '$lib/collections/tracks'
 	import {loadFeaturedChannelTracks} from '$lib/collections/featured'
 	import {groupByDay} from '$lib/utils'
+	import {daysAgoIso} from '$lib/dates'
 	import TrackCard from '$lib/components/track-card.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import ExplorePageHeader from '$lib/components/explore-page-header.svelte'
@@ -22,7 +23,6 @@
 
 	const LIMIT = 50
 	const FEATURED_DAYS = 30
-	const FEATURED_COUNT = 3
 
 	let tracks = $state(/** @type {import('$lib/types').Track[]} */ ([]))
 	let loadedAll = $state(false)
@@ -59,8 +59,8 @@
 	}
 
 	async function loadFeatured() {
-		const picked = await loadFeaturedChannelTracks(FEATURED_COUNT, FEATURED_DAYS)
-		const featuredSince = new Date(Date.now() - FEATURED_DAYS * 86400000).toISOString()
+		const picked = await loadFeaturedChannelTracks(FEATURED_DAYS)
+		const featuredSince = daysAgoIso(FEATURED_DAYS)
 		const slugSet = new Set(picked.map((ch) => ch.slug))
 		// Access .size so this derived re-runs when tracks are upserted into the collection
 		void tracksCollection.state.size
@@ -147,14 +147,14 @@
 	}
 
 	.content {
-		padding: 0.25rem 0.5rem 0.5rem;
+		padding: var(--space-1) 0.5rem 0.5rem;
 	}
 
 	.track-with-channel {
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		padding-inline: 0.5rem;
 	}
 
@@ -171,7 +171,7 @@
 		font-size: var(--font-4);
 		font-weight: 600;
 		color: light-dark(var(--gray-11), var(--gray-9));
-		margin: 1rem 0 0.25rem;
+		margin: 1rem 0 var(--space-1);
 		&:first-child {
 			margin-top: 0;
 		}

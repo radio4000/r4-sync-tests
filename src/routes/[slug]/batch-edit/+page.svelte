@@ -650,9 +650,9 @@
 
 	.sort-row {
 		display: flex;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		padding-bottom: 0.5rem;
-		margin-bottom: 0.2rem;
+		margin-bottom: var(--space-1);
 		border-bottom: 1px solid var(--gray-6);
 	}
 
@@ -663,14 +663,14 @@
 	.column-options {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 
 	.column-options label {
 		display: flex;
 		gap: 0.5rem;
 		white-space: nowrap;
-		padding: 0.2rem;
+		padding: var(--space-1);
 	}
 
 	.column-options label:hover {

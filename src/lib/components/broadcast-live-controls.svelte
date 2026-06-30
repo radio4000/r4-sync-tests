@@ -66,7 +66,7 @@
 		align-items: center;
 		justify-content: center;
 		flex-wrap: wrap;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		width: 100%;
 	}
 </style>

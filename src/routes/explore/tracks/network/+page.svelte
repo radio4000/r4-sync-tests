@@ -4,6 +4,7 @@
 	import {appName} from '$lib/config'
 	import {tracksCollection, fetchRecentTracksForSlugs} from '$lib/collections/tracks'
 	import {groupByDay} from '$lib/utils'
+	import {daysAgoIso} from '$lib/dates'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
 	import TrackCard from '$lib/components/track-card.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
@@ -28,7 +29,7 @@
 	$effect(() => {
 		if (!follows.followedChannels.length || days <= maxLoadedDays) return
 		maxLoadedDays = days
-		const since = new Date(Date.now() - days * 86400000).toISOString()
+		const since = daysAgoIso(days)
 		fetchRecentTracksForSlugs(
 			follows.followedChannels.map((ch) => ch.slug),
 			since
@@ -38,7 +39,7 @@
 	// Feed: tracks from followed channels within selected window, grouped by day
 	const feedTracks = $derived.by(() => {
 		if (!follows.followedChannels.length) return []
-		const since = new Date(Date.now() - days * 86400000).toISOString()
+		const since = daysAgoIso(days)
 		const slugSet = new Set(follows.followedChannels.map((ch) => ch.slug))
 		// Access .size so this derived re-runs when tracks are upserted into the collection
 		void tracksCollection.state.size
@@ -98,7 +99,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		padding-inline: 0.5rem;
 	}
 
@@ -116,14 +117,14 @@
 	}
 
 	.content {
-		padding: 0.25rem 0.5rem 0.5rem;
+		padding: var(--space-1) 0.5rem 0.5rem;
 	}
 
 	.day-header {
 		font-size: var(--font-4);
 		font-weight: 600;
 		color: light-dark(var(--gray-11), var(--gray-9));
-		margin: 1rem 0 0.25rem;
+		margin: 1rem 0 var(--space-1);
 		&:first-child {
 			margin-top: 0;
 		}

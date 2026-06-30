@@ -56,13 +56,10 @@
 		broadcastSyncDrifted ? m.player_sync_broadcast() : m.player_broadcast_synced()
 	)
 	const autoTitle = $derived(deck?.auto_radio_drifted ? m.auto_radio_resync() : m.auto_radio_join())
-	const resolvedSlugHref = $derived(slug ? resolve('/[slug]', {slug}) : undefined)
-	const resolvedChannelSlugHref = $derived(
-		channel?.slug ? resolve('/[slug]', {slug: channel.slug}) : undefined
-	)
-	const resolvedListeningWhomHref = $derived(
-		listeningWhomSlug ? resolve('/[slug]', {slug: listeningWhomSlug}) : undefined
-	)
+	const slugHref = (s) => (s ? resolve('/[slug]', {slug: s}) : undefined)
+	const resolvedSlugHref = $derived(slugHref(slug))
+	const resolvedChannelSlugHref = $derived(slugHref(channel?.slug))
+	const resolvedListeningWhomHref = $derived(slugHref(listeningWhomSlug))
 	const derivedTags = $derived.by(() => {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local dedupe, not reactive state
 		const tags = new Set(
@@ -85,13 +82,10 @@
 		Boolean(listeningWhomSlug && listeningWhomSlug !== listeningWhoSlug)
 	)
 	const resolvedTitleHref = $derived(titleHref ?? (slug ? `/${slug}` : undefined))
-	const titleClassNames = $derived(
-		['title-row', titleClass, isPlaying ? 'active' : ''].filter(Boolean).join(' ')
-	)
 </script>
 
 <div class="deck-channel-header">
-	<svelte:element this={titleElement} class={titleClassNames}>
+	<svelte:element this={titleElement} class={['title-row', titleClass, {active: isPlaying}]}>
 		{#if resolvedTitleHref}
 			<a href={resolvedTitleHref} class="title-link">{derivedTitle}</a>
 		{:else}
@@ -130,11 +124,7 @@
 		{/if}
 
 		{#each derivedTags as tag (tag.label)}
-			{#if tag.href}
-				<Tag href={tag.href} value={tag.label}>{tag.label}</Tag>
-			{:else}
-				<Tag value={tag.label}>{tag.label}</Tag>
-			{/if}
+			<Tag href={tag.href} value={tag.label}>{tag.label}</Tag>
 		{/each}
 
 		{#if showModeMeta && showAutoButton}
@@ -163,7 +153,7 @@
 	.title-row {
 		display: flex;
 		align-items: center;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		min-width: 0;
 		margin: 0;
 	}
@@ -187,7 +177,7 @@
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		min-width: 0;
 		font-size: var(--font-2);
 	}
@@ -197,7 +187,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		padding: 0 0.3rem;
+		padding: 0 var(--space-1);
 	}
 
 	.sync-icon :global(svg) {
@@ -208,7 +198,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		padding-inline: 0.35rem;
+		padding-inline: var(--space-1);
 		min-height: 1.35rem;
 		align-self: center;
 	}

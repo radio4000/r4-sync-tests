@@ -88,13 +88,13 @@
 	.pagination {
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: var(--space-1);
 
 		.page-label {
 			min-width: 2.6rem;
 			font-variant-numeric: tabular-nums;
 			font-size: var(--font-2);
-			padding: 0.1rem 0.2rem;
+			padding: 0.1rem var(--space-1);
 		}
 	}
 

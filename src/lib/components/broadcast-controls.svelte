@@ -166,7 +166,7 @@
 
 <style>
 	.compact {
-		padding-inline: 0.4rem;
+		padding-inline: 0.5rem;
 		min-width: 2rem;
 	}
 

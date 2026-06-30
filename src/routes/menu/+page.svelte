@@ -170,7 +170,7 @@
 	.meta-footer {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		font-size: var(--font-2);
 		color: var(--gray-9);
 	}

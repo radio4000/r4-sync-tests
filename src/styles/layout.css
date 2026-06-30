@@ -135,7 +135,7 @@
 menu,
 nav {
 	display: flex;
-	gap: 0.2rem;
+	gap: var(--space-1);
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -148,7 +148,7 @@ nav {
 	}
 
 	&.row {
-		gap: 0.2rem;
+		gap: var(--space-1);
 	}
 
 	:where(a):not(:hover) {
@@ -156,7 +156,7 @@ nav {
 	}
 
 	:where(a):has(svg, i) {
-		gap: 0.2rem;
+		gap: var(--space-1);
 	}
 }
 
@@ -170,7 +170,7 @@ menu.nav-vertical {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.2rem 0.5rem;
+		padding: var(--space-1) 0.5rem;
 		text-decoration: none;
 		border-radius: var(--border-radius);
 		min-height: 2rem;
@@ -190,7 +190,7 @@ menu.nav-vertical {
 	}
 
 	& + & {
-		margin-top: 0.2rem;
+		margin-top: var(--space-1);
 	}
 }
 
@@ -223,14 +223,14 @@ menu.tags-menu {
 
 menu.view-modes {
 	padding-bottom: 0.5rem;
-	margin-bottom: 0.2rem;
+	margin-bottom: var(--space-1);
 	border-bottom: 1px solid var(--gray-6);
 
 	button {
 		flex: 1;
 		flex-direction: column;
-		gap: 0.2rem;
-		padding: 0.2rem;
+		gap: var(--space-1);
+		padding: var(--space-1);
 		min-width: 3.5rem;
 
 		small {
@@ -252,7 +252,7 @@ menu {
 		a {
 			display: inline-flex;
 			align-items: center;
-			padding: 0.3rem 0.5rem 0.2rem;
+			padding: var(--space-1) 0.5rem var(--space-1);
 			min-height: 2rem;
 			text-decoration: none;
 			font-size: var(--font-4);
@@ -287,33 +287,13 @@ menu {
 }
 
 .tabs {
+	display: flex;
+	gap: var(--space-1);
 	overflow-x: auto;
 	scrollbar-width: thin;
 
-	:where(a, button) {
-		display: flex;
-		align-items: center;
-		white-space: nowrap;
-		padding: 0.5rem 0.5rem 0.45rem;
-		text-decoration: none;
-		background: none;
-		border: none;
-		border-radius: 0;
-		font-size: var(--font-4);
-	}
-
-	:where(a, button):hover {
-		background: var(--gray-3);
-	}
-
-	:where(a, button):focus-visible {
-		outline: 2px solid var(--accent-9);
-		outline-offset: -2px;
-	}
-
-	:where(a, button).active,
-	:where(a, button)[aria-current] {
-		box-shadow: inset 0 -2px 0 var(--accent-9);
+	:where(.btn.chip) {
+		flex: 0 0 auto;
 	}
 }
 
@@ -391,7 +371,7 @@ dl.meta {
 
 	pre {
 		background: var(--accent-1);
-		padding: 0.4rem 0.5rem;
+		padding: 0.5rem;
 		border-radius: var(--border-radius);
 		white-space: pre-wrap;
 	}

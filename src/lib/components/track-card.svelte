@@ -352,6 +352,7 @@
 	.artwork {
 		aspect-ratio: 1/1;
 		width: var(--track-artwork-size);
+		width: 2.5rem;
 		object-fit: cover;
 		object-position: center;
 		align-self: center;
@@ -359,7 +360,6 @@
 	}
 
 	.artwork-trigger {
-		position: relative;
 		padding: 0;
 		border: 0;
 		background: transparent;
@@ -459,7 +459,7 @@
 		place-items: flex-end;
 		place-content: center;
 		padding-top: 0.1rem;
-		gap: 0.15rem;
+		gap: var(--space-1);
 		/* because this is the actual link with some trickery */
 		cursor: var(--interactive-cursor, pointer);
 

@@ -518,7 +518,7 @@
 	.r4-discogs-resource--loading {
 		display: flex;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		padding: 0.5rem;
 		color: var(--gray-7);
 		background: var(--gray-2);
@@ -527,7 +527,7 @@
 	label {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		margin-right: 0.5rem;
 	}
 
@@ -536,7 +536,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		font-style: normal;
-		padding: 0.35rem 0.5rem;
+		padding: var(--space-1) 0.5rem;
 		background: var(--gray-2);
 	}
 
@@ -573,19 +573,19 @@
 		font-size: var(--font-3);
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.35rem 0.55rem;
+		gap: var(--space-1) var(--space-2);
 	}
 
 	.release-meta span {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		min-width: 0;
 	}
 
 	.release-actions {
 		display: flex;
-		gap: 0.15rem;
+		gap: var(--space-1);
 		flex-shrink: 0;
 	}
 
@@ -593,10 +593,10 @@
 		flex-shrink: 0;
 		display: flex;
 		align-items: center;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		color: var(--gray-8);
 		text-decoration: none;
-		padding: 0.15rem 0.3rem;
+		padding: var(--space-1) var(--space-1);
 		border-radius: 3px;
 		border: 1px solid var(--gray-5);
 
@@ -610,7 +610,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.75rem;
-		padding: 0.25rem 0.5rem;
+		padding: var(--space-1) 0.5rem;
 		font-size: var(--font-3);
 		border-bottom: 1px solid var(--gray-3);
 	}
@@ -622,7 +622,7 @@
 	.release-community span {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.2rem;
+		gap: var(--space-1);
 	}
 
 	.tracklist {
@@ -632,7 +632,7 @@
 	}
 
 	.r4-discogs-resource--full .tracklist {
-		padding: 0.25rem 0.45rem 0.45rem;
+		padding: var(--space-1) var(--space-2) var(--space-2);
 	}
 
 	.tracklist-item {
@@ -658,7 +658,7 @@
 	.track-hints {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 		font-size: var(--font-3);
 		color: var(--gray-10);
 	}
@@ -666,7 +666,7 @@
 	.state {
 		border: 1px solid var(--gray-5);
 		border-radius: 999px;
-		padding: 0.05rem 0.35rem;
+		padding: 0.05rem var(--space-1);
 		font-size: var(--font-2);
 		text-transform: uppercase;
 		letter-spacing: 0.03em;

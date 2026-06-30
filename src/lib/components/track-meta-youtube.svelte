@@ -83,7 +83,7 @@
 	.tags {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.35rem;
+		gap: var(--space-1);
 	}
 
 	.tags a {

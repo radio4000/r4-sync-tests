@@ -84,8 +84,8 @@
 	}
 	.stack {
 		flex-wrap: wrap;
-		padding-block: 0.4rem;
-		gap: 0.25rem;
+		padding-block: 0.5rem;
+		gap: var(--space-1);
 
 		small {
 			flex: 1 0 100%;

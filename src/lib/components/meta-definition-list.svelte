@@ -10,7 +10,7 @@
 	.meta-list {
 		display: grid;
 		grid-template-columns: minmax(9rem, max-content) minmax(0, 1fr);
-		gap: 0.25rem 0.5rem;
+		gap: var(--space-1) 0.5rem;
 		align-items: baseline;
 		margin: 0;
 	}
@@ -19,7 +19,7 @@
 		margin: 0;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		white-space: nowrap;
 	}
 

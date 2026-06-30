@@ -116,7 +116,7 @@
 	.browse-links {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 0.5rem;
+		gap: var(--space-1) 0.5rem;
 		justify-content: center;
 		color: light-dark(var(--gray-9), var(--gray-8));
 

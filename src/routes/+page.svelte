@@ -7,9 +7,9 @@
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {featuredScore} from '$lib/utils'
+	import {shuffleSeed} from '$lib/utils'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
-	import {getFeaturedPool} from '$lib/collections/featured'
+	import {getFeaturedPool, pickFeatured, dailySeed} from '$lib/collections/featured'
 	import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 	import {getChannelTags, extractHashtags} from '$lib/utils'
 	import {playChannel, togglePlayPause, loadDeckView, playTrack, sortByNewest} from '$lib/api'
@@ -19,7 +19,7 @@
 	import {sdk} from '@radio4000/sdk'
 	import ChannelCard from '$lib/components/channel-card.svelte'
 	import MyChannelControls from '$lib/components/my-channel-controls.svelte'
-	import {not, isNull} from '@tanstack/db'
+	import {not, isNull, eq} from '@tanstack/db'
 	import Icon from '$lib/components/icon.svelte'
 	import PageHeader from '$lib/components/page-header.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
@@ -53,36 +53,34 @@
 
 	// Featured channels (not logged in, or no channel)
 	let featuredPool = $state(/** @type {import('$lib/types').Channel[]} */ ([]))
-	let featuredChannels = $state(/** @type {import('$lib/types').Channel[]} */ ([]))
 	let featuredLoaded = $state(false)
 
 	const featuredPickCount = $derived(!isSignedIn ? FEATURED_COUNT_LOGGEDOUT : FEATURED_COUNT)
 
-	// Shuffle button: random pick from the quality pool for variety
+	// Daily-seeded by default (same rotation as /featured); reshuffle picks a
+	// random seed for instant variety. Shared pickFeatured keeps both in sync.
+	let featuredSeed = $state(dailySeed())
 	let shuffling = $state(false)
-	async function pickFeatured() {
+	function reshuffleFeatured() {
 		if (!featuredPool.length || shuffling) return
 		shuffling = true
 		try {
-			const picked = featuredPool.toSorted(() => Math.random() - 0.5).slice(0, featuredPickCount)
-			featuredChannels = picked
+			featuredSeed = shuffleSeed()
 		} finally {
 			shuffling = false
 		}
 	}
+
+	const featuredChannels = $derived(
+		pickFeatured(featuredPool, {count: featuredPickCount, seed: featuredSeed})
+	)
 
 	$effect(() => {
 		if (featuredLoaded) return
 		featuredLoaded = true
 		void (async () => {
 			try {
-				const pool = await getFeaturedPool(FEATURED_DAYS)
-				featuredPool = pool
-				// Initial pick: by score, consistent with explore pages
-				const picked = pool
-					.toSorted((a, b) => featuredScore(b) - featuredScore(a))
-					.slice(0, featuredPickCount)
-				featuredChannels = picked
+				featuredPool = await getFeaturedPool(FEATURED_DAYS)
 			} catch (e) {
 				console.warn('[homepage] failed to load featured channels', e)
 			}
@@ -130,12 +128,18 @@
 	const userChannelTrackCount = $derived(userChannel?.track_count ?? 0)
 	const showTrackWidget = $derived(userChannelTrackCount > 0)
 
+	// Reactive: subscribes to the collection so tags appear once ensureTracksLoaded
+	// writes them. A plain tracksCollection.state read wouldn't re-run on that write.
+	const channelTracksQuery = useLiveQuery((q) =>
+		userChannel?.slug
+			? q.from({t: tracksCollection}).where(({t}) => eq(t.slug, userChannel.slug))
+			: null
+	)
+
 	const userChannelTopTags = $derived.by(() => {
 		if (!userChannel?.slug) return []
 		const channelTracks = /** @type {import('$lib/types').Track[]} */ (
-			[...tracksCollection.state.values()].filter(
-				(t) => /** @type {any} */ (t).slug === userChannel.slug
-			)
+			channelTracksQuery.data ?? []
 		)
 		const featuredTags = extractHashtags(userChannel.description ?? '').map((t) => t.slice(1))
 		const allByCount = getChannelTags(channelTracks)
@@ -472,7 +476,7 @@
 							<button
 								type="button"
 								title={m.home_featured_refresh()}
-								onclick={pickFeatured}
+								onclick={reshuffleFeatured}
 								disabled={shuffling}
 							>
 								<Icon icon="switch-alt" />
@@ -489,49 +493,52 @@
 		{/if}
 	{:else}
 		<!-- Not logged in -->
-		<div class="loggedout-top-row" class:modal-open={appState.show_welcome_hint}>
-			{#if appState.show_welcome_hint}
-				<section class="section welcome-section dismissible top-row-welcome">
-					<button
-						class="dismiss-btn"
-						onclick={() => (appState.show_welcome_hint = false)}
-						aria-label="Close"
-					>
-						<Icon icon="close" />
-					</button>
-					<h1>{m.welcome_title({appName})}</h1>
-					<p class="tagline">{m.welcome_tagline_channel()}</p>
-					<p class="tagline">{m.welcome_tagline_metadata()}</p>
-					<ul class="feature-list">
-						<li>{m.welcome_feature_archive()}</li>
-						<li>{m.welcome_feature_decks()}</li>
-						<li>{m.welcome_feature_follow()}</li>
-						<li>{m.welcome_feature_open()}</li>
-					</ul>
-					<menu class="welcome-menu">
-						<a
-							href={resolve('/auth/create-account') + '?redirect=' + resolve('/create-channel')}
-							class="btn primary">{m.header_start_your_radio()}</a
-						>
-						<a href={resolve('/auth/login')} class="btn">{m.nav_sign_in()}</a>
-						<a href={resolve('/about')} class="btn ghost">{m.nav_about()}</a>
-					</menu>
-				</section>
-			{/if}
 
-			{#if showBroadcastCountWidget}
-				<section class="section top-row-live">
-					<h2 class="section-title">
-						<a href={resolve('/channels/broadcasting')}>{m.home_broadcasting()}</a>
-					</h2>
-					<ol class="list">
-						{#each activeBroadcasts as broadcast (broadcast.channel_id)}
-							<li><ChannelCard channel={broadcast.channels} /></li>
-						{/each}
-					</ol>
-				</section>
-			{/if}
-		</div>
+		{#if appState.show_welcome_hint || showBroadcastCountWidget}
+			<div class="loggedout-top-row" class:modal-open={appState.show_welcome_hint}>
+				{#if appState.show_welcome_hint}
+					<section class="section welcome-section dismissible top-row-welcome">
+						<button
+							class="dismiss-btn"
+							onclick={() => (appState.show_welcome_hint = false)}
+							aria-label="Close"
+						>
+							<Icon icon="close" />
+						</button>
+						<h1>{m.welcome_title({appName})}</h1>
+						<p class="tagline">{m.welcome_tagline_channel()}</p>
+						<p class="tagline">{m.welcome_tagline_metadata()}</p>
+						<ul class="feature-list">
+							<li>{m.welcome_feature_archive()}</li>
+							<li>{m.welcome_feature_decks()}</li>
+							<li>{m.welcome_feature_follow()}</li>
+							<li>{m.welcome_feature_open()}</li>
+						</ul>
+						<menu class="welcome-menu">
+							<a
+								href={resolve('/auth/create-account') + '?redirect=' + resolve('/create-channel')}
+								class="btn primary">{m.header_start_your_radio()}</a
+							>
+							<a href={resolve('/auth/login')} class="btn">{m.nav_sign_in()}</a>
+							<a href={resolve('/about')} class="btn ghost">{m.nav_about()}</a>
+						</menu>
+					</section>
+				{/if}
+
+				{#if showBroadcastCountWidget}
+					<section class="section top-row-live">
+						<h2 class="section-title">
+							<a href={resolve('/channels/broadcasting')}>{m.home_broadcasting()}</a>
+						</h2>
+						<ol class="list">
+							{#each activeBroadcasts as broadcast (broadcast.channel_id)}
+								<li><ChannelCard channel={broadcast.channels} /></li>
+							{/each}
+						</ol>
+					</section>
+				{/if}
+			</div>
+		{/if}
 
 		<div class="loggedout-over-globe">
 			<div class="loggedout-grid">
@@ -539,7 +546,7 @@
 					<section class="section section--featured-col">
 						<header class="section-header">
 							<h2 class="section-title">
-								<a href={resolve('/channels/featured')}>{m.home_featured()}</a>
+								<a class="btn chip" href={resolve('/channels/featured')}>{m.home_featured()}</a>
 							</h2>
 							<menu>
 								{#if featuredFirst}
@@ -551,7 +558,7 @@
 									<button
 										type="button"
 										title={m.home_featured_refresh()}
-										onclick={pickFeatured}
+										onclick={reshuffleFeatured}
 										disabled={shuffling}
 									>
 										<Icon icon="switch-alt" />
@@ -571,7 +578,9 @@
 					     of popping in and shoving the globe down (CLS). -->
 					<section class="section section--featured-col" aria-hidden="true">
 						<header class="section-header">
-							<h2 class="section-title">{m.home_featured()}</h2>
+							<h2 class="section-title">
+								<a class="btn chip" href={resolve('/channels/featured')}>{m.home_featured()}</a>
+							</h2>
 						</header>
 						<ol class="grid grid--scroll">
 							{#each Array.from({length: featuredPickCount}) as _, i (i)}
@@ -635,7 +644,6 @@
 
 <style>
 	.homepage {
-		padding: 0.35rem 0.5rem;
 		display: flex;
 		flex-direction: column;
 		flex: 1;
@@ -648,7 +656,6 @@
 	}
 
 	.homepage.signed-in {
-		gap: 1rem;
 		background: var(--color-interface);
 	}
 
@@ -665,10 +672,6 @@
 	}
 
 	.section {
-		margin-bottom: 0;
-	}
-
-	.homepage:not(.signed-in) .section {
 		margin-bottom: 0;
 	}
 
@@ -713,8 +716,8 @@
 	.loggedout-top-row {
 		display: grid;
 		grid-template-columns: 1fr;
-		gap: 0.6rem;
-		padding: 0.6rem 0.5rem 0;
+		gap: var(--space-2);
+		padding: var(--space-2) 0.5rem 0;
 	}
 
 	@media (min-width: 980px) {
@@ -740,8 +743,8 @@
 		flex-direction: column;
 		flex: 1;
 		min-height: 0;
-		padding: 0.6rem 0.5rem;
-		gap: 0.6rem;
+		padding: 0 0.5rem 0.5rem;
+		gap: 0.5rem;
 	}
 
 	.section--featured-col {
@@ -772,7 +775,8 @@
 	.dashboard-section {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: var(--space-2);
+		margin-inline: var(--space-2);
 
 		:global(.list) {
 			margin: 0;
@@ -782,7 +786,7 @@
 	.dashboard-group {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		border-radius: var(--border-radius);
 		background: var(--color-interface);
 	}
@@ -790,7 +794,7 @@
 	.dashboard-grid {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.3rem;
+		gap: var(--space-1);
 	}
 
 	.dashboard-grid--scroll {
@@ -806,7 +810,7 @@
 	.dashboard-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		padding: 0.5rem;
 		border-radius: var(--border-radius);
 		background: light-dark(var(--gray-1), var(--gray-2));
@@ -823,7 +827,7 @@
 	.dashboard-card--pill {
 		padding: 0rem 0.5rem;
 		border-radius: 999px;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		background: var(--color-interface-elevated);
 	}
 
@@ -858,7 +862,7 @@
 		text-decoration: none;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.3rem;
+		gap: var(--space-1);
 		min-width: 0;
 		flex-shrink: 1;
 		&:hover {
@@ -905,15 +909,9 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 0.5rem;
 
 		.section-title {
 			margin-bottom: 0;
-		}
-
-		menu {
-			display: flex;
-			gap: 0.1rem;
 		}
 	}
 
@@ -987,17 +985,13 @@
 		}
 	}
 
-	.footer-stats {
-		padding-top: 1rem;
-	}
-
 	/* Featured loading skeleton — mirrors ChannelCard's structure so the slot height
 	   matches the real cards and nothing shifts when they load. */
 	.skeleton-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
-		padding: 0.25rem;
+		gap: var(--space-1);
+		padding: var(--space-1);
 		height: 100%;
 	}
 
@@ -1075,8 +1069,9 @@
 		max-width: 56rem;
 		margin-inline: auto;
 		padding: 1.5rem;
-		border-radius: 0.75rem;
-		background: light-dark(var(--gray-2), var(--gray-2));
+		border-radius: var(--border-radius);
+		background: var(--accent-2);
+		margin-bottom: var(--space-3);
 
 		h1 {
 			font-size: var(--font-8);
@@ -1093,15 +1088,9 @@
 			padding-left: 1.25rem;
 
 			li {
-				margin-block: 0.3rem;
+				margin-block: var(--space-1);
 			}
 		}
-	}
-
-	.homepage:not(.signed-in) .welcome-section {
-		max-width: none;
-		margin-inline: 0;
-		border-radius: 0;
 	}
 
 	.welcome-menu {

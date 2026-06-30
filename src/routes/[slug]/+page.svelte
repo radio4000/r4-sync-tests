@@ -516,7 +516,7 @@
 		padding: 0.5rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
+		gap: var(--space-1);
 	}
 
 	.meta-row {
@@ -532,7 +532,7 @@
 		margin-left: auto;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-1);
 	}
 
 	.coords-link {
@@ -561,22 +561,36 @@
 		color: inherit;
 	}
 
+	article:has(.track-section) {
+		display: flex;
+		flex-flow: column;
+		height: 100%;
+	}
+
 	.track-section {
+		display: flex;
+		flex-flow: column;
+		height: 100%;
 		footer {
-			padding: 0.4rem;
-			margin: 0;
+			margin: auto 0 0;
+			padding: 0.5rem;
 			text-align: center;
 			position: sticky;
 			bottom: 0;
 			background: var(--gray-1);
+			background: linear-gradient(0deg, #0000000f, transparent);
 			border: 0;
+			pointer-events: none;
+			a {
+				pointer-events: auto;
+			}
 		}
 	}
 
 	.common-follows {
 		padding: 0.5rem;
 		display: grid;
-		gap: 0.45rem;
+		gap: var(--space-2);
 	}
 
 	.common-follows.compact {
@@ -584,9 +598,9 @@
 	}
 
 	.match-score-row {
-		gap: clamp(0.3rem, 1.4vw, 0.55rem);
-		row-gap: 0.35rem;
-		padding-bottom: 0.3rem;
+		gap: clamp(var(--space-1), 1.4vw, var(--space-2));
+		row-gap: var(--space-1);
+		padding-bottom: var(--space-1);
 		flex-wrap: wrap;
 		align-items: center;
 		color: var(--gray-10);
@@ -610,7 +624,7 @@
 
 	.follows-you-row {
 		color: var(--accent-9);
-		gap: 0.35rem;
+		gap: var(--space-1);
 	}
 
 	.follows-you-row p {
@@ -620,7 +634,7 @@
 	.compact-row {
 		display: flex;
 		align-items: center;
-		gap: 0.45rem;
+		gap: var(--space-2);
 		min-height: 1.8rem;
 		color: inherit;
 		text-decoration: none;
@@ -635,7 +649,7 @@
 	.compact-avatars {
 		display: inline-flex;
 		align-items: center;
-		margin-right: 0.2rem;
+		margin-right: var(--space-1);
 	}
 
 	.compact-avatars :global(img),
@@ -644,7 +658,7 @@
 		height: 1.2rem;
 		border-radius: 999px;
 		border: 1px solid var(--gray-1);
-		margin-right: -0.35rem;
+		margin-right: calc(-1 * var(--space-1));
 		background: var(--gray-2);
 	}
 
@@ -660,7 +674,7 @@
 	.play-actions-group {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: var(--space-1);
 		margin-inline: auto;
 	}
 </style>
