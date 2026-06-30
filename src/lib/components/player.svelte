@@ -28,7 +28,7 @@
 	import {appState, canEditChannel, removeDeck, deckAccent} from '$lib/app-state.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import Icon from '$lib/components/icon.svelte'
-	import PresenceCount from '$lib/components/presence-count.svelte'
+	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
 	import SpeedControl from '$lib/components/speed-control.svelte'
 	import VolumeControl from '$lib/components/volume-control.svelte'
@@ -84,7 +84,9 @@
 	let soundcloudPlayer = $state()
 	let audioPlayer = $state()
 
-	const display = createDeckDisplay(deckId)
+	// deckId never changes for this component instance — it's rendered inside
+	// an {#each ... (deckId)} keyed block, so a changed deckId remounts it.
+	const display = createDeckDisplay(untrack(() => deckId))
 	const track = $derived(display.track)
 	const channel = $derived(display.channel)
 	const displayTrack = $derived(display.displayTrack)
@@ -671,7 +673,7 @@
 				{mediaDuration}
 				trackDuration={track?.duration}
 				isPlaying={Boolean(deck?.is_playing)}
-				disabled={isListeningToBroadcast || Boolean(deck?.auto_radio)}
+				disabled={isListeningToBroadcast}
 				onseek={(val) => {
 					if (deck) deck.media_current_time = val
 					if (mediaElement) mediaElement.currentTime = val
@@ -732,30 +734,16 @@
 					<VolumeControl {deckId} />
 				{:else if deck?.auto_radio}
 					{@render btnPlay()}
+					<AutoRadioButton
+						live
+						drifted={!!deck?.auto_radio_drifted}
+						size={14}
+						count={headerPresenceCount}
+						onclick={() => resyncAutoRadio(deckId)}
+					/>
 					<VolumeControl {deckId} />
 				{/if}
 			</menu>
-		{/if}
-		{#if deck?.auto_radio}
-			{@const autoNotSynced = !!deck?.auto_radio_drifted}
-			<div class="sync-footer">
-				<button
-					class={['sync-btn', {active: !autoNotSynced}]}
-					title={autoNotSynced ? m.auto_radio_resync() : m.auto_radio_join()}
-					aria-label={autoNotSynced ? m.auto_radio_resync() : m.auto_radio_join()}
-					onclick={() => resyncAutoRadio(deckId)}
-					{@attach tooltip({
-						content: autoNotSynced ? m.auto_radio_resync() : m.auto_radio_join(),
-						position: 'top'
-					})}
-				>
-					<Icon icon="infinite" size={14} />
-					<span>{autoNotSynced ? 'Sync' : 'Auto'}</span>
-					{#if headerPresenceCount > 0}
-						<PresenceCount count={headerPresenceCount} />
-					{/if}
-				</button>
-			</div>
 		{/if}
 	</section>
 </div>
@@ -873,24 +861,6 @@
 		justify-content: center;
 		padding-inline: var(--space-1);
 		min-height: 1.35rem;
-	}
-
-	.sync-footer {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0 0.5rem 0.5rem;
-	}
-
-	.sync-footer .sync-btn {
-		width: 100%;
-		min-height: 1.7rem;
-		gap: var(--space-1);
-		justify-content: center;
-	}
-
-	.sync-footer .sync-btn.active :global(svg) {
-		color: var(--accent-9);
 	}
 
 	.layout-controls {

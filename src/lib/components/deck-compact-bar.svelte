@@ -1,4 +1,5 @@
 <script>
+	import {untrack} from 'svelte'
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {appState, canEditChannel, removeDeck} from '$lib/app-state.svelte'
@@ -20,6 +21,7 @@
 	import {parseUrl} from 'media-now/parse-url'
 	import * as m from '$lib/paraglide/messages'
 	import Icon from '$lib/components/icon.svelte'
+	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import TrackCard from '$lib/components/track-card.svelte'
 	import SpeedControl from '$lib/components/speed-control.svelte'
@@ -44,7 +46,9 @@
 		!deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
 	)
 
-	const display = createDeckDisplay(deckId)
+	// deckId never changes for this component instance — it's rendered inside
+	// an {#each ... (deckId)} keyed block, so a changed deckId remounts it.
+	const display = createDeckDisplay(untrack(() => deckId))
 	const track = $derived(display.track)
 	const displayTrack = $derived(display.displayTrack)
 	const displayChannel = $derived(display.displayChannel)
@@ -114,7 +118,7 @@
 			{mediaDuration}
 			trackDuration={displayTrack?.duration}
 			isPlaying={Boolean(deck?.is_playing)}
-			disabled={Boolean(deck?.listening_to_channel_id || deck?.auto_radio)}
+			disabled={Boolean(deck?.listening_to_channel_id)}
 			onseek={(val) => {
 				if (deck) deck.media_current_time = val
 				const mediaElement = getMediaPlayer(deckId)
@@ -209,7 +213,6 @@
 				<SpeedControl {deckId} {provider} />
 				<VolumeControl {deckId} />
 			{:else if deck?.auto_radio}
-				{@const autoNotSynced = !!deck?.auto_radio_drifted}
 				<button
 					class="play"
 					class:active={deck?.is_playing}
@@ -219,20 +222,13 @@
 				>
 					<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
 				</button>
-				<button
-					class="auto-sync"
-					class:active={!autoNotSynced}
-					title={autoNotSynced ? m.auto_radio_resync() : m.auto_radio_join()}
-					aria-label={autoNotSynced ? m.auto_radio_resync() : m.auto_radio_join()}
+				<AutoRadioButton
+					live
+					drifted={!!deck?.auto_radio_drifted}
+					size={14}
+					count={modePresenceCount}
 					onclick={() => resyncAutoRadio(deckId)}
-				>
-					<Icon icon="infinite" size={12} />
-					<span class="auto-sync-label">{autoNotSynced ? 'sync' : 'auto'}</span>
-					<span class="live-circle" aria-hidden="true">◉</span>
-					{#if modePresenceCount > 0}
-						<span class="live-count">{modePresenceCount}</span>
-					{/if}
-				</button>
+				/>
 			{:else if !deck?.listening_to_channel_id}
 				<VolumeControl {deckId} />
 			{/if}
@@ -341,10 +337,6 @@
 		display: none;
 	}
 
-	.controls .auto-sync.active :global(svg) {
-		color: var(--accent-9);
-	}
-
 	.controls :global(.speed),
 	.controls :global(.volume) {
 		flex: 1 1 7rem;
@@ -429,30 +421,6 @@
 			flex: 1 1 auto;
 			width: 100%;
 			flex-wrap: nowrap;
-		}
-
-		.controls .auto-sync {
-			flex: 1 1 auto;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: var(--space-1);
-			overflow: hidden;
-		}
-
-		.controls .auto-sync .auto-sync-label {
-			font-size: var(--font-1);
-			white-space: nowrap;
-		}
-
-		.controls .auto-sync .live-circle {
-			font-size: 0.55em;
-			color: var(--accent-9);
-		}
-
-		.controls .auto-sync .live-count {
-			font-size: var(--font-1);
-			color: var(--gray-11);
 		}
 
 		.controls :global(.speed),

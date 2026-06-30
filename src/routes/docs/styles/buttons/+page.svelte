@@ -184,20 +184,17 @@
 	<h2>Auto radio (<code>&lt;AutoRadioButton&gt;</code> / <code>.auto-live-btn</code>)</h2>
 	<p>
 		<small
-			>Infinite icon whose stroke uses an animated gradient. Idle is a plain button; when
-			<code>synced</code> it goes <code>.ghost</code> and the stroke animates.</small
+			>Infinite-icon button for auto-radio. Idle is a plain button; <code>live</code> turns it
+			active; <code>drifted</code> drops it back to a resync call-to-action. A <code>count</code>
+			above 1 shows a listener badge in the corner.</small
 		>
 	</p>
 	<div class="row">
 		<AutoRadioButton title="Idle" />
-		<AutoRadioButton synced title="Synced (animated)" />
-		<button class="auto-live-btn active"><Icon icon="infinite" size={16} /></button>
+		<AutoRadioButton live title="Live" />
+		<AutoRadioButton live drifted title="Drifted (resync)" />
+		<AutoRadioButton live count={3} title="Live with listeners" />
 	</div>
-	<p>
-		<small
-			>Last one: <code>.auto-live-btn.active</code> (drifted) — solid accent stroke, no animation.</small
-		>
-	</p>
 </section>
 
 <section>
