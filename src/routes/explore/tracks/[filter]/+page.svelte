@@ -5,6 +5,7 @@
 	import {tracksCollection, fetchRecentTracks} from '$lib/collections/tracks'
 	import {loadFeaturedChannelTracks} from '$lib/collections/featured'
 	import {groupByDay} from '$lib/utils'
+	import {daysAgoIso} from '$lib/dates'
 	import TrackCard from '$lib/components/track-card.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import ExplorePageHeader from '$lib/components/explore-page-header.svelte'
@@ -59,7 +60,7 @@
 
 	async function loadFeatured() {
 		const picked = await loadFeaturedChannelTracks(FEATURED_DAYS)
-		const featuredSince = new Date(Date.now() - FEATURED_DAYS * 86400000).toISOString()
+		const featuredSince = daysAgoIso(FEATURED_DAYS)
 		const slugSet = new Set(picked.map((ch) => ch.slug))
 		// Access .size so this derived re-runs when tracks are upserted into the collection
 		void tracksCollection.state.size

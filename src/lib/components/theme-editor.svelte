@@ -9,9 +9,6 @@
 	import InputRange from '$lib/components/input-range.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import * as m from '$lib/paraglide/messages'
-	import {logger} from '$lib/logger'
-
-	const log = logger.ns('theme').seal()
 
 	const uid = 'theme-editor'
 
@@ -84,46 +81,42 @@
 	}
 
 	let importText = $state('')
-	let exportString = $derived.by(() => {
-		const variables = appState.custom_css_variables || {}
-		const themeString = Object.entries(variables)
+	let exportString = $derived(
+		Object.entries(appState.custom_css_variables || {})
 			.map(([key, value]) => `${key}:${value}`)
 			.join(';')
-		return themeString
-	})
+	)
 
 	function copyTheme() {
 		navigator.clipboard.writeText(exportString)
 	}
 
 	const importTheme = () => {
-		if (!importText.trim()) return
-
-		try {
-			const variables = {}
-			const pairs = importText.split(';')
-
-			for (const pair of pairs) {
-				if (!pair.trim()) continue
-				const [key, value] = pair.split(':')
-				if (!key || !value) continue
-
-				let cleanKey = key.trim()
-				if (!cleanKey.startsWith('--')) {
-					cleanKey = `--${cleanKey}`
-				}
-
-				variables[cleanKey] = value.trim()
-			}
-
-			appState.custom_css_variables = {...appState.custom_css_variables, ...variables}
-			applyCustomCssVariables($state.snapshot(appState.custom_css_variables))
-			importText = ''
-		} catch (error) {
-			log.error('import theme failed', {error})
-		}
+		const variables = Object.fromEntries(
+			importText
+				.split(';')
+				.map((pair) => pair.split(':').map((s) => s.trim()))
+				.filter(([key, value]) => key && value)
+				.map(([key, value]) => [key.startsWith('--') ? key : `--${key}`, value])
+		)
+		if (!Object.keys(variables).length) return
+		appState.custom_css_variables = {...appState.custom_css_variables, ...variables}
+		applyCustomCssVariables($state.snapshot(appState.custom_css_variables))
+		importText = ''
 	}
 </script>
+
+{#snippet cssToggle(name, label)}
+	<fieldset>
+		<label for={`${uid}${name}`}>{label}</label>
+		<input
+			type="checkbox"
+			checked={(customVariables[name] ?? '0.5rem') !== '0'}
+			onchange={(e) => updateVariable(name, e.currentTarget.checked ? '0.5rem' : '0')}
+			id={`${uid}${name}`}
+		/>
+	</fieldset>
+{/snippet}
 
 <div class="focused constrained">
 	<section class="box">
@@ -154,39 +147,13 @@
 					max={1.2}
 					step={0.05}
 					id={`${uid}--scaling`}
-					oninput={(e) => {
-						const v = /** @type {HTMLInputElement} */ (e.target).value.trim()
-						appState.custom_css_variables['--scaling'] = v
-						applyCustomCssVariables({...customVariables, '--scaling': v})
-					}}
+					oninput={(e) =>
+						updateVariable('--scaling', /** @type {HTMLInputElement} */ (e.target).value)}
 				/>
 			</fieldset>
 
-			<fieldset>
-				<label for={`${uid}--border-radius`}>{m.theme_corners_label()}</label>
-				<input
-					type="checkbox"
-					checked={customVariables['--border-radius']
-						? customVariables['--border-radius'] !== '0'
-						: true}
-					onchange={(e) =>
-						updateVariable('--border-radius', e.currentTarget.checked ? '0.5rem' : '0')}
-					id={`${uid}--border-radius`}
-				/>
-			</fieldset>
-
-			<fieldset>
-				<label for={`${uid}--media-radius`}>{m.theme_artwork_label()}</label>
-				<input
-					type="checkbox"
-					checked={customVariables['--media-radius']
-						? customVariables['--media-radius'] !== '0'
-						: true}
-					onchange={(e) =>
-						updateVariable('--media-radius', e.currentTarget.checked ? '0.5rem' : '0')}
-					id={`${uid}--media-radius`}
-				/>
-			</fieldset>
+			{@render cssToggle('--border-radius', m.theme_corners_label())}
+			{@render cssToggle('--media-radius', m.theme_artwork_label())}
 
 			<fieldset>
 				<label for={`${uid}-hide-artwork`}>{m.theme_hide_artwork_label()}</label>

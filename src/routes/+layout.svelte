@@ -81,10 +81,12 @@
 		return total
 	})
 
-	function compactDeckTransition() {
-		return {
-			duration: 0
-		}
+	/**
+	 * @param {Element} _node
+	 * @returns {import('svelte/transition').TransitionConfig}
+	 */
+	function compactDeckTransition(_node) {
+		return {duration: 0}
 	}
 
 	// Ensure first client render uses persisted locale before any message call runs.

@@ -41,6 +41,16 @@
 	--aside-bg: var(--color-interface-elevated);
 	--footer-bg: var(--color-interface-elevated);
 
+	/* buttons (*-light/*-dark overrides come from the theme editor) */
+	--button-bg: light-dark(
+		var(--button-bg-light, var(--gray-3)),
+		var(--button-bg-dark, var(--gray-3))
+	);
+	--button-color: light-dark(
+		var(--button-color-light, var(--gray-12)),
+		var(--button-color-dark, var(--gray-12))
+	);
+
 	/* media queries can't use variables, but still, nice to declare what we use */
 	--breakpoint-xs: 520px;
 	--breakpoint-sm: 768px;

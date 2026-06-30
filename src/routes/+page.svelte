@@ -675,9 +675,6 @@
 		margin-bottom: 0;
 	}
 
-	.homepage:not(.signed-in) .section {
-	}
-
 	.homepage > .section:not(.section--globe) {
 		position: relative;
 		z-index: 6;

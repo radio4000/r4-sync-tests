@@ -107,6 +107,12 @@ export function toIsoDateTime(date) {
 	return value.toISOString()
 }
 
+/** ISO timestamp `days` ago — e.g. the lower bound for "recent" activity.
+ * @param {number} days */
+export function daysAgoIso(days) {
+	return new Date(Date.now() - days * 86400000).toISOString()
+}
+
 /** @param {Date | string | number | null | undefined} date */
 export function isValidDateInput(date) {
 	return Boolean(toValidDate(date))

@@ -4,6 +4,7 @@
 	import {appName} from '$lib/config'
 	import {tracksCollection, fetchRecentTracksForSlugs} from '$lib/collections/tracks'
 	import {groupByDay} from '$lib/utils'
+	import {daysAgoIso} from '$lib/dates'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
 	import TrackCard from '$lib/components/track-card.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
@@ -28,7 +29,7 @@
 	$effect(() => {
 		if (!follows.followedChannels.length || days <= maxLoadedDays) return
 		maxLoadedDays = days
-		const since = new Date(Date.now() - days * 86400000).toISOString()
+		const since = daysAgoIso(days)
 		fetchRecentTracksForSlugs(
 			follows.followedChannels.map((ch) => ch.slug),
 			since
@@ -38,7 +39,7 @@
 	// Feed: tracks from followed channels within selected window, grouped by day
 	const feedTracks = $derived.by(() => {
 		if (!follows.followedChannels.length) return []
-		const since = new Date(Date.now() - days * 86400000).toISOString()
+		const since = daysAgoIso(days)
 		const slugSet = new Set(follows.followedChannels.map((ch) => ch.slug))
 		// Access .size so this derived re-runs when tracks are upserted into the collection
 		void tracksCollection.state.size

@@ -33,7 +33,7 @@ export function pickFeatured(
  * channelsCollection so other parts of the app can use these channels.
  */
 export async function getFeaturedPool(days = 30): Promise<Channel[]> {
-	const since = new Date(Date.now() - days * 86400000).toISOString()
+	const since = daysAgoIso(days)
 	try {
 		const data = await queryClient.fetchQuery({
 			queryKey: ['channels', 'featured-pool'],
@@ -70,7 +70,7 @@ export async function getFeaturedPool(days = 30): Promise<Channel[]> {
  */
 export async function loadFeaturedChannelTracks(days = 30): Promise<Channel[]> {
 	const pool = await getFeaturedPool(days)
-	const since = new Date(Date.now() - days * 86400000).toISOString()
+	const since = daysAgoIso(days)
 	const picked = pool.toSorted((a, b) => featuredScore(b) - featuredScore(a))
 	if (picked.length) {
 		await fetchRecentTracksForSlugs(
