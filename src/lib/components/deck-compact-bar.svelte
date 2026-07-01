@@ -206,7 +206,7 @@
 						onclick={() => toggleShuffle(deckId)}
 						class:active={deck?.shuffle}
 						aria-label={m.player_tooltip_shuffle()}
-						{@attach tooltip({content: m.player_tooltip_shuffle()})}
+						{@attach tooltip({content: m.player_tooltip_shuffle() + shortcutHint('toggleShuffle')})}
 					>
 						<Icon icon="shuffle" />
 					</button>

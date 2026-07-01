@@ -729,7 +729,9 @@
 							onclick={() => toggleShuffle(deckId)}
 							class:active={deck?.shuffle}
 							class="shuffle"
-							{@attach tooltip({content: m.player_tooltip_shuffle()})}
+							{@attach tooltip({
+								content: m.player_tooltip_shuffle() + shortcutHint('toggleShuffle')
+							})}
 						>
 							<Icon icon="shuffle" />
 						</button>
@@ -757,7 +759,7 @@
 		onclick={() => previous(deckId, 'user_prev')}
 		disabled={!canPrevFromQueue}
 		class="prev"
-		{@attach tooltip({content: m.player_tooltip_prev()})}
+		{@attach tooltip({content: m.player_tooltip_prev() + shortcutHint('previousTrack')})}
 	>
 		<Icon icon="previous-fill" />
 	</button>
@@ -768,7 +770,7 @@
 		onclick={() => next(deckId, 'user_next')}
 		disabled={!canNextFromQueue}
 		class="next"
-		{@attach tooltip({content: m.player_tooltip_next()})}
+		{@attach tooltip({content: m.player_tooltip_next() + shortcutHint('nextTrack')})}
 	>
 		<Icon icon="next-fill" />
 	</button>
@@ -781,7 +783,9 @@
 		class="play"
 		class:active={deck?.is_playing}
 		{@attach tooltip({
-			content: deck?.is_playing ? m.player_tooltip_pause() : m.player_tooltip_play()
+			content:
+				(deck?.is_playing ? m.player_tooltip_pause() : m.player_tooltip_play()) +
+				shortcutHint('togglePlayPause')
 		})}
 	>
 		<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
