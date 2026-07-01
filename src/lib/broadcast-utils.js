@@ -1,10 +1,15 @@
 /**
- * Pure utilities for broadcast sync calculations.
- * No external deps — safe to import in tests.
+ * Pure helpers for the broadcast wire format and sync calculations.
+ * No app state or network deps — safe to import anywhere, easy to test.
  */
+
+import {parseUrl} from 'media-now/parse-url'
+import {isDbId} from '$lib/utils'
 
 /** @typedef {import('$lib/types').BroadcastPlaybackFields} BroadcastPlaybackFields */
 /** @typedef {import('$lib/types').Track} Track */
+/** @typedef {import('$lib/types').BroadcastDeckState} BroadcastDeckState */
+/** @typedef {{track_url: string | null, track_title: string | null, track_media_id: string | null}} EphemeralPayload */
 
 /** Shared drift tolerance used by both broadcast and auto-radio drift effects. */
 export const DRIFT_TOLERANCE_SECONDS = 2
@@ -23,7 +28,8 @@ export const BROADCAST_STATE_DEFAULTS = {
 /**
  * Pick the shared playback fields off any broadcast-shaped source (a Deck,
  * a Broadcast row, or a BroadcastDeckState) — same field names on both ends,
- * so this works for mapping in either direction.
+ * so this works for mapping in either direction. The field list is the keys
+ * of BROADCAST_STATE_DEFAULTS.
  * @param {BroadcastPlaybackFields | null | undefined} source
  * @returns {BroadcastPlaybackFields}
  */
@@ -31,13 +37,9 @@ export function pickBroadcastFields(source) {
 	/** @type {BroadcastPlaybackFields} */
 	const fields = {}
 	if (!source) return fields
-	if (source.track_played_at != null) fields.track_played_at = source.track_played_at
-	if (source.seeked_at != null) fields.seeked_at = source.seeked_at
-	if (source.seek_position != null) fields.seek_position = source.seek_position
-	if (source.volume != null) fields.volume = source.volume
-	if (source.muted != null) fields.muted = source.muted
-	if (source.is_playing != null) fields.is_playing = source.is_playing
-	if (source.speed != null) fields.speed = source.speed
+	for (const key of Object.keys(BROADCAST_STATE_DEFAULTS)) {
+		if (source[key] != null) fields[key] = source[key]
+	}
 	return fields
 }
 
@@ -87,4 +89,47 @@ export function calculateSeekTime(broadcast, track) {
 	if (elapsed < 0) return undefined
 	if (track.duration && elapsed * speed >= track.duration) return undefined
 	return Math.round(elapsed * speed)
+}
+
+/*
+ * Ephemeral tracks — Discogs matches and local-file imports use synthetic,
+ * non-UUID IDs; listeners can't look those up by id, so the broadcaster ships
+ * url/title/media_id alongside and the listener reconstructs a Track.
+ */
+
+/** @type {EphemeralPayload} */
+const EMPTY = {track_url: null, track_title: null, track_media_id: null}
+
+/**
+ * @param {Partial<Track> | null | undefined} track
+ * @returns {EphemeralPayload}
+ */
+export function packEphemeralTrack(track) {
+	if (!track?.id || isDbId(track.id)) return EMPTY
+	return {
+		track_url: track.url ?? null,
+		track_title: track.title ?? null,
+		track_media_id: track.media_id ?? null
+	}
+}
+
+/**
+ * @param {string | null | undefined} track_id
+ * @param {Partial<EphemeralPayload> | null | undefined} payload
+ * @returns {Track | undefined}
+ */
+export function unpackEphemeralTrack(track_id, payload) {
+	if (!track_id || !payload?.track_url) return undefined
+	const parsed = parseUrl(payload.track_url)
+	const now = new Date().toISOString()
+	return /** @type {Track} */ ({
+		id: track_id,
+		url: payload.track_url,
+		title: payload.track_title ?? track_id,
+		media_id: payload.track_media_id ?? parsed?.id ?? null,
+		provider: parsed?.provider ?? null,
+		created_at: now,
+		updated_at: now,
+		slug: null
+	})
 }

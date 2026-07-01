@@ -3,7 +3,7 @@ import {
 	calculateSeekTime,
 	pickBroadcastFields,
 	composeBroadcastDeckState
-} from '$lib/player/broadcast-utils'
+} from '$lib/broadcast-utils'
 
 /** @typedef {import('$lib/types').Track} Track */
 

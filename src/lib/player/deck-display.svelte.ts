@@ -11,7 +11,7 @@ import {tracksCollection} from '$lib/collections/tracks'
 import {channelsCollection} from '$lib/collections/channels'
 import {broadcastsCollection} from '$lib/collections/broadcasts'
 import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-import {unpackEphemeralTrack} from '$lib/player/broadcast-payload'
+import {unpackEphemeralTrack} from '$lib/broadcast-utils'
 import type {Channel, Track, BroadcastDeckState} from '$lib/types'
 
 export interface DeckDisplay {

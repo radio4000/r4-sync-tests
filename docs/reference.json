@@ -429,7 +429,6 @@
 	],
 
 	"src/lib/broadcast.js": [
-		{"name": "DRIFT_TOLERANCE_SECONDS", "desc": "Broadcast/auto-radio drift tolerance (2s)."},
 		{
 			"name": "isUserBroadcasting(channelId)",
 			"desc": "Check if user is broadcasting on a channel."
@@ -441,10 +440,6 @@
 		{
 			"name": "getBroadcastingChannelId()",
 			"desc": "Get the channel ID being broadcast from any deck."
-		},
-		{
-			"name": "calculateSeekTime(state, track)",
-			"desc": "Compute expected playback second (speed-aware) from broadcast state."
 		},
 		{"name": "startBroadcast(channelId, trackId?)", "desc": "Start broadcasting."},
 		{"name": "stopBroadcast(channelId)", "desc": "Stop broadcasting."},
@@ -610,18 +605,12 @@
 		{"name": "InternetIndicator", "desc": "Online/offline status indicator."}
 	],
 
-	"src/lib/player/broadcast-payload.js": [
+	"src/lib/broadcast-utils.js": [
+		{"name": "DRIFT_TOLERANCE_SECONDS", "desc": "Broadcast/auto-radio drift tolerance (2s)."},
 		{
-			"name": "packEphemeralTrack(track)",
-			"desc": "Serialize non-DB track fields for broadcast wire format."
+			"name": "calculateSeekTime(state, track)",
+			"desc": "Compute expected playback second (speed-aware) from broadcast state."
 		},
-		{
-			"name": "unpackEphemeralTrack(track_id, payload)",
-			"desc": "Reconstruct Track from broadcast payload."
-		}
-	],
-
-	"src/lib/player/broadcast-utils.js": [
 		{
 			"name": "pickBroadcastFields(source)",
 			"desc": "Pick shared playback fields off a Deck, Broadcast row or BroadcastDeckState."
@@ -630,7 +619,15 @@
 			"name": "composeBroadcastDeckState(index, trackId, deck, ephemeralPayload)",
 			"desc": "Compose one deck's outbound broadcast wire state."
 		},
-		{"name": "BROADCAST_STATE_DEFAULTS", "desc": "Defaults for the shared playback fields."}
+		{"name": "BROADCAST_STATE_DEFAULTS", "desc": "Defaults for the shared playback fields."},
+		{
+			"name": "packEphemeralTrack(track)",
+			"desc": "Serialize non-DB track fields for broadcast wire format."
+		},
+		{
+			"name": "unpackEphemeralTrack(track_id, payload)",
+			"desc": "Reconstruct Track from broadcast payload."
+		}
 	],
 
 	"src/lib/player/deck-display.svelte.ts": [

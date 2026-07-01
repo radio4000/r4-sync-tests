@@ -19,10 +19,10 @@ import {
 	calculateSeekTime,
 	DRIFT_TOLERANCE_SECONDS,
 	pickBroadcastFields,
-	composeBroadcastDeckState
-} from '$lib/player/broadcast-utils'
-import {packEphemeralTrack, unpackEphemeralTrack} from '$lib/player/broadcast-payload'
-export {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
+	composeBroadcastDeckState,
+	packEphemeralTrack,
+	unpackEphemeralTrack
+} from '$lib/broadcast-utils'
 import {capture} from '$lib/analytics'
 
 /** @typedef {import('$lib/types').Broadcast} Broadcast */
@@ -381,7 +381,8 @@ function applyBroadcastFieldsToMedia(mediaEl, fields) {
 		if (fields.is_playing && mediaEl.paused) mediaEl.play()
 		if (!fields.is_playing && !mediaEl.paused) mediaEl.pause()
 	}
-	if (typeof fields.speed === 'number' && 'playbackRate' in mediaEl) mediaEl.playbackRate = fields.speed
+	if (typeof fields.speed === 'number' && 'playbackRate' in mediaEl)
+		mediaEl.playbackRate = fields.speed
 }
 
 /**

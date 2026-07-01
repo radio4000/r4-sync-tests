@@ -45,7 +45,8 @@ In the deck player, a full-width Live mode button sits below the header and abov
 
 ## Files
 
-- `src/lib/broadcast.js` — core logic
+- `src/lib/broadcast.js` — core logic (realtime channels, join/leave, liveness)
+- `src/lib/broadcast-utils.js` — pure wire-format and sync helpers (tested)
 - `src/lib/collections/broadcasts.js` — collection with realtime subscription
 - `src/routes/broadcast/+page.svelte` — list page
 - `src/lib/components/broadcast-controls.svelte` — UI
