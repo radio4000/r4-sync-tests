@@ -15,6 +15,7 @@
 	import {channelsCollection} from '$lib/collections/channels'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {getMediaPlayer, playChannel, shufflePlayChannel, toggleChannelPlay} from '$lib/api'
+	import {shortcutHint} from '$lib/keyboard'
 	import {
 		findAutoDecksForChannel,
 		findChannelDeck,
@@ -172,23 +173,11 @@
 	let playTooltip = $derived(
 		activeAutoDrifted
 			? m.auto_radio_resync()
-			: isChannelPlaying
-				? m.player_tooltip_pause()
-				: m.player_tooltip_play()
+			: (isChannelPlaying ? m.player_tooltip_pause() : m.player_tooltip_play()) +
+					shortcutHint('togglePlayPause')
 	)
-	let playLabel = $derived(
-		(isChannelPlaying ? m.player_tooltip_pause() : m.player_tooltip_play())
-			.replace(/\s*<kbd>[^<]*<\/kbd>/gi, '')
-			.replace(/<[^>]+>/g, '')
-			.trim()
-	)
-	let shuffleLabel = $derived(
-		m
-			.player_tooltip_shuffle()
-			.replace(/\s*<kbd>[^<]*<\/kbd>/gi, '')
-			.replace(/<[^>]+>/g, '')
-			.trim()
-	)
+	let playLabel = $derived(isChannelPlaying ? m.player_tooltip_pause() : m.player_tooltip_play())
+	let shuffleLabel = $derived(m.player_tooltip_shuffle())
 	let listeningTrack = $derived.by(() => {
 		const trackId = channelListeningDeck?.playlist_track
 		if (!trackId) return undefined

@@ -1,8 +1,10 @@
 import {createKeybindingsHandler} from 'tinykeys'
 import {goto} from '$app/navigation'
+import {page} from '$app/state'
 import {
 	openSearch,
 	togglePlayPause,
+	toggleChannelPlay,
 	clearQueue,
 	toggleShuffle,
 	toggleDeckCompact,
@@ -11,7 +13,22 @@ import {
 	previous
 } from '$lib/api'
 import {appState} from '$lib/app-state.svelte'
+import {channelsCollection} from '$lib/collections/channels'
 import * as m from '$lib/paraglide/messages'
+
+/**
+ * `k`: plain play/pause, except on a channel page with nothing loaded on the
+ * active deck — then start that channel, same as the header play button.
+ */
+function togglePlayOrStartChannel() {
+	const deckId = appState.active_deck_id
+	const slug = page.params.slug
+	if (slug && !appState.decks[deckId]?.playlist_track) {
+		const channel = [...channelsCollection.state.values()].find((c) => c?.slug === slug)
+		if (channel) return toggleChannelPlay(channel, page.params.tid)
+	}
+	return togglePlayPause(deckId)
+}
 
 function gotoIfAllowed(path) {
 	if (appState.embed_mode) return
@@ -32,7 +49,7 @@ export const SHORTCUT_ACTIONS = {
 	togglePlayPause: {
 		default: 'k',
 		label: () => m.shortcuts_action_togglePlayPause(),
-		run: () => togglePlayPause(appState.active_deck_id)
+		run: () => togglePlayOrStartChannel()
 	},
 	nextTrack: {
 		default: 'Shift+N',
@@ -94,6 +111,28 @@ export const DEFAULT_KEY_BINDINGS = Object.fromEntries(
 
 export function getActionLabel(name) {
 	return SHORTCUT_ACTIONS[name]?.label?.() ?? name
+}
+
+/**
+ * The key currently bound to an action (user override wins over default), or
+ * undefined when unbound.
+ * @param {string} name
+ */
+function getActionKey(name) {
+	const bindings = {...DEFAULT_KEY_BINDINGS, ...appState.shortcuts}
+	return Object.entries(bindings).find(([, action]) => action === name)?.[0] || undefined
+}
+
+/**
+ * Tooltip `<kbd>` hint for an action's current key, e.g. ` <kbd>R</kbd>`.
+ * Empty string when unbound. Single-char keys are uppercased to match the
+ * player transport tooltips. Read inside a reactive scope for live updates.
+ * @param {string} name
+ */
+export function shortcutHint(name) {
+	const key = getActionKey(name)
+	if (!key) return ''
+	return ` <kbd>${key.length === 1 ? key.toUpperCase() : key}</kbd>`
 }
 
 /** Single stable listener — swap the inner handler instead of add/remove */

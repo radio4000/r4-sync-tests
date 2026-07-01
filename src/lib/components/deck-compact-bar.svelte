@@ -30,6 +30,7 @@
 	import PlayerProgress from '$lib/components/player-progress.svelte'
 	import {channelPresence} from '$lib/presence.svelte'
 	import {viewLabel} from '$lib/views'
+	import {shortcutHint} from '$lib/keyboard'
 
 	/** @type {{deckId: number, showEdgeControls?: boolean}} */
 	let {deckId, showEdgeControls = true} = $props()
@@ -205,7 +206,7 @@
 						onclick={() => toggleShuffle(deckId)}
 						class:active={deck?.shuffle}
 						aria-label={m.player_tooltip_shuffle()}
-						{@attach tooltip({content: m.player_tooltip_shuffle()})}
+						{@attach tooltip({content: m.player_tooltip_shuffle() + shortcutHint('toggleShuffle')})}
 					>
 						<Icon icon="shuffle" />
 					</button>
@@ -237,7 +238,9 @@
 					class="expand"
 					onclick={() => toggleDeckCompact(deckId)}
 					aria-label={m.player_compact_show_panel()}
-					{@attach tooltip({content: m.player_compact_show_panel()})}
+					{@attach tooltip({
+						content: m.player_compact_show_panel() + shortcutHint('toggleCompactDeck')
+					})}
 				>
 					<Icon icon="deck-panel" expanded />
 				</button>
