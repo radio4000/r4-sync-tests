@@ -3,7 +3,8 @@ import {goto} from '$app/navigation'
 import {page} from '$app/state'
 import {
 	openSearch,
-	togglePlayPauseOrChannel,
+	togglePlayPause,
+	toggleChannelPlay,
 	clearQueue,
 	toggleShuffle,
 	toggleDeckCompact,
@@ -12,7 +13,22 @@ import {
 	previous
 } from '$lib/api'
 import {appState} from '$lib/app-state.svelte'
+import {channelsCollection} from '$lib/collections/channels'
 import * as m from '$lib/paraglide/messages'
+
+/**
+ * `k`: plain play/pause, except on a channel page with nothing loaded on the
+ * active deck — then start that channel, same as the header play button.
+ */
+function togglePlayOrStartChannel() {
+	const deckId = appState.active_deck_id
+	const slug = page.params.slug
+	if (slug && !appState.decks[deckId]?.playlist_track) {
+		const channel = [...channelsCollection.state.values()].find((c) => c?.slug === slug)
+		if (channel) return toggleChannelPlay(channel, page.params.tid)
+	}
+	return togglePlayPause(deckId)
+}
 
 function gotoIfAllowed(path) {
 	if (appState.embed_mode) return
@@ -33,9 +49,7 @@ export const SHORTCUT_ACTIONS = {
 	togglePlayPause: {
 		default: 'k',
 		label: () => m.shortcuts_action_togglePlayPause(),
-		// On a channel page with nothing playing, start that channel (like the header
-		// play button); otherwise plain play/pause. slug/tid are undefined off-channel.
-		run: () => togglePlayPauseOrChannel(page.params.slug, page.params.tid)
+		run: () => togglePlayOrStartChannel()
 	},
 	nextTrack: {
 		default: 'Shift+N',
