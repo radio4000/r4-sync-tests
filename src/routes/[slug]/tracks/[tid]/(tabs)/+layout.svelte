@@ -97,7 +97,7 @@
 </script>
 
 <Seo
-	title={track?.title || m.track_meta_title()}
+	title={track?.title || m.track_page_fallback()}
 	description={track?.description}
 	image={ogImage}
 	url={page.url.href}

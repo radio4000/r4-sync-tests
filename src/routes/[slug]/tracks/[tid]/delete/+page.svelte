@@ -55,7 +55,7 @@
 </script>
 
 <svelte:head>
-	<title>{m.common_delete()} {track?.title || m.track_meta_title()}</title>
+	<title>{m.common_delete()} {track?.title || m.track_page_fallback()}</title>
 </svelte:head>
 
 <article class="constrained focused">
