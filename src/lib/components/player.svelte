@@ -33,6 +33,7 @@
 	import SpeedControl from '$lib/components/speed-control.svelte'
 	import VolumeControl from '$lib/components/volume-control.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
+	import {shortcutHint} from '$lib/keyboard'
 	import {logger} from '$lib/logger'
 	import {parseUrl} from 'media-now/parse-url'
 	import {tracksCollection, updateTrack} from '$lib/collections/tracks'
@@ -601,7 +602,10 @@
 						class="compact-toggle"
 						onclick={() => toggleDeckCompact(deckId)}
 						aria-label={m.player_tooltip_compact()}
-						{@attach tooltip({content: m.player_tooltip_compact(), position: 'top'})}
+						{@attach tooltip({
+							content: m.player_tooltip_compact() + shortcutHint('toggleCompactDeck'),
+							position: 'top'
+						})}
 					>
 						<Icon icon="deck-panel" />
 					</button>
