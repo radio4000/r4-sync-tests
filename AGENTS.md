@@ -19,13 +19,15 @@ For any task or question:
 /src/lib/components   -- components
 ```
 
+Verify with `bun run test` (one known failing test is expected), `bun run types`, `bun run lint`.
+
 Be concise. Short answers, no walls of text.
 
 Name CSS classes by primitive/identity (`tabs`, `btn`, `chip`, `link`, etc.), not by location (`explore-section-menu`) — reusable vocabulary styled once in `src/styles/`.
 
 ## Key docs
 
-- [reference](docs/reference.json) - scan for relevant functions, SDK methods, components, types
+- [reference](docs/reference.json) - scan for relevant functions, SDK methods, components, types. Maintained by hand — update it when you add or change APIs (`sg-ast outline` helps list what's where)
 - [universe](docs/universe.md) - domain model: channels, tracks, views, decks, broadcast, auto-radio
 - [state](docs/state.md) - how data flows (remote, local sync, app state)
 - [tone](docs/tone.md) - voice and tone for all copy (UI, docs, changelog)

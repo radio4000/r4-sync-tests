@@ -584,7 +584,13 @@
 
 		{"name": "Channels", "desc": "Grid/list/map/tuner views with filter, sort, shuffle."},
 		{"name": "ChannelCard", "desc": "Channel preview with avatar, description, live dot."},
+		{
+			"name": "FeaturedChannels",
+			"desc": "Featured channels grid: seeded pick, reshuffle, play toggle."
+		},
+		{"name": "HomeGlobe", "desc": "Lazy channels globe — loads map when scrolled into view."},
 
+		{"name": "Seo", "desc": "Page title and meta/OG tags. plain prop skips the app-name suffix."},
 		{"name": "dialog.svelte", "desc": "Generic dialog wrapper with header/children snippets."},
 		{"name": "date-formal.svelte", "desc": "Localized formal date-time display."},
 		{"name": "Icon", "desc": "Iconify icon wrapper."},
@@ -613,6 +619,18 @@
 			"name": "unpackEphemeralTrack(track_id, payload)",
 			"desc": "Reconstruct Track from broadcast payload."
 		}
+	],
+
+	"src/lib/player/broadcast-utils.js": [
+		{
+			"name": "pickBroadcastFields(source)",
+			"desc": "Pick shared playback fields off a Deck, Broadcast row or BroadcastDeckState."
+		},
+		{
+			"name": "composeBroadcastDeckState(index, trackId, deck, ephemeralPayload)",
+			"desc": "Compose one deck's outbound broadcast wire state."
+		},
+		{"name": "BROADCAST_STATE_DEFAULTS", "desc": "Defaults for the shared playback fields."}
 	],
 
 	"src/lib/player/deck-display.svelte.ts": [
