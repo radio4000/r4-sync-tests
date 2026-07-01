@@ -15,31 +15,23 @@ import {broadcastsCollection} from '$lib/collections/broadcasts'
 import {channelsCollection} from '$lib/collections/channels'
 import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 import {isDbId} from '$lib/utils'
-import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
-import {packEphemeralTrack, unpackEphemeralTrack} from '$lib/player/broadcast-payload'
-export {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
+import {
+	calculateSeekTime,
+	DRIFT_TOLERANCE_SECONDS,
+	pickBroadcastFields,
+	composeBroadcastDeckState,
+	packEphemeralTrack,
+	unpackEphemeralTrack
+} from '$lib/broadcast-utils'
 import {capture} from '$lib/analytics'
 
 /** @typedef {import('$lib/types').Broadcast} Broadcast */
 /** @typedef {import('$lib/types').BroadcastDeckState} BroadcastDeckState */
+/** @typedef {ReturnType<typeof getMediaPlayer>} MediaPlayer */
 
 const log = logger.ns('broadcast').seal()
 const BROADCAST_IDLE_STOP_MS = 10000
 const BROADCAST_LIVENESS_INTERVAL_MS = 1000
-
-/** Extract type-validated broadcast fields for deck state */
-function pickBroadcastFields(broadcast) {
-	/** @type {Partial<import('$lib/types').Deck>} */
-	const fields = {}
-	if (broadcast.track_played_at) fields.track_played_at = broadcast.track_played_at
-	if (broadcast.seeked_at) fields.seeked_at = broadcast.seeked_at
-	if (broadcast.seek_position != null) fields.seek_position = broadcast.seek_position
-	if (typeof broadcast.volume === 'number') fields.volume = broadcast.volume
-	if (typeof broadcast.muted === 'boolean') fields.muted = broadcast.muted
-	if (typeof broadcast.is_playing === 'boolean') fields.is_playing = broadcast.is_playing
-	if (typeof broadcast.speed === 'number') fields.speed = broadcast.speed
-	return fields
-}
 
 /** Get slug for a channel ID, or short ID if not found */
 function label(channelId) {
@@ -377,8 +369,25 @@ async function seekWhenReady(deckId, seconds, jobId) {
 }
 
 /**
+ * Apply the shared playback fields (volume/muted/is_playing/speed) to a media element.
+ * @param {MediaPlayer} mediaEl
+ * @param {Partial<BroadcastDeckState>} fields
+ */
+function applyBroadcastFieldsToMedia(mediaEl, fields) {
+	if (!mediaEl) return
+	if (typeof fields.volume === 'number') mediaEl.volume = fields.volume
+	if (typeof fields.muted === 'boolean') mediaEl.muted = fields.muted
+	if (typeof fields.is_playing === 'boolean') {
+		if (fields.is_playing && mediaEl.paused) mediaEl.play()
+		if (!fields.is_playing && !mediaEl.paused) mediaEl.pause()
+	}
+	if (typeof fields.speed === 'number' && 'playbackRate' in mediaEl)
+		mediaEl.playbackRate = fields.speed
+}
+
+/**
  * @param {number} deckId
- * @param {Partial<BroadcastDeckState> & {channel_id: string, track_id?: string | null, track_url?: string | null, track_title?: string | null, track_media_id?: string | null}} broadcast
+ * @param {Partial<BroadcastDeckState> & {channel_id: string}} broadcast
  */
 async function playBroadcastTrack(deckId, broadcast) {
 	const {track_id, channel_id} = broadcast
@@ -426,18 +435,7 @@ async function playBroadcastTrack(deckId, broadcast) {
 		})
 
 		// Apply to media element — delay slightly so YouTube has time to initialize after load
-		const applyToMedia = () => {
-			const mediaEl = getMediaPlayer(deckId)
-			if (!mediaEl) return
-			if (typeof broadcast.volume === 'number') mediaEl.volume = broadcast.volume
-			if (typeof broadcast.muted === 'boolean') mediaEl.muted = broadcast.muted
-			if (typeof broadcast.is_playing === 'boolean') {
-				if (broadcast.is_playing && mediaEl.paused) mediaEl.play()
-				if (!broadcast.is_playing && !mediaEl.paused) mediaEl.pause()
-			}
-			if (typeof broadcast.speed === 'number' && 'playbackRate' in mediaEl)
-				mediaEl.playbackRate = broadcast.speed
-		}
+		const applyToMedia = () => applyBroadcastFieldsToMedia(getMediaPlayer(deckId), broadcast)
 		applyToMedia()
 		// Re-apply after a short delay — YouTube resets playbackRate on video load
 		setTimeout(applyToMedia, 1000)
@@ -539,18 +537,7 @@ function getBroadcastDeckState() {
 		const deck = appState.decks[id]
 		const trackId = deck?.playlist_track ?? null
 		const nonDbTrack = trackId && !isDbId(trackId) ? tracksCollection.get(trackId) : null
-		return {
-			index,
-			track_id: trackId,
-			track_played_at: deck?.track_played_at ?? null,
-			is_playing: deck?.is_playing ?? false,
-			seeked_at: deck?.seeked_at ?? null,
-			seek_position: deck?.seek_position ?? null,
-			volume: deck?.volume ?? 0,
-			muted: deck?.muted ?? false,
-			speed: deck?.speed ?? 1,
-			...packEphemeralTrack(nonDbTrack)
-		}
+		return composeBroadcastDeckState(index, trackId, deck, packEphemeralTrack(nonDbTrack))
 	})
 }
 
@@ -814,35 +801,12 @@ async function syncDeckToBroadcastState(deckId, channelId, state) {
 		...pickBroadcastFields(state)
 	})
 	if (trackChanged) {
-		await playBroadcastTrack(deckId, {
-			channel_id: channelId,
-			track_id: state.track_id,
-			track_played_at: state.track_played_at,
-			seeked_at: state.seeked_at,
-			seek_position: state.seek_position,
-			is_playing: state.is_playing,
-			volume: state.volume,
-			muted: state.muted,
-			speed: state.speed,
-			track_url: state.track_url,
-			track_title: state.track_title,
-			track_media_id: state.track_media_id
-		})
+		await playBroadcastTrack(deckId, {...state, channel_id: channelId})
 		return
 	}
 
 	const mediaEl = getMediaPlayer(deckId)
-	if (mediaEl) {
-		if (typeof state.volume === 'number') mediaEl.volume = state.volume
-		if (typeof state.muted === 'boolean') mediaEl.muted = state.muted
-		if (typeof state.is_playing === 'boolean') {
-			if (state.is_playing && mediaEl.paused) mediaEl.play()
-			if (!state.is_playing && !mediaEl.paused) mediaEl.pause()
-		}
-		if (typeof state.speed === 'number' && 'playbackRate' in mediaEl) {
-			mediaEl.playbackRate = state.speed
-		}
-	}
+	applyBroadcastFieldsToMedia(mediaEl, state)
 
 	const track = tracksCollection.get(state.track_id)
 	if (!track) return

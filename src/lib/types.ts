@@ -41,9 +41,9 @@ export interface Deck {
 	auto_radio_rotation_start?: number
 	listening_drifted?: boolean
 	play_id?: string
-	track_played_at?: string
-	seeked_at?: string
-	seek_position?: number
+	track_played_at?: string | null
+	seeked_at?: string | null
+	seek_position?: number | null
 	speed?: number
 	media_current_time?: number
 	media_duration?: number
@@ -126,6 +126,20 @@ interface User {
 }
 
 export type KeyBindingsConfig = Record<string, string>
+
+/**
+ * Playback fields with the same name and shape on both Deck and BroadcastDeckState —
+ * shared vocabulary for mapping state between a local deck and a broadcast.
+ */
+export interface BroadcastPlaybackFields {
+	track_played_at?: string | null
+	seeked_at?: string | null
+	seek_position?: number | null
+	volume?: number
+	muted?: boolean
+	is_playing?: boolean
+	speed?: number
+}
 
 export interface BroadcastDeckState extends Partial<import('@radio4000/sdk').BroadcastDeckState> {
 	track_url?: string | null

@@ -23,7 +23,7 @@
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {playbackState, toAutoTracks} from '$lib/player/auto-radio'
 	import {leaveBroadcast, getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast.js'
-	import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/player/broadcast-utils'
+	import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/broadcast-utils'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
 	import {appState, canEditChannel, removeDeck, deckAccent} from '$lib/app-state.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
