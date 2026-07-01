@@ -207,6 +207,10 @@
 		},
 		{"name": "shufflePlayChannel(deckId, {id, slug})", "desc": "Random start plus shuffle."},
 		{"name": "togglePlayPause(deckId)", "desc": "Toggle play/pause for a deck."},
+		{
+			"name": "togglePlayPauseOrChannel(slug?, trackId?)",
+			"desc": "`k` shortcut: toggle the active deck, or start the channel (by slug) when nothing is playing."
+		},
 		{"name": "playFromHere(deckId, trackId)", "desc": "Play from track to end."},
 
 		{"name": "setPlaylist(deckId, trackIds, options?)", "desc": "Set queue to track IDs."},

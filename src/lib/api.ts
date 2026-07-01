@@ -22,6 +22,7 @@ import {
 	queueRotate
 } from '$lib/player/queue'
 import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
+import {channelsCollection} from '$lib/collections/channels'
 
 import type {Channel, Deck, Track, PlayEndReason, PlayStartReason} from '$lib/types'
 import {
@@ -581,6 +582,20 @@ export async function togglePlayPause(deckId: number) {
 		player.pause()
 	}
 	maybeBroadcastNotify()
+}
+
+/**
+ * Play/pause for the global `k` shortcut. Toggles the active deck when it has a
+ * track. When there's nothing to play and we're on a channel page (slug set),
+ * starts that channel instead — same as the header play button. `trackId` starts
+ * from a specific track (track-detail pages).
+ */
+export async function togglePlayPauseOrChannel(slug?: string, trackId?: string) {
+	const deck = getDeck(appState.active_deck_id)
+	if (deck?.playlist_track || !slug) return togglePlayPause(appState.active_deck_id)
+	const channel = [...channelsCollection.state.values()].find((c) => c?.slug === slug)
+	if (!channel) return togglePlayPause(appState.active_deck_id)
+	await toggleChannelPlay(channel, trackId)
 }
 
 /** Play from this track to end of list */

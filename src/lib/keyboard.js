@@ -1,8 +1,9 @@
 import {createKeybindingsHandler} from 'tinykeys'
 import {goto} from '$app/navigation'
+import {page} from '$app/state'
 import {
 	openSearch,
-	togglePlayPause,
+	togglePlayPauseOrChannel,
 	clearQueue,
 	toggleShuffle,
 	toggleDeckCompact,
@@ -32,7 +33,9 @@ export const SHORTCUT_ACTIONS = {
 	togglePlayPause: {
 		default: 'k',
 		label: () => m.shortcuts_action_togglePlayPause(),
-		run: () => togglePlayPause(appState.active_deck_id)
+		// On a channel page with nothing playing, start that channel (like the header
+		// play button); otherwise plain play/pause. slug/tid are undefined off-channel.
+		run: () => togglePlayPauseOrChannel(page.params.slug, page.params.tid)
 	},
 	nextTrack: {
 		default: 'Shift+N',
