@@ -10,6 +10,7 @@
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import ExplorePageHeader from '$lib/components/explore-page-header.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const {data} = $props()
@@ -89,9 +90,7 @@
 	const groupedTracks = $derived(groupByDay(tracks))
 </script>
 
-<svelte:head>
-	<title>{m.explore_title({appName})}</title>
-</svelte:head>
+<Seo title={m.explore_title({appName})} plain />
 
 <div class="layout">
 	<ExplorePageHeader>

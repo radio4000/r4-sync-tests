@@ -14,6 +14,7 @@
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import Icon from '$lib/components/icon.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	let slug = $derived(page.params.slug)
@@ -310,9 +311,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.batch_edit_page_title({name: channel?.name || m.channel_page_fallback()})}</title>
-</svelte:head>
+<Seo title={m.batch_edit_page_title({name: channel?.name || m.channel_page_fallback()})} plain />
 
 <ChannelNavControlsPortal controls={navControls} />
 

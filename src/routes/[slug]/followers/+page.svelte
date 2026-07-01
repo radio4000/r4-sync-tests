@@ -12,6 +12,7 @@
 	import SearchInput from '$lib/components/search-input.svelte'
 	import Subpage from '$lib/components/subpage.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const d = appState.channels_display
@@ -99,9 +100,7 @@
 	{/if}
 {/snippet}
 
-<svelte:head>
-	<title>{m.nav_followers()} - {channel?.name || m.channel_page_fallback()}</title>
-</svelte:head>
+<Seo title={`${m.nav_followers()} - ${channel?.name || m.channel_page_fallback()}`} plain />
 
 <article class="channels-page fill-height">
 	<Subpage

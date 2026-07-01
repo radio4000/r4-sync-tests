@@ -13,6 +13,7 @@
 	import SearchTrackMenu from '$lib/components/search-track-menu.svelte'
 	import {searchChannelsCombined} from '$lib/search'
 	import Pagination from '$lib/components/pagination.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {tracksCollection} from '$lib/collections/tracks'
 	import {featuredScore, getTopTagValues, seededRandom, shuffleArray, shuffleSeed} from '$lib/utils'
@@ -106,9 +107,7 @@
 	})
 </script>
 
-<svelte:head>
-	<title>{m.search_title()}</title>
-</svelte:head>
+<Seo title={m.search_title()} plain />
 
 <article {@attach fromAction(trap)}>
 	<SearchShell

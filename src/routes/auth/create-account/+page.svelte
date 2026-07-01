@@ -6,6 +6,7 @@
 	import * as m from '$lib/paraglide/messages'
 	import AuthSignup from '$lib/components/auth-signup.svelte'
 	import IconR4 from '$lib/components/icon-r4.svelte'
+	import Seo from '$lib/components/seo.svelte'
 
 	const redirect = $derived(page.url.searchParams.get('redirect') || '/settings')
 
@@ -16,9 +17,7 @@
 	const isCheckEmail = $derived(step === 'linkSent' || step === 'confirmEmail')
 </script>
 
-<svelte:head>
-	<title>{m.auth_create_page_title()}</title>
-</svelte:head>
+<Seo title={m.auth_create_page_title()} plain />
 
 <article class="constrained constrained--smaller focused splash">
 	<figure class="logo">

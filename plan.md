@@ -4,14 +4,9 @@ Possible improvements. Roughly by priority. Verify before implementing.
 
 Last update (2026-05-27): cleared done sections — see CHANGELOG.md for user-facing history.
 
-## Simplify: rely on types and primitives, fewer layers
-
-- **Broadcast field juggling** — `broadcast.js`: `pickBroadcastFields()`, `getBroadcastDeckState()`, ephemeral track construction. Three hand-rolled serializers. Align types so most disappear.
-- **Player vs compact bar: same concept, two local contracts** — `player.svelte` and `deck-compact-bar.svelte` each rebuild "what this deck is showing" with different rules. Both keep their own `lastTrack`/`lastChannel`, both derive display fallbacks, both resolve header channel differently. Extract one shared derivation.
-
 ## Backlog
 
-- Consolidate page metadata behind `src/lib/components/seo.svelte` — today some routes use raw `<svelte:head>` because `Seo` always appends `| {appName}` and emits OG tags, while many title messages already hardcode `Radio4000` or custom formatting. Refactor `Seo` into the single metadata path for non-debug routes: support plain/full titles, stop baking brand names into i18n title strings, move default title/description in `src/app.html` to config-driven values, and keep route usage consistent.
+- Page metadata follow-ups — `Seo` is now the single metadata path (50 routes migrated, `plain` prop skips the `| {appName}` suffix). Remaining: stop baking brand names into i18n title strings so more routes can drop `plain`, and move default title/description in `src/app.html` to config-driven values (needs a `transformPageChunk` hook in `hooks.server.ts`).
 - `userHasPlayed` not reset between playlists (`player.svelte`) — flag carries over when switching channels, may cause unexpected autoplay. Needs verification and user testing.
 - `seekWhenReady` race in `broadcast.js` — between the final `seekJobSeqByDeck` check and `play(deckId)`, a new job could start. Old job's `play()` still fires. Needs verification and user testing.
 

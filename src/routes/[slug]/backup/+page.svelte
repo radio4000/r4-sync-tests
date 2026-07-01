@@ -6,6 +6,7 @@
 	import {getChannelCtx} from '$lib/contexts'
 	import Icon from '$lib/components/icon.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const channelCtx = getChannelCtx()
@@ -52,9 +53,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.channel_backup_page_title({handle: `@${slug}`})}</title>
-</svelte:head>
+<Seo title={m.channel_backup_page_title({handle: `@${slug}`})} plain />
 
 <ChannelNavControlsPortal controls={navControls} />
 

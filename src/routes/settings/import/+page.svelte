@@ -3,14 +3,13 @@
 	import {resolve} from '$app/paths'
 	import BackLink from '$lib/components/back-link.svelte'
 	import Icon from '$lib/components/icon.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const importedCount = $derived(appState.local_channels?.length ?? 0)
 </script>
 
-<svelte:head>
-	<title>{m.import_title()}</title>
-</svelte:head>
+<Seo title={m.import_title()} plain />
 
 <article class="focused constrained">
 	<header>

@@ -10,6 +10,7 @@
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import ExplorePageHeader from '$lib/components/explore-page-header.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	let search = $state('')
@@ -53,9 +54,7 @@
 	})
 </script>
 
-<svelte:head>
-	<title>{m.nav_feed()} — {appName}</title>
-</svelte:head>
+<Seo title={`${m.nav_feed()} — ${appName}`} plain />
 
 <div class="feed">
 	<ExplorePageHeader>

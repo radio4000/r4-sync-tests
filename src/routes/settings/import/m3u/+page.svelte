@@ -6,6 +6,7 @@
 	import type {ImportResult} from '$lib/import'
 	import BackLink from '$lib/components/back-link.svelte'
 	import Dropzone from '$lib/components/dropzone.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	let error = $state('')
@@ -55,9 +56,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.import_m3u_title()}</title>
-</svelte:head>
+<Seo title={m.import_m3u_title()} plain />
 
 <article class="focused constrained">
 	<header>

@@ -8,6 +8,7 @@
 	import {channelsCollection} from '$lib/collections/channels'
 	import {tracksCollection} from '$lib/collections/tracks'
 	import {queryClient} from '$lib/collections/query-client'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const channelCtx = getChannelCtx()
@@ -76,9 +77,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.channel_delete_page_title({name: channel?.name || m.channel_page_fallback()})}</title>
-</svelte:head>
+<Seo title={m.channel_delete_page_title({name: channel?.name || m.channel_page_fallback()})} plain />
 
 <article>
 	{#if canDelete && channel}

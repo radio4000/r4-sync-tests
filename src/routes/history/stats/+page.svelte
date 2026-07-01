@@ -9,6 +9,7 @@
 	import {followsCollection} from '$lib/collections/follows'
 	import {queryClient} from '$lib/collections/query-client'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
+	import Seo from '$lib/components/seo.svelte'
 
 	// Reactive reads — updates live as you play tracks, follow channels, etc.
 	const eventsQuery = useLiveQuery((q) => q.from({ev: captureEventsCollection}))
@@ -236,9 +237,7 @@
 	})
 </script>
 
-<svelte:head>
-	<title>{m.page_title_stats()}</title>
-</svelte:head>
+<Seo title={m.page_title_stats()} plain />
 
 <article class="focused constrained">
 	<header>

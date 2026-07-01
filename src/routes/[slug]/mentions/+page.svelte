@@ -10,6 +10,7 @@
 	import Subpage from '$lib/components/subpage.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import Icon from '$lib/components/icon.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import type {Track} from '$lib/types'
 	import * as m from '$lib/paraglide/messages'
 
@@ -89,9 +90,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.mentions_title({handle: `@${slug}`})}</title>
-</svelte:head>
+<Seo title={m.mentions_title({handle: `@${slug}`})} plain />
 
 <ChannelNavControlsPortal controls={navControls} />
 

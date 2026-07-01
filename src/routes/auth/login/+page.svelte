@@ -6,6 +6,7 @@
 	import * as m from '$lib/paraglide/messages'
 	import AuthLogin from '$lib/components/auth-login.svelte'
 	import IconR4 from '$lib/components/icon-r4.svelte'
+	import Seo from '$lib/components/seo.svelte'
 
 	const redirect = $derived(page.url.searchParams.get('redirect') || '/settings')
 	let step = $state('providers')
@@ -16,9 +17,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.auth_login_page_title()}</title>
-</svelte:head>
+<Seo title={m.auth_login_page_title()} plain />
 
 <article class="constrained focused splash">
 	<figure class="logo">

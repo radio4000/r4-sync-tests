@@ -3,11 +3,10 @@
 	import {appName, communityLinks, appContactEmail} from '$lib/config'
 	import BackLink from '$lib/components/back-link.svelte'
 	import Icon from '$lib/components/icon.svelte'
+	import Seo from '$lib/components/seo.svelte'
 </script>
 
-<svelte:head>
-	<title>Community — {appName}</title>
-</svelte:head>
+<Seo title={`Community — ${appName}`} plain />
 
 <article class="focused constrained">
 	<header>

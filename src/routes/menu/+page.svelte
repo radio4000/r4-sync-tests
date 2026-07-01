@@ -10,6 +10,7 @@
 	import {repoBlobUrl, repoUrl, repoCommitUrl} from '$lib/repo'
 	import BackLink from '$lib/components/back-link.svelte'
 	import LanguageSwitcher from '$lib/components/language-switcher.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import {appPresence} from '$lib/presence.svelte.js'
 
 	const sha = __GIT_INFO__.sha
@@ -37,9 +38,7 @@
 	})
 </script>
 
-<svelte:head>
-	<title>Menu — {appName}</title>
-</svelte:head>
+<Seo title={`Menu — ${appName}`} plain />
 
 <article class="focused constrained">
 	<header>

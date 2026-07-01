@@ -4,6 +4,7 @@
 	import {eq} from '@tanstack/db'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {tracksCollection} from '$lib/collections/tracks'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const channelQuery = useLiveQuery((q) =>
@@ -21,9 +22,7 @@
 	const trackUrls = $derived(tracksQuery.data?.map((t) => t.url) || [])
 </script>
 
-<svelte:head>
-	<title>{m.track_urls_page_title({name: channel?.name || m.channel_page_fallback()})}</title>
-</svelte:head>
+<Seo title={m.track_urls_page_title({name: channel?.name || m.channel_page_fallback()})} plain />
 
 {#if tracksQuery.isLoading}
 	<p>{m.common_loading()}</p>

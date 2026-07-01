@@ -1,5 +1,6 @@
 <script>
 	import {appName} from '$lib/config'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const {data} = $props()
@@ -8,9 +9,7 @@
 	)
 </script>
 
-<svelte:head>
-	<title>{m.bookmarklet_title({appName})}</title>
-</svelte:head>
+<Seo title={m.bookmarklet_title({appName})} plain />
 
 <article class="constrained">
 	<h1>{m.bookmarklet_heading()}</h1>

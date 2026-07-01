@@ -8,6 +8,7 @@
 	import BackLink from '$lib/components/back-link.svelte'
 	import InputRange from '$lib/components/input-range.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import {
 		computeEconomy,
 		computeChannelEconomy,
@@ -139,9 +140,7 @@
 	)
 </script>
 
-<svelte:head>
-	<title>Economy — {appName}</title>
-</svelte:head>
+<Seo title={`Economy — ${appName}`} plain />
 
 <div class="economy fill-height">
 	<!-- ═══ SIDEBAR ═══ -->

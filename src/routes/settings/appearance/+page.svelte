@@ -2,12 +2,11 @@
 	import ThemeEditor from '$lib/components/theme-editor.svelte'
 	import {resolve} from '$app/paths'
 	import BackLink from '$lib/components/back-link.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 </script>
 
-<svelte:head>
-	<title>{m.settings_appearance_title()}</title>
-</svelte:head>
+<Seo title={m.settings_appearance_title()} plain />
 
 <article>
 	<div class="focused constrained">

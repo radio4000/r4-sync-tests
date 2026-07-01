@@ -8,6 +8,7 @@
 	import {getTopChannelSlugs} from '$lib/utils'
 	import ChannelCard from '$lib/components/channel-card.svelte'
 	import SearchShell from '$lib/components/search-shell.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import {trap} from '$lib/focus'
 	import {fromAction} from 'svelte/attachments'
 	import * as m from '$lib/paraglide/messages'
@@ -52,9 +53,7 @@
 	})
 </script>
 
-<svelte:head>
-	<title>{m.search_title()}</title>
-</svelte:head>
+<Seo title={m.search_title()} plain />
 
 <article {@attach fromAction(trap)}>
 	<SearchShell {uid} bind:value={search.value} onsubmit={search.handleSubmit} />

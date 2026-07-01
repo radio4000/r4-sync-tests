@@ -1,10 +1,9 @@
 <script>
 	import LiveChat from '$lib/components/live-chat.svelte'
+	import Seo from '$lib/components/seo.svelte'
 </script>
 
-<svelte:head>
-	<title>Chat</title>
-</svelte:head>
+<Seo title="Chat" plain />
 
 <div class="constrained container">
 	<LiveChat />

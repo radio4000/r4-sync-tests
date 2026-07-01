@@ -4,6 +4,7 @@
 	import {sdk} from '@radio4000/sdk'
 	import {appState} from '$lib/app-state.svelte'
 	import BackLink from '$lib/components/back-link.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	let newEmail = $state('')
@@ -36,9 +37,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.account_change_email()}</title>
-</svelte:head>
+<Seo title={m.account_change_email()} plain />
 
 <article class="focused constrained">
 	<header>

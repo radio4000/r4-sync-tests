@@ -6,6 +6,7 @@
 	import {appState} from '$lib/app-state.svelte'
 	import ChannelCard from '$lib/components/channel-card.svelte'
 	import IconR4 from '$lib/components/icon-r4.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {inArray} from '@tanstack/db'
 	import {channelsCollection} from '$lib/collections/channels'
@@ -39,9 +40,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.auth_page_title()}</title>
-</svelte:head>
+<Seo title={m.auth_page_title()} plain />
 
 <article class="constrained focused splash">
 	<figure class="logo">

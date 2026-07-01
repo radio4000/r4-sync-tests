@@ -7,6 +7,7 @@
 	import ChannelCard from '$lib/components/channel-card.svelte'
 	import * as m from '$lib/paraglide/messages'
 	import BackLink from '$lib/components/back-link.svelte'
+	import Seo from '$lib/components/seo.svelte'
 
 	const FEATURED_DAYS = 30
 
@@ -27,9 +28,7 @@
 	})
 </script>
 
-<svelte:head>
-	<title>{m.about_title({appName})}</title>
-</svelte:head>
+<Seo title={m.about_title({appName})} plain />
 
 <article class="focused constrained">
 	<header>
