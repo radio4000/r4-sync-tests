@@ -425,7 +425,6 @@
 	"player_sync_broadcast": "Синхронизировать эфир",
 	"player_tooltip_close_deck": "Закрыть деку",
 	"player_tooltip_compact": "Компактный",
-	"player_tooltip_expand": "Развернуть плеер <kbd>F</kbd>",
 	"player_tooltip_mute": "Без звука <kbd>M</kbd>",
 	"player_tooltip_next": "Следующий трек",
 	"player_tooltip_pause": "Пауза",

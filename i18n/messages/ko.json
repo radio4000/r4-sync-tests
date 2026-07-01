@@ -425,7 +425,6 @@
 	"player_sync_broadcast": "방송 동기화",
 	"player_tooltip_close_deck": "덱 닫기",
 	"player_tooltip_compact": "컴팩트",
-	"player_tooltip_expand": "플레이어 확장 <kbd>F</kbd>",
 	"player_tooltip_mute": "음소거 <kbd>M</kbd>",
 	"player_tooltip_next": "다음 트랙",
 	"player_tooltip_pause": "일시정지",

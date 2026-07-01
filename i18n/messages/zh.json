@@ -425,7 +425,6 @@
 	"player_sync_broadcast": "同步广播",
 	"player_tooltip_close_deck": "关闭卡组",
 	"player_tooltip_compact": "紧凑",
-	"player_tooltip_expand": "展开播放器 <kbd>F</kbd>",
 	"player_tooltip_mute": "静音 <kbd>M</kbd>",
 	"player_tooltip_next": "下一首",
 	"player_tooltip_pause": "暂停",

@@ -17,7 +17,7 @@ That's it — the editor list, help dialog, and default key map all derive from 
 
 ## Showing a shortcut in a tooltip
 
-`shortcutHint(actionName)` returns ` <kbd>…</kbd>` markup for an action's current key (user override wins over default, empty when unbound). Append it to a tooltip's `content` so the hint tracks remapping — e.g. `content: m.player_compact_show_panel() + shortcutHint('toggleCompactDeck')`. Tooltips render as HTML. Use `getActionKey(actionName)` for the raw key without markup.
+`shortcutHint(actionName)` returns ` <kbd>…</kbd>` markup for an action's current key (user override wins over default, empty when unbound). Append it to a tooltip's `content` so the hint tracks remapping — e.g. `content: m.player_compact_show_panel() + shortcutHint('toggleCompactDeck')`. Tooltips render as HTML.
 
 ## Tracklist navigation
 

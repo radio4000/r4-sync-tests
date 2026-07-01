@@ -485,7 +485,6 @@
 	"player_sync_broadcast": "Sincronizar transmissão",
 	"player_tooltip_close_deck": "Fechar deck",
 	"player_tooltip_compact": "Compacto",
-	"player_tooltip_expand": "Expandir reprodutor <kbd>F</kbd>",
 	"player_tooltip_mute": "Silenciar <kbd>M</kbd>",
 	"player_tooltip_next": "Próxima faixa",
 	"player_tooltip_pause": "Pausar",

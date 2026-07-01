@@ -101,10 +101,10 @@ export function getActionLabel(name) {
 
 /**
  * The key currently bound to an action (user override wins over default), or
- * undefined when unbound. Read inside a reactive scope for live updates.
+ * undefined when unbound.
  * @param {string} name
  */
-export function getActionKey(name) {
+function getActionKey(name) {
 	const bindings = {...DEFAULT_KEY_BINDINGS, ...appState.shortcuts}
 	return Object.entries(bindings).find(([, action]) => action === name)?.[0] || undefined
 }
@@ -112,7 +112,7 @@ export function getActionKey(name) {
 /**
  * Tooltip `<kbd>` hint for an action's current key, e.g. ` <kbd>R</kbd>`.
  * Empty string when unbound. Single-char keys are uppercased to match the
- * player transport tooltips.
+ * player transport tooltips. Read inside a reactive scope for live updates.
  * @param {string} name
  */
 export function shortcutHint(name) {

@@ -512,7 +512,6 @@
 	"player_sync_broadcast": "Sync broadcast",
 	"player_tooltip_close_deck": "Remove deck",
 	"player_tooltip_compact": "Compact",
-	"player_tooltip_expand": "Expand player <kbd>F</kbd>",
 	"player_tooltip_mute": "Mute <kbd>M</kbd>",
 	"player_tooltip_next": "Next track",
 	"player_tooltip_pause": "Pause",

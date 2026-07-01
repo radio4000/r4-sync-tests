@@ -485,7 +485,6 @@
 	"player_sync_broadcast": "Synchroniser la diffusion",
 	"player_tooltip_close_deck": "Fermer le deck",
 	"player_tooltip_compact": "Mode compact",
-	"player_tooltip_expand": "Agrandir le lecteur <kbd>F</kbd>",
 	"player_tooltip_mute": "Couper le son <kbd>M</kbd>",
 	"player_tooltip_next": "Morceau suivant",
 	"player_tooltip_pause": "Pause",
