@@ -1,5 +1,4 @@
 <script>
-	import {onMount} from 'svelte'
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {appState} from '$lib/app-state.svelte'
@@ -7,22 +6,24 @@
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {shuffleSeed} from '$lib/utils'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
-	import {getFeaturedPool, pickFeatured, dailySeed} from '$lib/collections/featured'
+	import {getFeaturedPool} from '$lib/collections/featured'
 	import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 	import {getChannelTags, extractHashtags} from '$lib/utils'
-	import {playChannel, togglePlayPause, loadDeckView, playTrack, sortByNewest} from '$lib/api'
+	import {loadDeckView, playTrack, sortByNewest} from '$lib/api'
 	import {isBroadcasting} from '$lib/deck'
 	import {authStatus} from '$lib/app-state.svelte'
 	import {appPresence, watchPresence, unwatchPresence} from '$lib/presence.svelte'
 	import {sdk} from '@radio4000/sdk'
 	import ChannelCard from '$lib/components/channel-card.svelte'
+	import FeaturedChannels from '$lib/components/featured-channels.svelte'
+	import HomeGlobe from '$lib/components/home-globe.svelte'
 	import MyChannelControls from '$lib/components/my-channel-controls.svelte'
 	import {not, isNull, eq} from '@tanstack/db'
 	import Icon from '$lib/components/icon.svelte'
 	import PageHeader from '$lib/components/page-header.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const FEATURED_COUNT = 3
@@ -57,24 +58,6 @@
 
 	const featuredPickCount = $derived(!isSignedIn ? FEATURED_COUNT_LOGGEDOUT : FEATURED_COUNT)
 
-	// Daily-seeded by default (same rotation as /featured); reshuffle picks a
-	// random seed for instant variety. Shared pickFeatured keeps both in sync.
-	let featuredSeed = $state(dailySeed())
-	let shuffling = $state(false)
-	function reshuffleFeatured() {
-		if (!featuredPool.length || shuffling) return
-		shuffling = true
-		try {
-			featuredSeed = shuffleSeed()
-		} finally {
-			shuffling = false
-		}
-	}
-
-	const featuredChannels = $derived(
-		pickFeatured(featuredPool, {count: featuredPickCount, seed: featuredSeed})
-	)
-
 	$effect(() => {
 		if (featuredLoaded) return
 		featuredLoaded = true
@@ -86,20 +69,6 @@
 			}
 		})()
 	})
-
-	const featuredFirst = $derived(featuredChannels[0] ?? null)
-	const featuredIsPlaying = $derived(
-		!!featuredFirst &&
-			Object.values(appState.decks).some(
-				(d) => d.playlist_slug === featuredFirst.slug && d.is_playing
-			)
-	)
-
-	function toggleFeaturedPlay() {
-		if (!featuredFirst) return
-		if (featuredIsPlaying) togglePlayPause(appState.active_deck_id)
-		else playChannel(appState.active_deck_id, featuredFirst)
-	}
 
 	// Live broadcasts — reactive via useLiveQuery, sorted by most recently active
 	const broadcastsQuery = useLiveQuery(broadcastsCollection)
@@ -186,41 +155,11 @@
 	const showFavoriteBroadcastWidget = $derived(favoriteBroadcastCount > 0)
 	const showBroadcastCountWidget = $derived(broadcastCount > 0 && !userChannelIsBroadcasting)
 
-	let homeMapSection = $state(/** @type {HTMLDivElement | undefined} */ (undefined))
 	let homeMapVisible = $state(false)
-	let HomeMapChannels = $state(
-		/** @type {typeof import('$lib/components/map-channels.svelte').default | null} */ (null)
-	)
-
-	onMount(() => {
-		const section = homeMapSection
-		if (!section || homeMapVisible) return
-
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (!entries.some((entry) => entry.isIntersecting)) return
-				homeMapVisible = true
-				observer.disconnect()
-			},
-			{rootMargin: '400px 0px'}
-		)
-
-		observer.observe(section)
-		return () => observer.disconnect()
-	})
-
-	$effect(() => {
-		if (!homeMapVisible || HomeMapChannels) return
-		void import('$lib/components/map-channels.svelte').then((module) => {
-			HomeMapChannels = module.default
-		})
-	})
-
-	const shouldLoadHomeMapData = $derived(homeMapVisible)
 
 	// Globe channels — all synced channels with coordinates
 	const globeChannelsQuery = useLiveQuery((q) =>
-		shouldLoadHomeMapData
+		homeMapVisible
 			? q.from({ch: channelsCollection}).where(({ch}) => not(isNull(ch.latitude)))
 			: null
 	)
@@ -257,9 +196,7 @@
 	})
 </script>
 
-<svelte:head>
-	<title>{m.home_title({appName})}</title>
-</svelte:head>
+<Seo title={m.home_title({appName})} plain />
 
 <div class="homepage" class:signed-in={isSignedIn}>
 	<PageHeader>
@@ -419,22 +356,12 @@
 		</section>
 
 		<section class="section section--globe">
-			<div class="globe" bind:this={homeMapSection}>
-				{#if HomeMapChannels && homeMapVisible}
-					<HomeMapChannels
-						channels={mapChannels}
-						globeMode={true}
-						zoom={1}
-						syncUrl={false}
-						showControls={false}
-					/>
-				{:else}
-					<div class="globe-placeholder" aria-hidden="true"></div>
-				{/if}
-				<a href={mapOverlayHref} class="btn map-overlay-btn" aria-label={m.nav_map()}>
-					<Icon icon="fullscreen" size={14} />
-				</a>
-			</div>
+			<HomeGlobe
+				channels={mapChannels}
+				zoom={1}
+				overlayHref={mapOverlayHref}
+				onvisible={() => (homeMapVisible = true)}
+			/>
 		</section>
 	{:else if isSignedIn && authStatus.channelChecked}
 		<!-- Logged in but no channel -->
@@ -462,35 +389,7 @@
 			</section>
 		{/if}
 
-		{#if featuredChannels.length}
-			<section class="section">
-				<header class="section-header">
-					<h2 class="section-title">{m.home_featured()}</h2>
-					<menu>
-						{#if featuredFirst}
-							<button type="button" onclick={toggleFeaturedPlay}>
-								<Icon icon={featuredIsPlaying ? 'pause' : 'play-fill'} />
-							</button>
-						{/if}
-						{#if featuredPool.length > featuredPickCount}
-							<button
-								type="button"
-								title={m.home_featured_refresh()}
-								onclick={reshuffleFeatured}
-								disabled={shuffling}
-							>
-								<Icon icon="switch-alt" />
-							</button>
-						{/if}
-					</menu>
-				</header>
-				<ol class="grid grid--scroll">
-					{#each featuredChannels as channel (channel.id)}
-						<li><ChannelCard {channel} /></li>
-					{/each}
-				</ol>
-			</section>
-		{/if}
+		<FeaturedChannels pool={featuredPool} pickCount={featuredPickCount} />
 	{:else}
 		<!-- Not logged in -->
 
@@ -542,65 +441,13 @@
 
 		<div class="loggedout-over-globe">
 			<div class="loggedout-grid">
-				{#if featuredChannels.length}
-					<section class="section section--featured-col">
-						<header class="section-header">
-							<h2 class="section-title">
-								<a class="btn chip" href={resolve('/channels/featured')}>{m.home_featured()}</a>
-							</h2>
-							<menu>
-								{#if featuredFirst}
-									<button type="button" onclick={toggleFeaturedPlay}>
-										<Icon icon={featuredIsPlaying ? 'pause' : 'play-fill'} />
-									</button>
-								{/if}
-								{#if featuredPool.length > featuredPickCount}
-									<button
-										type="button"
-										title={m.home_featured_refresh()}
-										onclick={reshuffleFeatured}
-										disabled={shuffling}
-									>
-										<Icon icon="switch-alt" />
-									</button>
-								{/if}
-							</menu>
-						</header>
-						<ol class="grid grid--scroll">
-							{#each featuredChannels as channel (channel.id)}
-								<li><ChannelCard {channel} /></li>
-							{/each}
-						</ol>
-					</section>
-				{:else}
-					<!-- Skeleton mirrors ChannelCard's height-driving structure (square figure +
-					     body) so the featured slot reserves its space before data loads, instead
-					     of popping in and shoving the globe down (CLS). -->
-					<section class="section section--featured-col" aria-hidden="true">
-						<header class="section-header">
-							<h2 class="section-title">
-								<a class="btn chip" href={resolve('/channels/featured')}>{m.home_featured()}</a>
-							</h2>
-						</header>
-						<ol class="grid grid--scroll">
-							{#each Array.from({length: featuredPickCount}) as _, i (i)}
-								<li>
-									<article class="card skeleton-card">
-										<div class="sk-figure"></div>
-										<div class="sk-body">
-											<div class="sk-line sk-title"></div>
-											<div class="sk-line sk-slug"></div>
-											<div class="sk-line sk-desc"></div>
-											<div class="sk-line sk-desc"></div>
-											<div class="sk-line sk-desc sk-desc--short"></div>
-											<div class="sk-line sk-meta"></div>
-										</div>
-									</article>
-								</li>
-							{/each}
-						</ol>
-					</section>
-				{/if}
+				<FeaturedChannels
+					pool={featuredPool}
+					pickCount={featuredPickCount}
+					titleHref={resolve('/channels/featured')}
+					skeleton
+					column
+				/>
 			</div>
 
 			{#if featuredLoaded && (channelCount || trackCount || appPresence.count)}
@@ -618,26 +465,13 @@
 		</div>
 
 		<section class="section section--globe section--globe--loggedout">
-			<div class="globe" bind:this={homeMapSection}>
-				{#if HomeMapChannels && homeMapVisible}
-					<HomeMapChannels
-						channels={globeChannels}
-						globeMode={true}
-						zoom={1.5}
-						syncUrl={false}
-						showControls={false}
-					/>
-				{:else}
-					<div class="globe-placeholder" aria-hidden="true"></div>
-				{/if}
-				<a
-					href={resolve('/channels/all') + '?display=map'}
-					class="btn map-overlay-btn"
-					aria-label={m.nav_map()}
-				>
-					<Icon icon="fullscreen" size={14} />
-				</a>
-			</div>
+			<HomeGlobe
+				channels={globeChannels}
+				zoom={1.5}
+				overlayHref={resolve('/channels/all') + '?display=map'}
+				compact
+				onvisible={() => (homeMapVisible = true)}
+			/>
 		</section>
 	{/if}
 </div>
@@ -675,13 +509,14 @@
 		margin-bottom: 0;
 	}
 
-	.homepage > .section:not(.section--globe) {
+	/* :global() on .section — it's also rendered by FeaturedChannels, which doesn't share this scope */
+	.homepage > :global(.section):not(.section--globe) {
 		position: relative;
 		z-index: 6;
 		background: var(--color-interface);
 	}
 
-	.homepage.signed-in > .section:not(.section--globe):not(.dashboard-section) {
+	.homepage.signed-in > :global(.section):not(.section--globe):not(.dashboard-section) {
 		position: relative;
 		z-index: 6;
 		background: var(--color-interface);
@@ -747,17 +582,6 @@
 		gap: 0.5rem;
 	}
 
-	.section--featured-col {
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
-	}
-
-	.section--globe--loggedout .globe {
-		max-height: 55dvh;
-		z-index: 0;
-	}
-
 	.loggedout-grid {
 		display: grid;
 		grid-template-columns: 1fr;
@@ -766,7 +590,8 @@
 		min-height: 0;
 		overflow: hidden;
 
-		& > section {
+		/* :global() — the section here comes from FeaturedChannels, not this scope */
+		& > :global(section) {
 			min-width: 0;
 			overflow: hidden;
 		}
@@ -905,16 +730,6 @@
 		line-height: 1;
 	}
 
-	.section-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-
-		.section-title {
-			margin-bottom: 0;
-		}
-	}
-
 	.section-title {
 		font-size: var(--font-7);
 		font-weight: 600;
@@ -945,114 +760,6 @@
 		max-width: none;
 		margin-inline: 0;
 		padding-inline: 0.5rem;
-	}
-
-	.globe {
-		position: relative;
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		min-height: 50dvh;
-		margin-top: -0.75rem;
-		background: transparent;
-		border-radius: var(--border-radius);
-		overflow: hidden;
-		:global(.map) {
-			flex: 1;
-			min-height: 0;
-		}
-		:global(article .description) {
-			display: none;
-		}
-	}
-
-	.globe-placeholder {
-		flex: 1;
-		min-height: 50dvh;
-		background:
-			radial-gradient(circle at 50% 42%, rgb(105 160 255 / 0.22), transparent 18%),
-			radial-gradient(circle at 50% 50%, rgb(36 72 126 / 0.85), rgb(9 15 24 / 0.95) 72%);
-	}
-
-	.map-overlay-btn {
-		position: absolute;
-		bottom: 0.5rem;
-		left: 0.5rem;
-		z-index: 10;
-		opacity: 0.7;
-		&:hover {
-			opacity: 1;
-		}
-	}
-
-	/* Featured loading skeleton — mirrors ChannelCard's structure so the slot height
-	   matches the real cards and nothing shifts when they load. */
-	.skeleton-card {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-		padding: var(--space-1);
-		height: 100%;
-	}
-
-	.sk-figure {
-		aspect-ratio: 1;
-		width: 100%;
-		border-radius: var(--border-radius);
-		background: var(--gray-2);
-	}
-
-	.sk-body {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		margin-top: 0.5rem;
-		flex: 1;
-	}
-
-	.sk-line {
-		background: var(--gray-2);
-		border-radius: 4px;
-	}
-
-	.sk-title {
-		height: 1rem;
-		width: 70%;
-	}
-
-	.sk-slug {
-		height: 0.5rem;
-		width: 40%;
-	}
-
-	.sk-desc {
-		height: 0.5rem;
-		width: 92%;
-		margin-top: 0.5rem;
-	}
-
-	.sk-desc--short {
-		width: 60%;
-		margin-top: 0;
-	}
-
-	.sk-meta {
-		height: 0.5rem;
-		width: 30%;
-		margin-top: auto;
-	}
-
-	@media (prefers-reduced-motion: no-preference) {
-		.skeleton-card .sk-figure,
-		.skeleton-card .sk-line {
-			animation: sk-pulse 1.4s ease-in-out infinite;
-		}
-	}
-
-	@keyframes sk-pulse {
-		50% {
-			opacity: 0.55;
-		}
 	}
 
 	.dismissible {
