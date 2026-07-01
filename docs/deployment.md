@@ -125,3 +125,7 @@ What requires network:
 - Sign in / account actions
 - Fetching new remote data
 - Media playback (YouTube/SoundCloud streams)
+
+## App updates
+
+Pages are network-first and never precached, so a full page load always runs the latest deploy — the service worker only matters for offline. The update banner (`src/lib/components/app-update-banner.svelte`) therefore keys off the app version, not the service worker: SvelteKit polls `_app/version.json` every 5 minutes (`kit.version` in `svelte.config.js`, version name = git sha) and `updated.current` flips when the running page is older than the deploy. Long-lived tabs get the banner; fresh page loads never do. When a new service worker installs while the page is already current, it stays `waiting` and activates on its own once the last tab closes — no prompt. The banner's reload button activates a waiting worker if there is one and falls back to a plain reload after 1.5s.

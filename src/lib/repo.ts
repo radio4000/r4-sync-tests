@@ -47,6 +47,12 @@ export function repoCommitUrl(sha?: string | null) {
 	return `${repoUrl}/commit/${sha}`
 }
 
+export function repoCompareUrl(from?: string | null, to = 'main') {
+	if (!repoUrl || !from) return ''
+	if (repoProvider === 'gitlab') return `${repoUrl}/-/compare/${from}...${to}`
+	return `${repoUrl}/compare/${from}...${to}`
+}
+
 export function repoBlobUrl(path: string, branch = 'main') {
 	if (!repoUrl) return ''
 	if (repoProvider === 'gitlab') return `${repoUrl}/-/blob/${branch}/${path}`

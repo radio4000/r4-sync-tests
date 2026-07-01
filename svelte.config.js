@@ -21,7 +21,10 @@ const config = {
 		paths: standalone ? {base: process.env.BASE_PATH ?? ''} : {},
 
 		version: {
-			name: child_process.execSync('git rev-parse HEAD').toString().trim()
+			name: child_process.execSync('git rev-parse HEAD').toString().trim(),
+			// Poll `_app/version.json` so long-lived tabs notice new deploys.
+			// Drives `updated.current`, which the app update banner listens to.
+			pollInterval: 5 * 60 * 1000
 		}
 	},
 
