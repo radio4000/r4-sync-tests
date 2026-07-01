@@ -168,7 +168,7 @@
 {/snippet}
 
 <svelte:head>
-	<title>{m.nav_in_common()} - {channel?.name}</title>
+	<title>{m.nav_in_common()} - {channel?.name || m.channel_page_fallback()}</title>
 </svelte:head>
 
 <article class="channels-page fill-height">

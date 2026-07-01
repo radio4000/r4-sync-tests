@@ -173,7 +173,7 @@
 {/snippet}
 
 <svelte:head>
-	<title>{m.channel_section_featured_channels()} - {channel?.name}</title>
+	<title>{m.channel_section_featured_channels()} - {channel?.name || m.channel_page_fallback()}</title>
 </svelte:head>
 
 <article class="channels-page fill-height">
