@@ -757,6 +757,7 @@
 	"track_meta_view_discogs": "view on discogs →",
 	"track_meta_view_musicbrainz": "view on musicbrainz →",
 	"track_not_found": "Track not found",
+	"track_page_fallback": "Track",
 	"track_play_next": "Queue",
 	"track_recently_saved": "Recently saved tracks",
 	"track_related_by": "by",
