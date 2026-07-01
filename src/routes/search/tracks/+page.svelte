@@ -16,6 +16,7 @@
 	import {trap} from '$lib/focus'
 	import {fromAction} from 'svelte/attachments'
 	import Pagination from '$lib/components/pagination.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import {getTopChannelSlugs, getTopTagValues} from '$lib/utils'
 	import * as m from '$lib/paraglide/messages'
 
@@ -44,9 +45,7 @@
 	const featuredTags = $derived(getTopTagValues([...tracksCollection.state.values()], 12))
 </script>
 
-<svelte:head>
-	<title>{m.search_title()}</title>
-</svelte:head>
+<Seo title={m.search_title()} plain />
 
 <article {@attach fromAction(trap)}>
 	<SearchShell

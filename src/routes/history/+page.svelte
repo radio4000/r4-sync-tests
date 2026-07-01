@@ -16,6 +16,7 @@
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import DateTime from '$lib/components/date-time.svelte'
 	import Icon from '$lib/components/icon.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import type {Track, PlayStartReason} from '$lib/types'
 	import {parseUrl} from 'media-now'
 
@@ -113,9 +114,7 @@
 	const locale = $derived(appState.language || getLocale())
 </script>
 
-<svelte:head>
-	<title>{m.page_title_history()}</title>
-</svelte:head>
+<Seo title={m.page_title_history()} plain />
 
 <article class="">
 	<header class="constrained">

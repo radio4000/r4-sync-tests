@@ -4,6 +4,7 @@
 	import {page} from '$app/state'
 	import {appState} from '$lib/app-state.svelte'
 	import TrackForm from '$lib/components/track-form.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const rawUrl = $derived(page?.url?.searchParams?.get('url') || '')
@@ -30,9 +31,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.page_title_add_track()}</title>
-</svelte:head>
+<Seo title={m.page_title_add_track()} plain />
 
 <article class="constrained">
 	{#if canAddTrack && channel}

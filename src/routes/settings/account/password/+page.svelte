@@ -3,6 +3,7 @@
 	import {sdk} from '@radio4000/sdk'
 	import {appState} from '$lib/app-state.svelte'
 	import BackLink from '$lib/components/back-link.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	let newPassword = $state('')
@@ -40,9 +41,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.account_change_password()}</title>
-</svelte:head>
+<Seo title={m.account_change_password()} plain />
 
 <article class="focused constrained">
 	<header>

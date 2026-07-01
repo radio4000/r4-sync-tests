@@ -4,6 +4,7 @@
 	import {appState} from '$lib/app-state.svelte'
 	import {appName} from '$lib/config'
 	import BackLink from '$lib/components/back-link.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	let providerLoading = $state(/** @type {string | null} */ (null))
@@ -63,9 +64,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.settings_account()}</title>
-</svelte:head>
+<Seo title={m.settings_account()} plain />
 
 <article class="focused constrained">
 	<header>

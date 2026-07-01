@@ -11,6 +11,7 @@
 	import {resolve} from '$app/paths'
 	import BackLink from '$lib/components/back-link.svelte'
 	import Icon from '$lib/components/icon.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const viewsQuery = useLiveQuery(viewsCollection)
@@ -54,9 +55,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.views_pins_title()}</title>
-</svelte:head>
+<Seo title={m.views_pins_title()} plain />
 
 <article class="focused constrained">
 	<header>

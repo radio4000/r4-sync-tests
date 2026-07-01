@@ -2,12 +2,11 @@
 	import {appState} from '$lib/app-state.svelte'
 	import {resolve} from '$app/paths'
 	import BackLink from '$lib/components/back-link.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 </script>
 
-<svelte:head>
-	<title>{m.settings_player()} — {m.settings_title()}</title>
-</svelte:head>
+<Seo title={`${m.settings_player()} — ${m.settings_title()}`} plain />
 
 <article class="focused constrained">
 	<header>

@@ -3,6 +3,7 @@
 	import {appState} from '$lib/app-state.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import IconR4 from '$lib/components/icon-r4.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const userChannel = $derived(appState.channel)
@@ -12,9 +13,7 @@
 	)
 </script>
 
-<svelte:head>
-	<title>{m.broadcasts_you_are_live()}</title>
-</svelte:head>
+<Seo title={m.broadcasts_you_are_live()} plain />
 
 <div class="broadcast-page">
 	<div class="broadcast-bar">

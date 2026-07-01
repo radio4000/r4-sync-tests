@@ -4,14 +4,13 @@
 	import * as m from '$lib/paraglide/messages'
 	import BackLink from '$lib/components/back-link.svelte'
 	import Icon from '$lib/components/icon.svelte'
+	import Seo from '$lib/components/seo.svelte'
 
 	const blogPostUrl =
 		'https://blog.radio4000.com/posts/use-radio4000-on-mobile-android-firefox-and-lock-the-screen/'
 </script>
 
-<svelte:head>
-	<title>{m.apps_title()} — {appName}</title>
-</svelte:head>
+<Seo title={`${m.apps_title()} — ${appName}`} plain />
 
 <article class="focused constrained">
 	<header>

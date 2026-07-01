@@ -4,6 +4,7 @@
 	import {resolve} from '$app/paths'
 	import {appState} from '$lib/app-state.svelte'
 	import BackLink from '$lib/components/back-link.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	let confirmDelete = $state(false)
@@ -24,9 +25,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.account_delete_title()}</title>
-</svelte:head>
+<Seo title={m.account_delete_title()} plain />
 
 <article class="focused constrained">
 	<header>

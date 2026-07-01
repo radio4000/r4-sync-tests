@@ -3,11 +3,10 @@
 	import * as m from '$lib/paraglide/messages'
 	import Icon from '$lib/components/icon.svelte'
 	import BackLink from '$lib/components/back-link.svelte'
+	import Seo from '$lib/components/seo.svelte'
 </script>
 
-<svelte:head>
-	<title>{m.settings_title()}</title>
-</svelte:head>
+<Seo title={m.settings_title()} plain />
 
 <article class="focused constrained">
 	<header>

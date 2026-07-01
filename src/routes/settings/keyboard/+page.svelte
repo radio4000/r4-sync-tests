@@ -2,12 +2,11 @@
 	import KeyboardEditor from '$lib/components/keyboard-editor.svelte'
 	import {resolve} from '$app/paths'
 	import BackLink from '$lib/components/back-link.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 </script>
 
-<svelte:head>
-	<title>{m.page_title_keyboard()}</title>
-</svelte:head>
+<Seo title={m.page_title_keyboard()} plain />
 
 <article class="focused constrained">
 	<header>

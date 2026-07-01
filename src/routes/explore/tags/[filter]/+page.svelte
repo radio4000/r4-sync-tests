@@ -10,6 +10,7 @@
 	import SearchInput from '$lib/components/search-input.svelte'
 	import ExplorePageHeader from '$lib/components/explore-page-header.svelte'
 	import TagRow from '$lib/components/tag-row.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import * as m from '$lib/paraglide/messages'
 
@@ -54,9 +55,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.explore_title({appName})}</title>
-</svelte:head>
+<Seo title={m.explore_title({appName})} plain />
 
 <div class="layout">
 	<ExplorePageHeader>

@@ -1,10 +1,10 @@
 <script>
 	import {appName} from '$lib/config'
-	let {title, description, image, url, type = 'website'} = $props()
+	let {title, description = undefined, image = undefined, url = undefined, type = 'website', plain = false} = $props()
 </script>
 
 <svelte:head>
-	<title>{title} | {appName}</title>
+	<title>{plain ? title : `${title} | ${appName}`}</title>
 	<meta property="og:site_name" content={appName} />
 	<meta property="og:title" content={title} />
 	<meta property="og:type" content={type} />

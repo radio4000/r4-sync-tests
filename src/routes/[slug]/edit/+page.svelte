@@ -6,6 +6,7 @@
 	import {updateChannel} from '$lib/collections/channels'
 	import MapPicker from '$lib/components/map-picker.svelte'
 	import R4AvatarUpload from '$lib/components/r4-avatar-upload.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const channelCtx = getChannelCtx()
@@ -92,9 +93,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.channel_edit_page_title({name: channel?.name || m.channel_page_fallback()})}</title>
-</svelte:head>
+<Seo title={m.channel_edit_page_title({name: channel?.name || m.channel_page_fallback()})} plain />
 
 <article>
 	{#if canEdit && channel}

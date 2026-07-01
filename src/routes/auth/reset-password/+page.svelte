@@ -4,6 +4,7 @@
 	import {resolve} from '$app/paths'
 	import {appChatUrl} from '$lib/config'
 	import IconR4 from '$lib/components/icon-r4.svelte'
+	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const log = logger.ns('auth').seal()
@@ -36,9 +37,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{m.auth_reset_page_title()}</title>
-</svelte:head>
+<Seo title={m.auth_reset_page_title()} plain />
 
 <article class="constrained focused splash">
 	<figure class="logo">
