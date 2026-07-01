@@ -1,5 +1,9 @@
 # Changelog
 
+## July 2026
+
+- #Channels Track page title shows the track's name — or "Track" when it has none — instead of the placeholder "title"
+
 ## June 2026
 
 - #Home Featured tracks rotate daily and include more channels
