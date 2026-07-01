@@ -46,20 +46,9 @@ Drift is computed continuously in `player.svelte` while playing:
 - Broadcast drift: compare current playback to `calculateSeekTime(...)` from `broadcast.js`.
 - Both use a `2s` tolerance.
 
-Range seek and other UI controls do not directly set `auto_radio_drifted` anymore.
+Drift is detected only by this comparison — range seek and other UI controls do not set `auto_radio_drifted` directly.
 
-The Auto button uses the same `infinite` icon in both states:
-
-- synced: ghost button style + animated rotating gradient stroke (live/synced signal)
-- drifted: normal button style
-
-All infinity auto controls now use one shared UI component: `components/auto-radio-button.svelte`.
-
-Accessibility: with `prefers-reduced-motion: reduce`, the synced icon falls back to a static accent stroke (no animation).
-
-In deck player UI, Auto mode appears as a full-width action row below the channel header and above the video. It combines icon, status text, presence count, and resync action in one button.
-
-`resyncAutoRadio` now re-applies the stored view (`processViewTracks`) before recomputing the deterministic shuffle, so filtered/tag/search auto-radio resyncs correctly.
+`resyncAutoRadio` applies the stored view (`processViewTracks`) before recomputing the deterministic shuffle, so filtered/tag/search auto-radio resyncs correctly.
 
 ## Deck state
 
@@ -78,7 +67,7 @@ Auto-radio uses these `Deck` fields:
 - `player/auto-radio.test.ts` — determinism, viewSeed, epochFromTracks, hashString tests
 - `api.ts` — `joinAutoRadio`, `resyncAutoRadio`
 - `components/auto-radio-button.svelte` — shared infinity auto button UI across headers/pages/search
-- `components/player.svelte` — computed drift detection + auto/live status UI
+- `components/player.svelte` — computed drift detection
 - `broadcast.js` — `calculateSeekTime` (speed-aware expected position for listeners)
 - `[slug]/+layout.svelte` — full-channel join button
 - `[slug]/+page.svelte` — per-tag join buttons

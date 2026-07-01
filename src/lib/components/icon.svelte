@@ -77,8 +77,8 @@
 	} from 'obra-icons-svelte'
 	import IconDeckPanel from '$lib/components/icon-deck-panel.svelte'
 
-	/** @type {{icon: string, title?: string, className?: string, size?: string | number, children?: any, [key: string]: any}} */
-	const {children, icon = '', title, className = '', size = 18, ...rest} = $props()
+	/** @type {{icon: string, title?: string, class?: string, size?: string | number, children?: any, [key: string]: any}} */
+	const {children, icon = '', title, class: className = '', size = 18, ...rest} = $props()
 
 	const icons = {
 		book: IconBook,

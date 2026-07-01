@@ -375,7 +375,8 @@
 			</button>
 			{#if hasAutoRadioCoverage(tagFilteredTracks)}
 				<AutoRadioButton
-					synced={isAutoActive && isAutoPlaying && !isAutoDrifted}
+					live={isAutoActive && isAutoPlaying}
+					drifted={isAutoDrifted}
 					title={isAutoDrifted ? m.auto_radio_resync() : m.auto_radio_join()}
 					onclick={() =>
 						autoView &&

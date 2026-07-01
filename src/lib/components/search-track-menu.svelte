@@ -72,7 +72,8 @@
 	</ButtonFeedback>
 	{#if canShowAutoRadio}
 		<AutoRadioButton
-			synced={isSearchAutoActive && isSearchAutoPlaying && !isSearchAutoDrifted}
+			live={isSearchAutoActive && isSearchAutoPlaying}
+			drifted={isSearchAutoDrifted}
 			title={isSearchAutoDrifted ? m.auto_radio_resync() : m.search_auto_radio_this()}
 			onclick={() => joinAutoRadio(appState.active_deck_id, autoRadioTracks, view)}
 		/>

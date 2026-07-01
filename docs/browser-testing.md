@@ -57,8 +57,46 @@ agent-browser eval "JSON.stringify(window.r5.appState)"
 | `window.r5.sdk`                            | Supabase SDK instance                          |
 | `window.r5.channelsCollection._state.size` | channels loaded                                |
 | `window.r5.tracksCollection._state.size`   | tracks loaded                                  |
+| `window.r5.api`                            | every `api.ts` function — drive logic directly |
+| `window.r5.decks()`                        | deck probe — see "Player & decks" below        |
 
 Wrap objects in `JSON.stringify()`.
+
+`window.r5.api` lets you trigger app logic without clicking — e.g.
+`eval "window.r5.api.toggleChannelPlay({id, slug:'oskar'})"`. Faster and less
+flaky than driving the player through the UI.
+
+### Player & decks
+
+The player runs N decks (`appState.decks`, keyed by id) with one `active_deck_id`.
+Multiple decks can play at once — there is no exclusive-playback rule.
+
+**Assert on resolution, not playback.** Muted/backgrounded YouTube (and SoundCloud)
+iframes **self-pause in headless Chromium**, especially across navigations — so
+`is_playing` reads flaky and is _not_ reliable ground truth. What _is_
+deterministic: which deck is `active_deck_id` and what slug each deck holds. Test
+those. "Tap play on channel X resolves to and focuses the deck holding X" is a
+resolution fact the headless audio state can't break.
+
+Probe decks in one call:
+
+```
+agent-browser eval "JSON.stringify(window.r5.decks())"
+# → [{id, slug, playing, active, auto}, ...]
+```
+
+**Two-deck setup** (the arrangement that catches display-vs-action bugs — a deck
+acting on a channel other than the active one):
+
+```
+agent-browser eval "window.r5.api.playChannelInNewDeck({id:'<id-a>', slug:'channel-a'})"
+agent-browser eval "window.r5.api.playChannelInNewDeck({id:'<id-b>', slug:'channel-b'})"
+# channel-b's deck is now active; channel-a's deck is loaded but not active.
+# Tapping channel-a's play control should resolve to channel-a's deck — assert
+# active flips to it via window.r5.decks(), not that audio resumed.
+```
+
+Keep decks muted while testing: `eval "Object.values(window.r5.appState.decks).forEach(d => d.muted = true)"`.
 
 ### UI patterns
 

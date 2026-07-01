@@ -327,7 +327,8 @@
 			>
 			{#if channel && canShowFilteredAutoRadio}
 				<AutoRadioButton
-					synced={isFilteredAutoActive && isFilteredAutoPlaying && !isFilteredAutoDrifted}
+					live={isFilteredAutoActive && isFilteredAutoPlaying}
+					drifted={isFilteredAutoDrifted}
 					title={isFilteredAutoDrifted ? m.auto_radio_resync() : m.tracks_auto_radio_selection()}
 					onclick={() =>
 						joinAutoRadio(appState.active_deck_id, filteredAutoRadioTracks, filteredAutoView)}

@@ -88,7 +88,17 @@ async function preload() {
 			spamDecisionsCollection,
 			captureEventsCollection,
 			queue,
-			api
+			api,
+			// Deterministic deck probe for testing: which deck is active and what each holds.
+			// Prefer this over reading `is_playing` audio in headless — see browser-testing.md.
+			decks: () =>
+				Object.values(appState.decks).map((d) => ({
+					id: d.id,
+					slug: d.playlist_slug,
+					playing: d.is_playing,
+					active: d.id === appState.active_deck_id,
+					auto: d.auto_radio
+				}))
 		}
 	} catch (err) {
 		log.error('preloading_error', err)

@@ -3,7 +3,6 @@
 	import Icon from '$lib/components/icon.svelte'
 	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 	import Tag from '$lib/components/tag.svelte'
-	import PresenceCount from '$lib/components/presence-count.svelte'
 	import {deckTitle} from '$lib/deck'
 	import {extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
 	import * as m from '$lib/paraglide/messages'
@@ -55,7 +54,6 @@
 	const broadcastSyncTitle = $derived(
 		broadcastSyncDrifted ? m.player_sync_broadcast() : m.player_broadcast_synced()
 	)
-	const autoTitle = $derived(deck?.auto_radio_drifted ? m.auto_radio_resync() : m.auto_radio_join())
 	const slugHref = (s) => (s ? resolve('/[slug]', {slug: s}) : undefined)
 	const resolvedSlugHref = $derived(slugHref(slug))
 	const resolvedChannelSlugHref = $derived(slugHref(channel?.slug))
@@ -129,16 +127,13 @@
 
 		{#if showModeMeta && showAutoButton}
 			<AutoRadioButton
-				className="auto-btn active"
-				synced={!!deck?.is_playing && !deck?.auto_radio_drifted}
-				title={autoTitle}
-				ariaLabel={autoTitle}
+				class="auto-btn"
+				live
+				drifted={!!deck?.auto_radio_drifted}
 				size={14}
+				count={presenceCount}
 				onclick={onAutoClick}
 			/>
-		{/if}
-		{#if showModeMeta && presenceCount > 0}
-			<PresenceCount count={presenceCount} />
 		{/if}
 	</div>
 </div>
