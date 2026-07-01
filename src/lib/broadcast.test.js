@@ -1,5 +1,9 @@
 import {describe, expect, test} from 'vitest'
-import {calculateSeekTime} from '$lib/player/broadcast-utils'
+import {
+	calculateSeekTime,
+	pickBroadcastFields,
+	composeBroadcastDeckState
+} from '$lib/player/broadcast-utils'
 
 /** @typedef {import('$lib/types').Track} Track */
 
@@ -109,5 +113,84 @@ describe('calculateSeekTime', () => {
 			is_playing: true
 		}
 		expect(calculateSeekTime(broadcast, makeTrack())).toBeUndefined()
+	})
+})
+
+describe('pickBroadcastFields', () => {
+	test('returns empty object for null/undefined source', () => {
+		expect(pickBroadcastFields(null)).toEqual({})
+		expect(pickBroadcastFields(undefined)).toEqual({})
+	})
+
+	test('picks only the known playback fields, dropping extras', () => {
+		const source = {
+			track_played_at: '2026-01-01T00:00:00.000Z',
+			seeked_at: '2026-01-01T00:00:01.000Z',
+			seek_position: 42,
+			volume: 0.5,
+			muted: true,
+			is_playing: true,
+			speed: 1.5,
+			track_id: 'unrelated',
+			index: 0
+		}
+		expect(pickBroadcastFields(source)).toEqual({
+			track_played_at: '2026-01-01T00:00:00.000Z',
+			seeked_at: '2026-01-01T00:00:01.000Z',
+			seek_position: 42,
+			volume: 0.5,
+			muted: true,
+			is_playing: true,
+			speed: 1.5
+		})
+	})
+
+	test('omits fields that are null or undefined on the source', () => {
+		const source = {seek_position: 0, volume: 0, muted: false, is_playing: false}
+		expect(pickBroadcastFields(source)).toEqual({
+			seek_position: 0,
+			volume: 0,
+			muted: false,
+			is_playing: false
+		})
+	})
+})
+
+describe('composeBroadcastDeckState', () => {
+	test('fills in defaults for an empty/minimal deck', () => {
+		const result = composeBroadcastDeckState(0, null, undefined, {})
+		expect(result).toEqual({
+			index: 0,
+			track_id: null,
+			track_played_at: null,
+			seeked_at: null,
+			seek_position: null,
+			is_playing: false,
+			volume: 0,
+			muted: false,
+			speed: 1
+		})
+	})
+
+	test('overrides defaults with picked deck fields and merges the ephemeral payload', () => {
+		const deck = {playlist_track: 'ephemeral-1', is_playing: true, volume: 0.8, speed: 1.5}
+		const ephemeralPayload = {
+			track_url: 'https://youtu.be/abc',
+			track_title: 'Song',
+			track_media_id: 'abc'
+		}
+		const result = composeBroadcastDeckState(2, 'ephemeral-1', deck, ephemeralPayload)
+		expect(result).toEqual({
+			index: 2,
+			track_id: 'ephemeral-1',
+			track_played_at: null,
+			seeked_at: null,
+			seek_position: null,
+			is_playing: true,
+			volume: 0.8,
+			muted: false,
+			speed: 1.5,
+			...ephemeralPayload
+		})
 	})
 })
