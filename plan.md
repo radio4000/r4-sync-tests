@@ -28,8 +28,6 @@ Last update (2026-05-27): cleared done sections — see CHANGELOG.md for user-fa
 
 - `fetchQuery` usage review — remaining: `[slug]/tracks/[tid]/(tabs)/related` still calls `queryClient.fetchQuery` in the component body (followers/following pages now go through `getChannelConnections`).
 
-- Remaining non-reactive `collection.state` reads — `.state` is a snapshot; `$derived`/`void .state.size` does not subscribe. The page-level sites were converted to `useLiveQuery` (2026-07-02). The player-adjacent sites below still read snapshots but *appear* to work because `appState.decks` churn re-runs their deriveds. They need browser verification and possibly a shared reactive-mirror primitive (SvelteMap kept in sync via `collection.subscribeChanges`) instead of per-site live queries: `player.svelte` (playlist id→track map, slug lookups), `deck-display.svelte.ts`, `deck-compact-bar.svelte`, `deck-strip.svelte` (`listenPresenceCount` slug lookup), `channel-activity.svelte.ts`, `queue-panel.svelte`, `track-card.svelte`, `channel-card.svelte` (per-card, don't spawn one live query each), `track-edit-dialog.svelte`, `map-channels.svelte`, `ensure-track.svelte`, `[slug]/+layout.svelte` (`listeningTrack`).
-
 - atproto scrobbling — on play, write `fm.teal.alpha.feed.play` to the user's PDS via teal.fm's lexicon. Shared listening history across apps. Requires OAuth account linking, opt-in, one `createRecord` per play. Fire-and-forget, no sync. Proves out atproto OAuth plumbing for everything else.
 
 - atproto as backend — sign in with Bluesky, sync channels/tracks. Major architectural shift. See github.com/radio4000/r4atproto

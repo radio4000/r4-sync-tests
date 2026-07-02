@@ -161,9 +161,6 @@
 	let isChannelPlaying = $derived(Boolean(channelDeck?.is_playing))
 	let isAutoEnabled = $derived(Boolean(channelDeck?.auto_radio))
 	let activeAutoDrifted = $derived(Boolean(isAutoEnabled && channelDeck?.auto_radio_drifted))
-	let autoPresenceCount = $derived(
-		channel?.slug ? (channelPresence[channel.slug]?.byUri?.[`@${channel.slug}`] ?? 0) : 0
-	)
 	let livePresenceCount = $derived(
 		channel?.slug ? (channelPresence[channel.slug]?.broadcast ?? 0) : 0
 	)
@@ -178,12 +175,12 @@
 	)
 	let playLabel = $derived(isChannelPlaying ? m.player_tooltip_pause() : m.player_tooltip_play())
 	let shuffleLabel = $derived(m.player_tooltip_shuffle())
-	let listeningTrack = $derived.by(() => {
-		const trackId = channelListeningDeck?.playlist_track
-		if (!trackId) return undefined
-		void tracksCollection.state.size
-		return tracksCollection.state.get(trackId)
-	})
+	const listeningTrackQuery = useLiveQuery((q) =>
+		q
+			.from({t: tracksCollection})
+			.where(({t}) => eq(t.id, channelListeningDeck?.playlist_track ?? ''))
+	)
+	let listeningTrack = $derived(listeningTrackQuery.data?.[0])
 
 	// --- Effects ---
 
@@ -442,9 +439,6 @@
 						>
 							<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={14} />
 							<span>{playLabel}</span>
-							{#if autoPresenceCount > 0}
-								<PresenceCount count={autoPresenceCount} />
-							{/if}
 						</button>
 
 						<button

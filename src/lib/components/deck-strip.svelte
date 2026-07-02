@@ -3,7 +3,7 @@
 	import {appState, deckAccent} from '$lib/app-state.svelte'
 	import {captureEventsCollection} from '$lib/collections/capture-events'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {eq} from '@tanstack/db'
+	import {eq, inArray} from '@tanstack/db'
 	import {resyncBroadcastDeck} from '$lib/broadcast'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {channelPresence} from '$lib/presence.svelte'
@@ -59,12 +59,24 @@
 		visibleListeningDeckIds.length > 0 &&
 			visibleListeningDeckIds.every((id) => !appState.decks[id]?.listening_drifted)
 	)
+	// Reactive slug lookup for the (few) channels currently being listened to.
+	const listeningChannelIds = $derived(
+		/** @type {string[]} */ (
+			visibleListeningDeckIds
+				.map((id) => appState.decks[id]?.listening_to_channel_id)
+				.filter(Boolean)
+		)
+	)
+	const listeningChannelsQuery = useLiveQuery((q) =>
+		q.from({ch: channelsCollection}).where(({ch}) => inArray(ch.id, listeningChannelIds))
+	)
 	let listenPresenceCount = $derived.by(() => {
+		const rows = listeningChannelsQuery.data ?? []
 		let total = 0
 		for (const id of visibleListeningDeckIds) {
 			const channelId = appState.decks[id]?.listening_to_channel_id
 			if (!channelId) continue
-			const slug = channelsCollection.state.get(channelId)?.slug
+			const slug = rows.find((ch) => ch.id === channelId)?.slug
 			if (!slug) continue
 			total += channelPresence[slug]?.broadcast ?? 0
 		}

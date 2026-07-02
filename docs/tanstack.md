@@ -45,6 +45,10 @@ That wrapper is part of the contract, not a convenience import. Use it when you 
 
 Treat `collection.state`, `collection.get(id)`, and `collection.toArray` as one-off reads. Fine for event handlers and debug output. Wrong source for reactive UI.
 
+`collection.state` is a plain Map. Reading `.state`, `.state.size`, or `.state.get(id)` inside a `$derived` registers **no** Svelte dependency — the derived re-runs only when some *other* reactive value it reads changes. A `void collection.state.size` "touch" does nothing; it reads a plain number, not a signal. Proven in `src/lib/state-reactivity.svelte.test.ts`.
+
+The trap: a snapshot read wrapped in a `$derived` that *also* reads `appState.decks` (or any churning signal) *appears* reactive, because deck churn re-runs it and it re-reads a fresh snapshot. It goes stale exactly when a row loads in (or a shown row is edited) without a concurrent churn.
+
 Use `useLiveQuery`, then derive from `query.data`.
 
 ```js
@@ -93,6 +97,25 @@ When d2ts cannot express the last filter, use a hybrid shape:
 
 That is how we handle array `includes`, overlap-style filtering, and similar cases. The crucial bit is where the filter runs: on `query.data`, never on `collection.state`.
 
+### id-map lookups: trigger on a direct-collection query
+
+Resolving specific ids (`ids.map((id) => collection.state.get(id))`) is O(1) per id. Expressing the same as a live query — `useLiveQuery((q) => q.from(...).where(inArray(id, ids)))` — builds a d2ts pipeline that rebuilds on every change; over a multi-thousand-row collection that is a ~1s main-thread block.
+
+Keep the Map lookups, but make them reactive by reading a **direct-collection** query as a trigger:
+
+```js
+const tracksLive = useLiveQuery(tracksCollection) // a collection, not a (q) => ... callback → no d2ts pipeline
+let queueTracks = $derived.by(() => {
+	void tracksLive.data.length // re-runs on any insert/update/delete
+	const state = tracksCollection.state
+	return ids.map((id) => state.get(id)).filter(Boolean)
+})
+```
+
+`useLiveQuery(collection)` returns the collection bridged to Svelte via `subscribeChanges` — cheap, no pipeline. Its `data` is reassigned on every change, so reading it (even just `.length`) re-runs the derived, including on in-place edits. Used in `queue-panel.svelte`, `player.svelte` (`syncAutoTracks`), and `channel-activity.svelte.ts`.
+
+For an app-lifetime singleton outside a component (e.g. `channel-activity.svelte.ts`), create the direct-collection queries inside `$effect.root` so their internal effects have an owner — same pattern as the persistence effects in `app-state.svelte.ts`.
+
 ## route map
 
 Each TanStack debug route needs a distinct job.
@@ -109,10 +132,14 @@ Do not add more TanStack pages unless the route has a distinct verification job.
 
 The tutorial explains things. It does not prove much. The brittle parts need browser-visible assertions.
 
-Keep these local checks alive:
+Reactivity of `collection.state` vs `useLiveQuery` is now proven headlessly in `src/lib/state-reactivity.svelte.test.ts` (runs runes + effects in node via `$effect.root` + `flushSync`). It asserts:
 
 - `useLiveQuery` updates on insert, update, and delete
-- `$derived` from `collection.state` does not update on those mutations
+- `$derived` over `collection.state.size`/`.state.get(id)` does **not** update on those mutations
+- the "trick": an unrelated reactive dep re-runs the derived and picks up a fresh snapshot, masking the bug
+
+Keep these local (browser) checks alive:
+
 - `setQueryData` updates `createQuery` subscribers immediately
 - invalidation changes stale state the way we expect
 - `query.isError` and collection error state stay observable through our wrapper or workaround path

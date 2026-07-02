@@ -4,12 +4,30 @@ import {channelsCollection} from '$lib/collections/channels'
 import {followsCollection} from '$lib/collections/follows'
 import {broadcastsCollection} from '$lib/collections/broadcasts'
 import {deriveChannelActivityState} from '$lib/components/channel-ui-state.js'
+import {useLiveQuery} from '$lib/useLiveQuery.svelte'
+
+// Direct-collection live queries bridge each collection's changes into Svelte
+// reactivity without a d2ts pipeline. Reading their `data` below registers a
+// dependency, so activity recomputes on any track/channel/follow/broadcast change,
+// not just deck ticks (`.state` alone is a plain-Map snapshot and never triggers).
+// $effect.root owns these app-lifetime queries; a singleton shared by all views.
+let tracksLive: {data: unknown[]} | undefined
+let channelsLive: {data: unknown[]} | undefined
+let followsLive: {data: unknown[]} | undefined
+let broadcastsLive: {data: unknown[]} | undefined
+$effect.root(() => {
+	tracksLive = useLiveQuery(tracksCollection)
+	channelsLive = useLiveQuery(channelsCollection)
+	followsLive = useLiveQuery(followsCollection)
+	broadcastsLive = useLiveQuery(broadcastsCollection)
+})
 
 const channelActivity = $derived.by(() => {
-	void tracksCollection.state.size
-	void channelsCollection.state.size
-	void followsCollection.state.size
-	const broadcastRows = [...broadcastsCollection.state.values()]
+	// Reactive triggers — recompute on any collection change, not just deck churn.
+	void tracksLive?.data.length
+	void channelsLive?.data.length
+	void followsLive?.data.length
+	const broadcastRows = broadcastsLive?.data ?? [...broadcastsCollection.state.values()]
 
 	return deriveChannelActivityState({
 		decks: appState.decks,

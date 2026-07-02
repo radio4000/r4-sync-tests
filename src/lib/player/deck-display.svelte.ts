@@ -25,33 +25,38 @@ export interface DeckDisplay {
 	readonly displayChannel: Channel | undefined
 	readonly headerChannel: Channel | undefined
 	readonly secondaryHeaderChannel: Channel | undefined
+	readonly listenSlug: string | undefined
+	readonly broadcastSlug: string | undefined
 }
 
 export function createDeckDisplay(deckId: number): DeckDisplay {
 	const deck = $derived(appState.decks[deckId])
 
-	const track = $derived.by(() => {
-		const id = deck?.playlist_track
-		if (!id) return undefined
-		void tracksCollection.state.size
-		return tracksCollection.state.get(id) as Track | undefined
-	})
+	const trackQuery = useLiveQuery((q) =>
+		q.from({t: tracksCollection}).where(({t}) => eq(t.id, deck?.playlist_track ?? ''))
+	)
+	const track = $derived(trackQuery.data?.[0] as Track | undefined)
 
+	const broadcastRowQuery = useLiveQuery((q) =>
+		q
+			.from({b: broadcastsCollection})
+			.where(({b}) => eq(b.channel_id, deck?.listening_to_channel_id ?? ''))
+	)
 	const listeningBroadcastDeck = $derived.by<BroadcastDeckState | undefined>(() => {
-		const channelId = deck?.listening_to_channel_id
-		if (!channelId) return undefined
+		if (!deck?.listening_to_channel_id) return undefined
 		const trackId = deck?.playlist_track
-		void broadcastsCollection.state.size
-		const states = broadcastsCollection.state.get(channelId)?.decks
+		const states = broadcastRowQuery.data?.[0]?.decks
 		if (!Array.isArray(states) || !states.length) return undefined
 		return (trackId && states.find((s) => s?.track_id === trackId)) || states[0]
 	})
 
+	const broadcastTrackQuery = useLiveQuery((q) =>
+		q.from({t: tracksCollection}).where(({t}) => eq(t.id, listeningBroadcastDeck?.track_id ?? ''))
+	)
 	const broadcastTrack = $derived.by(() => {
 		const state = listeningBroadcastDeck
 		if (!state?.track_id) return undefined
-		void tracksCollection.state.size
-		const loaded = tracksCollection.state.get(state.track_id) as Track | undefined
+		const loaded = broadcastTrackQuery.data?.[0] as Track | undefined
 		if (loaded) return loaded
 		return unpackEphemeralTrack(state.track_id, state)
 	})
@@ -61,12 +66,28 @@ export function createDeckDisplay(deckId: number): DeckDisplay {
 	)
 	const channel = $derived(channelQuery.data?.[0] as Channel | undefined)
 
-	const broadcasterChannel = $derived.by(() => {
-		const channelId = deck?.listening_to_channel_id
-		if (!channelId) return undefined
-		void channelsCollection.state.size
-		return channelsCollection.state.get(channelId) as Channel | undefined
-	})
+	const broadcasterChannelQuery = useLiveQuery((q) =>
+		q.from({ch: channelsCollection}).where(({ch}) => eq(ch.id, deck?.listening_to_channel_id ?? ''))
+	)
+	const broadcasterChannel = $derived(broadcasterChannelQuery.data?.[0] as Channel | undefined)
+
+	// Slug of the channel this deck is listening to; prefer the loaded channel
+	// row, fall back to the channel embedded in the broadcast payload.
+	const listenSlug = $derived(
+		deck?.listening_to_channel_id
+			? (broadcasterChannel?.slug ?? broadcastRowQuery.data?.[0]?.channels?.slug)
+			: undefined
+	)
+
+	// Slug of the channel this deck is broadcasting.
+	const broadcastChannelQuery = useLiveQuery((q) =>
+		q.from({ch: channelsCollection}).where(({ch}) => eq(ch.id, deck?.broadcasting_channel_id ?? ''))
+	)
+	const broadcastSlug = $derived(
+		deck?.broadcasting_channel_id
+			? (broadcastChannelQuery.data?.[0]?.slug as string | undefined)
+			: undefined
+	)
 
 	let lastTrack = $state<Track | undefined>(undefined)
 	let lastChannel = $state<Channel | undefined>(undefined)
@@ -127,6 +148,12 @@ export function createDeckDisplay(deckId: number): DeckDisplay {
 		},
 		get secondaryHeaderChannel() {
 			return secondaryHeaderChannel
+		},
+		get listenSlug() {
+			return listenSlug
+		},
+		get broadcastSlug() {
+			return broadcastSlug
 		}
 	}
 }

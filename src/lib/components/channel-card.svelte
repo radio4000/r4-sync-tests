@@ -7,6 +7,7 @@
 	import {findChannelDeck} from '$lib/deck'
 	import {joinBroadcast} from '$lib/broadcast.js'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
+	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import ChannelAvatar from './channel-avatar.svelte'
 	import LinkEntities from './link-entities.svelte'
 	import ButtonFollow from './button-follow.svelte'
@@ -18,8 +19,9 @@
 
 	const cardHref = $derived(href ?? `/${channel.slug}`)
 
+	const broadcasts = useLiveQuery(broadcastsCollection)
 	const isBroadcasting = $derived(
-		(broadcastsCollection.state.size, broadcastsCollection.state.has(channel.id))
+		broadcasts.data?.some((b) => b.channel_id === channel.id) ?? false
 	)
 
 	// Resolve the deck holding this channel once, then drive both display and action

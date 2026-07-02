@@ -4,6 +4,7 @@
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {tracksCollection} from '$lib/collections/tracks'
+	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {clearQueue, clearAllQueue} from '$lib/api'
 	import {getActiveQueue} from '$lib/player/queue'
 	import SearchInput from './search-input.svelte'
@@ -41,14 +42,13 @@
 
 	let trackIds = $derived(getActiveQueue(deck))
 
-	// Resolve tracks directly from the collection, ordered by playlist position.
-	// An inArray() live query over a multi-thousand-track playlist rebuilds an
-	// entire query collection on every play (~1.2s main-thread block); direct Map
-	// lookups are O(1) each and instant. Matches deck-display.svelte.ts, including
-	// the `state.size` touch — `state.get()` is a non-reactive snapshot read (see
-	// docs/tanstack.md), so we depend on size to recompute as tracks load in.
+	// Resolve tracks by id in playlist order. An inArray() live query would rebuild a
+	// d2ts pipeline (~1.2s block) over a large playlist; these Map lookups are O(1).
+	// Reading tracksLive.data re-runs this on any track change, so edits and
+	// late-loading rows appear. See docs/tanstack.md.
+	const tracksLive = useLiveQuery(tracksCollection)
 	let queueTracks = $derived.by(() => {
-		void tracksCollection.state.size
+		void tracksLive.data.length
 		const state = tracksCollection.state
 		return trackIds.map((id) => state.get(id)).filter((t) => !!t)
 	})
