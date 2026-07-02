@@ -2,14 +2,14 @@
 	import {page} from '$app/state'
 	import {resolve} from '$app/paths'
 	import {canEditChannel, isLocalChannel} from '$lib/app-state.svelte'
-	import {tracksCollection} from '$lib/collections/tracks'
-	import {getChannelCtx} from '$lib/contexts'
+	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
 	import Icon from '$lib/components/icon.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const channelCtx = getChannelCtx()
+	const tracksQuery = getTracksQueryCtx()
 	const slug = $derived(page.params.slug)
 	const channel = $derived(channelCtx.data)
 	const canEdit = $derived(canEditChannel(channel?.id) || isLocalChannel(channel?.id))
@@ -21,9 +21,7 @@
 
 	const backupData = $derived.by(() => {
 		if (!channel) return null
-		void tracksCollection.state.size
-		const tracks = [...tracksCollection.state.values()].filter((t) => t.slug === slug)
-		return {channel, tracks}
+		return {channel, tracks: tracksQuery.data ?? []}
 	})
 
 	async function copyToClipboard() {

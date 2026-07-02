@@ -5,6 +5,8 @@
 	import {getMediaPlayer, playChannel, togglePlayPause, toggleChannelAutoRadio} from '$lib/api'
 	import {findAutoDecksForChannel, findLoadedDeck, findPlayingDeck} from '$lib/deck'
 	import {tracksCollection} from '$lib/collections/tracks'
+	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
+	import {eq} from '@tanstack/db'
 	import {hasAutoRadioCoverage} from '$lib/player/auto-radio'
 	import {channelPresence, watchPresence, unwatchPresence} from '$lib/presence.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
@@ -25,13 +27,10 @@
 		findLoadedDeck(appState.decks, channel.slug)?.id ?? appState.active_deck_id
 	)
 	const isPlaying = $derived(Boolean(findPlayingDeck(appState.decks, channel.slug)))
-	const canShowAutoButton = $derived.by(() => {
-		void tracksCollection.state.size
-		const channelTracks = [...tracksCollection.state.values()].filter(
-			(track) => track.slug === channel.slug
-		)
-		return hasAutoRadioCoverage(channelTracks)
-	})
+	const channelTracksQuery = useLiveQuery((q) =>
+		q.from({t: tracksCollection}).where(({t}) => eq(t.slug, channel.slug))
+	)
+	const canShowAutoButton = $derived(hasAutoRadioCoverage(channelTracksQuery.data ?? []))
 	const livePresenceCount = $derived(channelPresence[channel.slug]?.broadcast ?? 0)
 	const autoPresenceCount = $derived(
 		channelPresence[channel.slug]?.byUri?.[`@${channel.slug}`] ?? 0

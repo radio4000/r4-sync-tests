@@ -1,12 +1,11 @@
 <script>
 	import {page} from '$app/state'
 	import {appState} from '$lib/app-state.svelte'
-	import {captureEventsCollection} from '$lib/collections/capture-events'
 	import Player from '$lib/components/player.svelte'
 	import QueuePanel from '$lib/components/queue-panel.svelte'
 
-	/** @type {{deckId: number}} */
-	let {deckId} = $props()
+	/** @type {{deckId: number, hasHistory?: boolean}} */
+	let {deckId, hasHistory = false} = $props()
 
 	let deck = $derived(appState.decks[deckId])
 	let showPlayer = $derived(page.url.searchParams.get('player') !== 'false')
@@ -20,11 +19,9 @@
 			.find((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
 	)
 
-	// For deck 1: only show when there are tracks queued/playing or any history exists.
-	// Read collection size directly to avoid spinning up one full live query per deck.
-	let hasHistory = $derived(
-		[...captureEventsCollection.state.values()].some((e) => e.event === 'player:track_play')
-	)
+	// For deck 1: only show when there are tracks queued/playing or any history
+	// exists. hasHistory comes from the parent strip's shared live query so we
+	// don't spin up one per deck.
 	let hasContent = $derived(
 		(deck?.playlist_tracks?.length ?? 0) > 0 || Boolean(deck?.playlist_track) || hasHistory
 	)

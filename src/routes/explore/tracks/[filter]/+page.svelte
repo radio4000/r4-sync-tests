@@ -2,10 +2,9 @@
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {appName} from '$lib/config'
-	import {tracksCollection, fetchRecentTracks} from '$lib/collections/tracks'
+	import {fetchRecentTracks} from '$lib/collections/tracks'
 	import {loadFeaturedChannelTracks} from '$lib/collections/featured'
 	import {groupByDay} from '$lib/utils'
-	import {daysAgoIso} from '$lib/dates'
 	import TrackCard from '$lib/components/track-card.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import ExplorePageHeader from '$lib/components/explore-page-header.svelte'
@@ -60,17 +59,8 @@
 	}
 
 	async function loadFeatured() {
-		const picked = await loadFeaturedChannelTracks(FEATURED_DAYS)
-		const featuredSince = daysAgoIso(FEATURED_DAYS)
-		const slugSet = new Set(picked.map((ch) => ch.slug))
-		// Access .size so this derived re-runs when tracks are upserted into the collection
-		void tracksCollection.state.size
-		tracks = [...tracksCollection.state.values()]
-			.filter((t) => t?.slug && slugSet.has(t.slug) && (t.created_at ?? '') >= featuredSince)
-			.toSorted(
-				(a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
-			)
-			.slice(0, 50)
+		const result = await loadFeaturedChannelTracks(FEATURED_DAYS)
+		tracks = result.tracks.slice(0, 50)
 		loadedAll = true
 	}
 

@@ -11,13 +11,12 @@
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import {playTrack, setPlaylist, loadDeckView} from '$lib/api'
 	import {appState} from '$lib/app-state.svelte'
-	import {channelsCollection} from '$lib/collections/channels'
-	import {tracksCollection} from '$lib/collections/tracks'
+	import {getFeaturedSuggestions} from '$lib/featured-suggestions.svelte'
 	import {trap} from '$lib/focus'
 	import {fromAction} from 'svelte/attachments'
 	import Pagination from '$lib/components/pagination.svelte'
 	import Seo from '$lib/components/seo.svelte'
-	import {getTopChannelSlugs, getTopTagValues} from '$lib/utils'
+	import {getTopChannelSlugs} from '$lib/utils'
 	import * as m from '$lib/paraglide/messages'
 
 	const uid = $props.id()
@@ -41,8 +40,9 @@
 	const totalCount = $derived(viewQuery.count)
 	const resultCount = $derived(totalCount || tracks.length)
 	const tracksLoading = $derived(viewQuery.loading)
-	const featuredChannelSlugs = $derived(getTopChannelSlugs(channelsCollection.state.values(), 6))
-	const featuredTags = $derived(getTopTagValues([...tracksCollection.state.values()], 12))
+	const suggestions = getFeaturedSuggestions()
+	const featuredChannelSlugs = $derived(getTopChannelSlugs(suggestions.pool, 6))
+	const featuredTags = $derived(suggestions.tags.slice(0, 12))
 </script>
 
 <Seo title={m.search_title()} plain />

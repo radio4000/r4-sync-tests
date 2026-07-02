@@ -2,6 +2,8 @@
 	import {page} from '$app/state'
 	import {appState, deckAccent} from '$lib/app-state.svelte'
 	import {captureEventsCollection} from '$lib/collections/capture-events'
+	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
+	import {eq} from '@tanstack/db'
 	import {resyncBroadcastDeck} from '$lib/broadcast'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {channelPresence} from '$lib/presence.svelte'
@@ -28,9 +30,11 @@
 		deckIds.length > 0 && deckIds.every((id) => appState.decks[id]?.compact)
 	)
 	let showPlayer = $derived(page.url.searchParams.get('player') !== 'false')
-	let hasHistory = $derived(
-		[...captureEventsCollection.state.values()].some((e) => e.event === 'player:track_play')
+	// One live query shared by the strip and every deck (passed down as a prop)
+	const historyQuery = useLiveQuery((q) =>
+		q.from({e: captureEventsCollection}).where(({e}) => eq(e.event, 'player:track_play'))
 	)
+	let hasHistory = $derived((historyQuery.data ?? []).length > 0)
 	let visibleDeckIds = $derived.by(() =>
 		deckIds.filter((id) => {
 			const deck = appState.decks[id]
@@ -84,7 +88,7 @@
 			<section class="local">
 				{#each localDeckIds as deckId (deckId)}
 					<div class="deck-item" style:--deck-accent={deckAccent(deckIds, deckId)}>
-						<Deck {deckId} />
+						<Deck {deckId} {hasHistory} />
 					</div>
 				{/each}
 			</section>
@@ -96,7 +100,7 @@
 			>
 				{#each listeningDeckIds as deckId (deckId)}
 					<div class="deck-item" style:--deck-accent={deckAccent(deckIds, deckId)}>
-						<Deck {deckId} />
+						<Deck {deckId} {hasHistory} />
 					</div>
 				{/each}
 				{#if visibleListeningDeckIds.length}

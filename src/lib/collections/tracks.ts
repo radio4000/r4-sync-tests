@@ -447,15 +447,17 @@ export async function checkTracksFreshness(slug: string): Promise<boolean> {
 
 /**
  * Fetch tracks created after `createdAfter` for multiple channel slugs in one query.
- * Results are upserted into tracksCollection. Batches slugs to stay within URL limits.
+ * Results are upserted into tracksCollection and returned (newest first).
+ * Batches slugs to stay within URL limits.
  */
 export async function fetchRecentTracksForSlugs(
 	slugs: string[],
 	createdAfter: string
-): Promise<void> {
-	if (!slugs.length) return
+): Promise<Track[]> {
+	if (!slugs.length) return []
 	if (!tracksCollection.isReady()) tracksCollection.startSyncImmediate()
 	const BATCH = 50
+	const all: Track[] = []
 	for (let i = 0; i < slugs.length; i += BATCH) {
 		const batch = slugs.slice(i, i + BATCH)
 		const {data, error} = await sdk.supabase
@@ -469,7 +471,9 @@ export async function fetchRecentTracksForSlugs(
 		tracksCollection.utils.writeBatch(() => {
 			for (const t of tracks) tracksCollection.utils.writeUpsert(t)
 		})
+		all.push(...tracks)
 	}
+	return all.toSorted((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
 }
 
 /**
