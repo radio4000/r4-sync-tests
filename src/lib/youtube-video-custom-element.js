@@ -140,7 +140,8 @@ class YouTube2Element extends HTMLElement {
 				if (
 					Number.isFinite(duration) &&
 					duration > 0 &&
-					Math.abs(duration - this.#lastDuration) > 0.25
+					(!Number.isFinite(this.#lastDuration) ||
+						Math.abs(duration - this.#lastDuration) > 0.25)
 				) {
 					this.#lastDuration = duration
 					this.dispatchEvent(new Event('durationchange'))
