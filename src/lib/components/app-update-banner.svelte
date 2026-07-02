@@ -1,6 +1,7 @@
 <script>
 	import {onMount} from 'svelte'
 	import {updated} from '$app/state'
+	import {base} from '$app/paths'
 	import {repoCompareUrl} from '$lib/repo'
 	import * as m from '$lib/paraglide/messages'
 
@@ -8,6 +9,7 @@
 	let updateSW
 	let dismissed = $state(false)
 	let reloading = $state(false)
+	let deployedSha = $state('')
 
 	// True only when the deployed `_app/version.json` differs from this page's
 	// build. The service worker is deliberately not the trigger: pages are
@@ -15,11 +17,10 @@
 	// new worker sits waiting.
 	const visible = $derived(updated.current && !dismissed)
 
-	const {sha, branch} = __GIT_INFO__
-	const compareUrl = repoCompareUrl(
-		sha,
-		branch && branch !== 'HEAD' && branch !== 'unknown' ? branch : 'main'
-	)
+	const {sha} = __GIT_INFO__
+	// Compare this page's build against the deployed sha, not `main` — the
+	// deployed build can sit beside `main` and show an empty diff.
+	const compareUrl = $derived(deployedSha ? repoCompareUrl(sha, deployedSha) : '')
 
 	onMount(() => {
 		/** @type {ReturnType<typeof setInterval> | undefined} */
@@ -44,6 +45,14 @@
 			})
 		})
 		return () => clearInterval(interval)
+	})
+
+	$effect(() => {
+		if (!visible || deployedSha) return
+		fetch(`${base}/_app/version.json`, {cache: 'no-store'})
+			.then((r) => r.json())
+			.then((v) => (deployedSha = v.version))
+			.catch(() => {})
 	})
 
 	function reload() {
