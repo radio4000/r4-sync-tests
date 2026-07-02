@@ -503,7 +503,7 @@
 		z-index: 1;
 	}
 
-	@container (min-width: 500px) {
+	@container (min-width: 620px) {
 		header {
 			grid-template-areas: 'main controls secondary';
 			grid-template-columns: auto 1fr auto;
