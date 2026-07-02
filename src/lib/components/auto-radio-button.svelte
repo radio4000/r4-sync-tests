@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte'
+	import PresenceCount from '$lib/components/presence-count.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	let {
@@ -38,28 +39,6 @@
 >
 	<Icon icon="infinite" {size} />
 	{#if showCount}
-		<span class="count-badge" title="{count} listener{count === 1 ? '' : 's'}">{count}</span>
+		<PresenceCount {count} corner />
 	{/if}
 </button>
-
-<style>
-	.count-badge {
-		position: absolute;
-		top: calc(-1 * var(--space-1));
-		right: calc(-1 * var(--space-1));
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-width: 1.1em;
-		height: 1.1em;
-		padding: 0 var(--space-1);
-		font-size: var(--font-1);
-		font-weight: 600;
-		line-height: 1;
-		color: var(--gray-1);
-		background: var(--gray-12);
-		border-radius: 1em;
-		box-shadow: 0 0 0 1.5px var(--color-interface, var(--gray-1));
-		pointer-events: none;
-	}
-</style>

@@ -315,7 +315,7 @@
 												compactListeningDeckIds.forEach((id) => resyncBroadcastDeck(id))}
 										>
 											{#if compactListenPresenceCount > 0}
-												<PresenceCount count={compactListenPresenceCount} />
+												<PresenceCount count={compactListenPresenceCount} corner />
 											{/if}
 											<Icon icon="signal" size={12} />
 										</button>

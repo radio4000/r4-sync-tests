@@ -109,7 +109,7 @@
 	>
 		<Icon icon="signal" size={14} />
 		{#if livePresenceCount > 0}
-			<PresenceCount count={livePresenceCount} />
+			<PresenceCount count={livePresenceCount} corner />
 		{/if}
 	</button>
 
@@ -122,7 +122,7 @@
 		>
 			<Icon icon="infinite" size={14} />
 			{#if autoPresenceCount > 0}
-				<PresenceCount count={autoPresenceCount} />
+				<PresenceCount count={autoPresenceCount} corner />
 			{/if}
 		</button>
 	{/if}
