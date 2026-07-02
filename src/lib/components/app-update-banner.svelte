@@ -80,9 +80,8 @@
 		display: flex;
 		flex-flow: column;
 		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		padding: 1rem;
+		gap: var(--space-2);
+		padding: var(--space-3);
 		background: var(--accent-3);
 		border: 1px solid var(--accent-6);
 		border-radius: var(--border-radius);

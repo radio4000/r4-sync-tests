@@ -462,8 +462,12 @@
 			"name": "getBroadcastingChannelId()",
 			"desc": "Get the channel ID being broadcast from any deck."
 		},
-		{"name": "startBroadcast(channelId, trackId?)", "desc": "Start broadcasting."},
-		{"name": "stopBroadcast(channelId)", "desc": "Stop broadcasting."},
+		{"name": "startBroadcast(channelId, trackId?)", "desc": "Low-level: create the remote broadcast record for a track."},
+		{
+			"name": "startChannelBroadcast(channel, {deckId?, tid?})",
+			"desc": "Shared go-live path for all broadcast buttons: broadcasts what's playing, else auto-plays the channel (from tid) then goes live. Returns {ok, reason?}."
+		},
+		{"name": "stopBroadcast(channelId)", "desc": "Stop broadcasting; also clears deck broadcast flags."},
 		{"name": "joinBroadcast(deckId, channelId)", "desc": "Listen to broadcast on a deck."},
 		{
 			"name": "resyncBroadcastDeck(deckId)",

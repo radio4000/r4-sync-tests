@@ -13,11 +13,10 @@
 	import {loadDeckView, playTrack, sortByNewest} from '$lib/api'
 	import {isBroadcasting} from '$lib/deck'
 	import {authStatus} from '$lib/app-state.svelte'
-	import {appPresence, watchPresence, unwatchPresence} from '$lib/presence.svelte'
+	import {appPresence} from '$lib/presence.svelte'
 	import ChannelCard from '$lib/components/channel-card.svelte'
 	import FeaturedChannels from '$lib/components/featured-channels.svelte'
 	import HomeGlobe from '$lib/components/home-globe.svelte'
-	import MyChannelControls from '$lib/components/my-channel-controls.svelte'
 	import {not, isNull, eq} from '@tanstack/db'
 	import Icon from '$lib/components/icon.svelte'
 	import PageHeader from '$lib/components/page-header.svelte'
@@ -83,15 +82,6 @@
 	const broadcastCount = $derived(broadcastRows.length)
 	const favoriteBroadcastCount = $derived(favoriteBroadcastRows.length)
 	const userChannelIsBroadcasting = $derived(isBroadcasting(appState.decks, userChannel?.id))
-
-	// User channel play state
-
-	$effect(() => {
-		const slug = userChannel?.slug
-		if (!slug) return
-		watchPresence(slug)
-		return () => unwatchPresence(slug)
-	})
 
 	const userChannelTrackCount = $derived(userChannel?.track_count ?? 0)
 	const showTrackWidget = $derived(userChannelTrackCount > 0)
@@ -212,9 +202,6 @@
 					<Icon icon="circle-info" />
 				</button>
 			{/if}
-		{/if}
-		{#if userChannel}
-			<MyChannelControls channel={userChannel} />
 		{/if}
 	</PageHeader>
 
@@ -489,10 +476,6 @@
 	}
 
 	.create-channel-action {
-		margin-left: auto;
-	}
-
-	:global(.my-channel) {
 		margin-left: auto;
 	}
 

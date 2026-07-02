@@ -16,7 +16,7 @@
 
 	/** @type {{
 		tracks: Track[],
-		playlistTracks?: Track[],  // Overrides tracks for playlist context when rendering a subset (e.g. preview)
+		playlistTracks?: Track[],  // playlist context when rendering a subset (e.g. preview)
 		deckId?: number,
 		playlistTitle?: string,
 		footer?: (props: {track: Track}) => any,
@@ -72,16 +72,12 @@
 		playTrack(targetDeck, trackId, null, 'user_click_track')
 	}
 
-	/**
-	 * Build localized month names array (0-11) for current locale
-	 * @param {string} locale
-	 */
+	/** Localized month names (0-11) for the locale. @param {string} locale */
 	function getLocalizedMonths(locale) {
 		const formatter = new Intl.DateTimeFormat(locale, {month: 'long'})
 		return Array.from({length: 12}, (_, i) => formatter.format(new Date(2024, i, 1)))
 	}
 
-	// Rebuild month names when locale changes
 	const months = $derived(getLocalizedMonths(getLocale()))
 
 	/** @type {any} */

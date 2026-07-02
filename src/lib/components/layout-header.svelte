@@ -7,6 +7,7 @@
 	import EditTrackDialog from '$lib/components/track-edit-dialog.svelte'
 	import ShareDialog from '$lib/components/share-dialog.svelte'
 	import ShortcutsDialog from '$lib/components/shortcuts-dialog.svelte'
+	import BroadcastToggle from '$lib/components/broadcast-toggle.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import IconR4 from '$lib/components/icon-r4.svelte'
@@ -156,17 +157,7 @@
 					{#if isBroadcasting}<span class="broadcast-dot"></span>{/if}
 					<span class="btn-label channel-slug-label">@{userChannel.slug}</span>
 				</a>
-				{#if isBroadcasting}
-					<a
-						href={resolve('/broadcast')}
-						class="btn ghost broadcasting-btn nav-btn"
-						aria-label={m.status_broadcasting()}
-						{@attach tooltip({content: m.status_broadcasting()})}
-					>
-						<Icon icon="signal" />
-						<span class="btn-label">{m.status_live_short()}</span>
-					</a>
-				{/if}
+				<BroadcastToggle channel={userChannel} class="nav-btn" />
 			{:else if isSignedIn}
 				<a
 					href={resolve('/create-channel')}
@@ -242,10 +233,6 @@
 
 	nav :global(.btn svg) {
 		color: currentColor;
-	}
-
-	nav :global(.broadcasting-btn svg) {
-		color: var(--accent-9);
 	}
 
 	.nav-secondary {
@@ -384,8 +371,15 @@
 			min-height: var(--app-nav-btn-size);
 		}
 
+		nav :global(.btn.nav-btn .btn-label) {
+			font-size: var(--font-1);
+			letter-spacing: normal;
+		}
+
 		header {
-			--app-nav-btn-size: calc(var(--app-header-size) * 0.58);
+			--app-nav-btn-size: calc(var(--app-header-size) * 0.4);
+			--app-nav-gap: var(--space-1);
+			--app-nav-pad-inline: var(--space-1);
 			align-items: center;
 			flex-direction: row;
 			justify-content: space-between;
@@ -436,6 +430,13 @@
 			background: var(--color-interface-elevated);
 			border-color: transparent;
 			box-shadow: none;
+		}
+	}
+
+	/* Tightest phones: drop labels in the crowded user-nav */
+	@media (max-width: 360px) {
+		.user-nav :global(.btn.nav-btn .btn-label) {
+			display: none;
 		}
 	}
 </style>

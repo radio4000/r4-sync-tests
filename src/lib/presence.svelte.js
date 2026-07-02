@@ -36,7 +36,7 @@ export const channelPresence = $state({})
 
 // ─── Internal channel map (not reactive — never read in templates) ────────────
 // eslint-disable-next-line svelte/prefer-svelte-reactivity
-const channelMap = new Map() // slug → { ch, refCount, watching }
+const channelMap = new Map() // slug → { ch, refCount, watchCount }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -73,7 +73,7 @@ function _ensureChannel(slug) {
 		.on('presence', {event: 'join'}, () => updateChannelPresence(slug, ch))
 		.on('presence', {event: 'leave'}, () => updateChannelPresence(slug, ch))
 		.subscribe()
-	const entry = {ch, refCount: 0, watching: false}
+	const entry = {ch, refCount: 0, watchCount: 0}
 	channelMap.set(slug, entry)
 	return entry
 }
@@ -82,7 +82,7 @@ function _ensureChannel(slug) {
 function _maybeCleanup(slug) {
 	const entry = channelMap.get(slug)
 	if (!entry) return
-	if (entry.refCount === 0 && !entry.watching) {
+	if (entry.refCount === 0 && entry.watchCount === 0) {
 		entry.ch.unsubscribe()
 		channelMap.delete(slug)
 		resetChannelPresence(slug)
@@ -176,17 +176,18 @@ export async function untrackAutoRadioPresence(slug) {
 }
 
 // ─── Observer (channel page — no .track()) ───────────────────────────────────
+// Refcounted — overlapping watchers (e.g. global header + channel page) share
+// one connection and only tear it down when the last one leaves.
 
 /** @param {string} slug */
 export function watchPresence(slug) {
-	const entry = _ensureChannel(slug)
-	entry.watching = true
+	_ensureChannel(slug).watchCount++
 }
 
 /** @param {string} slug */
 export function unwatchPresence(slug) {
 	const entry = channelMap.get(slug)
-	if (!entry) return
-	entry.watching = false
+	if (!entry || entry.watchCount === 0) return
+	entry.watchCount--
 	_maybeCleanup(slug)
 }
