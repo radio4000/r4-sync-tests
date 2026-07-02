@@ -4,6 +4,38 @@ Possible improvements. Roughly by priority. Verify before implementing.
 
 Last update (2026-05-27): cleared done sections — see CHANGELOG.md for user-facing history.
 
+## UI cleanup — mobile-first (in progress)
+
+**Problem:** channel pages feel ~80% tappable (409 interactives on `@ko002` mobile). Compact deck and header are cramped and inconsistent.
+
+**Workflow:** plan with Oskar → Sonnet implements → Fable-high reviews → iterate. Test channel: `@ko002`.
+
+### Design principles (draft — Oskar to tweak)
+
+1. One primary action per zone.
+2. Static-by-default — tags/metadata earn a tap only when browsing is the intent.
+3. Consistent deck — same control positions across play states; icons change, layout doesn't.
+4. Progressive disclosure — secondary controls behind one overflow, not a scrolling icon row.
+5. Mobile budget — deck bar: ≤4 always-visible transport controls + one overflow.
+
+### Phase 1: compact deck (`deck-compact-bar.svelte`)
+
+**Annotation:** `/tmp/deck_annotated_crop.png` (numbered overlay). React by # — green=keep, orange=demote, red=cut, blue=ambiguous.
+
+**Open decisions from annotation:**
+- **#9 vs #18** — two separate `⋯` menus in one bar (track actions vs deck actions). Merge into one overflow?
+- **#3** channel micro-card — demote/cut when you're already on that channel?
+- **#4** whole track row is a tap target *and* competes with bar-root active-deck click (#1)
+- **#14–17** speed/volume — volume slider hidden <400px (done); speed left as settings opt-in
+
+**Files:** `deck-compact-bar.svelte`, `track-card.svelte` (compact embed), `+layout.svelte` (listening group chrome), `docs/decks.md` (stale mobile note).
+
+**Review rubric (Fable):** control count ≤5 visible taps; no horizontal scroll on controls row; play state doesn't reflow layout; `@ko002` playable at 390px width.
+
+### Phase 2: header menu (later)
+
+`layout-header.svelte`, `nav-popover.svelte` — after deck ships and reviews clean.
+
 ## Backlog
 
 - Page metadata follow-ups — `Seo` is now the single metadata path (50 routes migrated, `plain` prop skips the `| {appName}` suffix). Remaining: stop baking brand names into i18n title strings so more routes can drop `plain`, and move default title/description in `src/app.html` to config-driven values (needs a `transformPageChunk` hook in `hooks.server.ts`).
