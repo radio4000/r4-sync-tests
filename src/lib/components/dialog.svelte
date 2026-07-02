@@ -9,6 +9,11 @@
 
 	$effect(() => {
 		if (showModal) {
+			// A fullscreen element (e.g. a full-size deck) covers top-layer dialogs
+			// mounted outside of it — leave fullscreen so the dialog is visible
+			if (document.fullscreenElement && !document.fullscreenElement.contains(dialog)) {
+				document.exitFullscreen()
+			}
 			dialog.showModal()
 		} else {
 			dialog.close()
