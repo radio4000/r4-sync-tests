@@ -16,7 +16,7 @@
 
 	/** @type {{
 		tracks: Track[],
-		playlistTracks?: Track[],  // Overrides tracks for playlist context when rendering a subset (e.g. preview)
+		playlistTracks?: Track[],  // playlist context when rendering a subset (e.g. preview)
 		deckId?: number,
 		playlistTitle?: string,
 		footer?: (props: {track: Track}) => any,
@@ -72,16 +72,12 @@
 		playTrack(targetDeck, trackId, null, 'user_click_track')
 	}
 
-	/**
-	 * Build localized month names array (0-11) for current locale
-	 * @param {string} locale
-	 */
+	/** Localized month names (0-11) for the locale. @param {string} locale */
 	function getLocalizedMonths(locale) {
 		const formatter = new Intl.DateTimeFormat(locale, {month: 'long'})
 		return Array.from({length: 12}, (_, i) => formatter.format(new Date(2024, i, 1)))
 	}
 
-	// Rebuild month names when locale changes
 	const months = $derived(getLocalizedMonths(getLocale()))
 
 	/** @type {any} */
@@ -92,18 +88,33 @@
 		virtualList?.scroll({index, smoothScroll: true, shouldThrowOnBounds: false})
 	}
 
-	// Cache key to avoid recomputing when tracks/render mode haven't changed
-	let cacheKey = $derived(
-		`${grouped}-${virtual}-${tracks.length}-${tracks[0]?.id}-${tracks.at(-1)?.id}`
-	)
+	// Rebuild only when render mode or the track set changes, compared by element
+	// identity: an in-place edit swaps a track object (useLiveQuery yields a fresh row)
+	// so we rebuild, but benign churn (re-deriving on deck ticks) reuses the same refs
+	// and keeps the cache.
+	let modeKey = $derived(`${grouped}-${virtual}`)
 
-	/** @type {{key: string, items: FlatItem[], groups: SvelteMap<string, SvelteMap<string, IndexedTrack[]>>}} */
-	let cache = {key: '', items: [], groups: new SvelteMap()}
+	/**
+	 * @param {Track[]} a
+	 * @param {Track[]} b
+	 */
+	function sameTrackRefs(a, b) {
+		if (a.length !== b.length) return false
+		for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
+		return true
+	}
+
+	/** @type {{mode: string, source: Track[], items: FlatItem[], groups: SvelteMap<string, SvelteMap<string, IndexedTrack[]>>}} */
+	let cache = {mode: '', source: [], items: [], groups: new SvelteMap()}
+
+	function cacheValid() {
+		return cache.mode === modeKey && sameTrackRefs(cache.source, tracks)
+	}
 
 	/** @type {SvelteMap<string, SvelteMap<string, IndexedTrack[]>>} */
 	let groupedTracks = $derived.by(() => {
 		if (!grouped || !tracks.length) return new SvelteMap()
-		if (cache.key === cacheKey) return cache.groups
+		if (cacheValid()) return cache.groups
 
 		// Build groups with plain Map first (faster), convert to SvelteMap at end
 		/** @type {Map<string, Map<string, IndexedTrack[]>>} */
@@ -142,7 +153,7 @@
 	/** @type {FlatItem[]} */
 	let flatItems = $derived.by(() => {
 		if (!tracks.length) return []
-		if (cache.key === cacheKey && cache.items.length) return cache.items
+		if (cacheValid() && cache.items.length) return cache.items
 
 		if (!grouped) {
 			const items = tracks.map((track, index) => ({
@@ -151,7 +162,7 @@
 				index,
 				id: track.id
 			}))
-			cache = {key: cacheKey, items, groups: cache.groups}
+			cache = {mode: modeKey, source: tracks, items, groups: cache.groups}
 			return items
 		}
 
@@ -165,7 +176,7 @@
 				}
 			}
 		}
-		cache = {key: cacheKey, items, groups: cache.groups}
+		cache = {mode: modeKey, source: tracks, items, groups: cache.groups}
 		return items
 	})
 </script>

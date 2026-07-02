@@ -1,7 +1,7 @@
 <script>
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
-	import {getChannelCtx} from '$lib/contexts'
+	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
 	import {appState, canEditChannel, isLocalChannel} from '$lib/app-state.svelte'
 	import {appName} from '$lib/config'
 	import {deleteChannel} from '$lib/collections/channels'
@@ -12,14 +12,13 @@
 	import * as m from '$lib/paraglide/messages'
 
 	const channelCtx = getChannelCtx()
+	const tracksQuery = getTracksQueryCtx()
 	const channel = $derived(channelCtx.data)
 	const isSignedIn = $derived(!!appState.user)
 	const isLocal = $derived(isLocalChannel(channel?.id))
 	const canDelete = $derived(canEditChannel(channel?.id) || isLocal)
 	const trackCount = $derived(
-		isLocal
-			? [...tracksCollection.state.values()].filter((t) => t?.slug === channel?.slug).length
-			: (channel?.track_count ?? 0)
+		isLocal ? (tracksQuery.data ?? []).length : (channel?.track_count ?? 0)
 	)
 
 	let error = $state('')

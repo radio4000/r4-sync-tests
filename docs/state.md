@@ -2,39 +2,35 @@
 
 ## Remote
 
-Supabase PostgreSQL is the source of truth. Access via [`@radio4000/sdk`](radio4000-sdk.md) or the `r4` CLI. See [reference.json](reference.json) for all available methods.
+Supabase PostgreSQL is the source of truth. Access via [`@radio4000/sdk`](radio4000-sdk.md) or the `r4` CLI. See [reference.json](reference.json) for all methods.
 
 ## App state
 
-`appState` is a Svelte-reactive global object persisted to localStorage (`app-state.svelte.ts`). Holds deck/player state, queue contents, user settings, UI preferences — anything that should survive page refresh but isn't synced to the server. See `AppState` and `Deck` types in `types.ts`.
+`appState` is a Svelte-reactive global persisted to localStorage (`app-state.svelte.ts`). Holds deck/player state, queue contents, user settings, UI preferences — anything that should survive a refresh but isn't synced to the server. See `AppState` and `Deck` in `types.ts`.
 
-Persistence is split into two localStorage keys: one for general state, one for queue arrays (to avoid serializing large arrays on every small change).
+Persistence uses two localStorage keys: one for general state, one for queue arrays (so large arrays aren't reserialized on every small change). Transient deck runtime fields are excluded and reset on reload: media progress (`media_current_time`, `media_duration`), live/broadcast listening flags, drift flags, play/seek timestamps.
 
-Transient deck runtime fields are intentionally excluded from persistence: media progress (`media_current_time`, `media_duration`), live/broadcast listening flags, drift flags, and play/seek timestamps reset on reload.
-
-## Local sync and persistence
+## Local sync and caching
 
 Data flows from remote to components through a caching layer:
 
 ```
-Remote (Supabase) → Query Cache (IDB) → Collection (memory) → useLiveQuery → Component
+Remote (Supabase) → Query Cache (memory) → Collection (memory) → useLiveQuery → Component
 ```
 
-When a component calls `useLiveQuery`, the collection checks the query cache. If data exists and is fresh (see cache config), it's used directly. If stale or missing, it fetches from remote via the collection's `queryFn()`.
+`useLiveQuery` checks the collection; fresh cached data is used directly, stale or missing data is fetched via the collection's `queryFn()`. Sync is on-demand — live queries drive all fetching; nothing is prefetched.
 
-Query cache is persisted to IndexedDB via `query-cache-persistence.ts`. On app boot (`+layout.js`):
+IndexedDB persistence is currently **disabled**: `collection-persistence.ts` (`collectionsHydrated`) and `query-cache-persistence.ts` (`cacheReady`) export resolved stubs while data-flow bugs are debugged. The persister code is kept for re-enabling. Until then the cache is memory-only and every session starts cold.
 
-Today we only persist small canonical query snapshots there: full per-slug track queries and single-channel lookups.
-Broad channel lists, search/tag results, and partial track queries are recomputed instead of restored.
+On app boot (`+layout.js`):
 
-1. `collectionsHydrated` — restore collection state from IDB (if enabled)
-2. `cacheReady` — restore query cache from IDB
-3. `preload()` — prefetch channels, restore deck tracks
-4. `useLiveQuery` reads from cache, populates collections — instant UI
-5. `checkTracksFreshness()` validates against remote (see `tracks.ts`) — if outdated, triggers background refetch
+1. `collectionsHydrated` / `cacheReady` — currently no-ops (see above)
+2. `preload()` — seed channels (embed/local modes), validate broadcast listening state, restore tracks for saved deck queues via `ensureTracksLoaded()`, expose `window.r5` debug handles
+3. `useLiveQuery` in routes/components fetches on demand, populating collections
+4. `checkTracksFreshness()` validates per-channel tracks against remote (see `tracks.ts`); refetches in the background if outdated
 
-For the full picture on collections, queries, mutations, and live queries, see [tanstack.md](tanstack.md).
+For collections, queries, mutations, and live queries, see [tanstack.md](tanstack.md).
 
 ## Channels
 
-In `+layout.js` we `preload()` all channels from remote via `prefetchQuery`. We trade a slower first-load for faster pages afterwards. This feels good now, but if we get to +4 channels let's reconsider.
+Channels are not preloaded. `channelsCollection` is on-demand: each page's live query fetches the subset it needs, and the `queryFn` serves repeats from cache, delta-fetching only missing rows for pagination and id lookups.

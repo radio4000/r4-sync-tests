@@ -2,6 +2,8 @@
 	import {page} from '$app/state'
 	import {appState, deckAccent} from '$lib/app-state.svelte'
 	import {captureEventsCollection} from '$lib/collections/capture-events'
+	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
+	import {eq, inArray} from '@tanstack/db'
 	import {resyncBroadcastDeck} from '$lib/broadcast'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {channelPresence} from '$lib/presence.svelte'
@@ -28,9 +30,11 @@
 		deckIds.length > 0 && deckIds.every((id) => appState.decks[id]?.compact)
 	)
 	let showPlayer = $derived(page.url.searchParams.get('player') !== 'false')
-	let hasHistory = $derived(
-		[...captureEventsCollection.state.values()].some((e) => e.event === 'player:track_play')
+	// One live query shared by the strip and every deck (passed down as a prop)
+	const historyQuery = useLiveQuery((q) =>
+		q.from({e: captureEventsCollection}).where(({e}) => eq(e.event, 'player:track_play'))
 	)
+	let hasHistory = $derived((historyQuery.data ?? []).length > 0)
 	let visibleDeckIds = $derived.by(() =>
 		deckIds.filter((id) => {
 			const deck = appState.decks[id]
@@ -55,12 +59,24 @@
 		visibleListeningDeckIds.length > 0 &&
 			visibleListeningDeckIds.every((id) => !appState.decks[id]?.listening_drifted)
 	)
+	// Reactive slug lookup for the (few) channels currently being listened to.
+	const listeningChannelIds = $derived(
+		/** @type {string[]} */ (
+			visibleListeningDeckIds
+				.map((id) => appState.decks[id]?.listening_to_channel_id)
+				.filter(Boolean)
+		)
+	)
+	const listeningChannelsQuery = useLiveQuery((q) =>
+		q.from({ch: channelsCollection}).where(({ch}) => inArray(ch.id, listeningChannelIds))
+	)
 	let listenPresenceCount = $derived.by(() => {
+		const rows = listeningChannelsQuery.data ?? []
 		let total = 0
 		for (const id of visibleListeningDeckIds) {
 			const channelId = appState.decks[id]?.listening_to_channel_id
 			if (!channelId) continue
-			const slug = channelsCollection.state.get(channelId)?.slug
+			const slug = rows.find((ch) => ch.id === channelId)?.slug
 			if (!slug) continue
 			total += channelPresence[slug]?.broadcast ?? 0
 		}
@@ -84,7 +100,7 @@
 			<section class="local">
 				{#each localDeckIds as deckId (deckId)}
 					<div class="deck-item" style:--deck-accent={deckAccent(deckIds, deckId)}>
-						<Deck {deckId} />
+						<Deck {deckId} {hasHistory} />
 					</div>
 				{/each}
 			</section>
@@ -96,7 +112,7 @@
 			>
 				{#each listeningDeckIds as deckId (deckId)}
 					<div class="deck-item" style:--deck-accent={deckAccent(deckIds, deckId)}>
-						<Deck {deckId} />
+						<Deck {deckId} {hasHistory} />
 					</div>
 				{/each}
 				{#if visibleListeningDeckIds.length}

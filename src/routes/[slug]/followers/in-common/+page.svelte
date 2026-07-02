@@ -2,12 +2,9 @@
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {page} from '$app/state'
-	import {sdk} from '@radio4000/sdk'
 	import {getChannelCtx} from '$lib/contexts'
-	import {queryClient} from '$lib/collections/query-client'
 	import {appState} from '$lib/app-state.svelte'
-	import {getFollowedChannels} from '$lib/followed-channels.svelte'
-	import {dedupeById} from '$lib/utils'
+	import {getChannelConnections, getFollowedChannels} from '$lib/followed-channels.svelte'
 	import ChannelsView from '$lib/components/channels-view.svelte'
 	import ChannelsViewControls from '$lib/components/channels-view-controls.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
@@ -36,52 +33,24 @@
 	const follows = getFollowedChannels()
 
 	let q = $state('')
-	let followers = $state([])
-	let loading = $state(true)
+	// Only the intersection with own follows is shown — ids suffice, channel
+	// objects come from the already-loaded followed channels.
+	const conn = getChannelConnections('followers', () => channel?.id, {hydrate: false})
+	let loading = $derived(conn.loading || follows.isLoading)
 
 	const matches = (/** @type {any} */ c, /** @type {string} */ q) =>
 		!q ||
 		c.name?.toLowerCase().includes(q.toLowerCase()) ||
 		c.slug?.toLowerCase().includes(q.toLowerCase())
 
-	let commonIds = $derived(new Set(follows.followedIds))
-	let commonFollowers = $derived(
-		followers.filter((/** @type {any} */ c) => c.id && commonIds.has(c.id))
-	)
+	let followerIdSet = $derived(new Set(conn.ids))
+	let commonFollowers = $derived(follows.followedChannels.filter((c) => followerIdSet.has(c.id)))
 	let filteredChannels = $derived(commonFollowers.filter((c) => matches(c, q)))
 
 	function onViewChange(next) {
 		if (next !== 'all') return
 		goto(resolve('/[slug]/followers', {slug: page.params.slug ?? ''}))
 	}
-
-	$effect(() => {
-		if (!channel?.id) return
-		loading = true
-		queryClient
-			.fetchQuery({
-				queryKey: ['channel-followers', channel.id],
-				queryFn: async () => {
-					const {data} = await sdk.channels.readFollowers(channel.id)
-					if (!data?.length) return []
-					const ids = data.map((c) => c.id)
-					const {data: enriched} = await sdk.supabase
-						.from('channels_with_tracks')
-						.select('*')
-						.in('id', ids)
-					return dedupeById(/** @type {any[]} */ (enriched || data))
-				},
-				staleTime: 5 * 60 * 1000
-			})
-			.then((data) => {
-				followers = data
-				loading = false
-			})
-			.catch(() => {
-				followers = []
-				loading = false
-			})
-	})
 </script>
 
 <ChannelNavControlsPortal controls={navControls} />

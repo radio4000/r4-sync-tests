@@ -164,7 +164,7 @@ How filtered tracks become playback:
   Remote (Supabase PostgreSQL)
       │
       ▼
-  Query Cache (IndexedDB) ──→ survives refresh, enables instant UI
+  Query Cache (memory) ──→ dedupes fetches (IDB persistence currently disabled)
       │
       ▼
   Collection (in-memory) ──→ tracks, channels, follows, broadcasts

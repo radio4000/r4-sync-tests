@@ -4,7 +4,7 @@ import {fetchRecentTracksForSlugs} from '$lib/collections/tracks'
 import {sdk} from '@radio4000/sdk'
 import {featuredScore, seededRandom, shuffleArray} from '$lib/utils'
 import {daysAgoIso} from '$lib/dates'
-import type {Channel} from '$lib/types'
+import type {Channel, Track} from '$lib/types'
 
 /** Today as a stable seed (YYYY-MM-DD) for daily-rotating picks. */
 export function dailySeed(): string {
@@ -65,18 +65,20 @@ export async function getFeaturedPool(days = 30): Promise<Channel[]> {
 
 /**
  * Load the featured channel pool and fetch each channel's recent tracks.
- * Results land in tracksCollection.state — read from there after awaiting.
- * Returns the pool channels (sorted by score).
+ * Returns the pool channels (sorted by score) and their recent tracks
+ * (newest first, also upserted into tracksCollection).
  */
-export async function loadFeaturedChannelTracks(days = 30): Promise<Channel[]> {
+export async function loadFeaturedChannelTracks(
+	days = 30
+): Promise<{channels: Channel[]; tracks: Track[]}> {
 	const pool = await getFeaturedPool(days)
 	const since = daysAgoIso(days)
 	const picked = pool.toSorted((a, b) => featuredScore(b) - featuredScore(a))
-	if (picked.length) {
-		await fetchRecentTracksForSlugs(
-			picked.map((ch) => ch.slug),
-			since
-		)
-	}
-	return picked
+	const tracks = picked.length
+		? await fetchRecentTracksForSlugs(
+				picked.map((ch) => ch.slug),
+				since
+			)
+		: []
+	return {channels: picked, tracks}
 }

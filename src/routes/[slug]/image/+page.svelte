@@ -9,6 +9,8 @@
 	import {appState} from '$lib/app-state.svelte'
 	import {loadDeckView, playTrack, shufflePlayChannel} from '$lib/api'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
+	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
+	import {eq} from '@tanstack/db'
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
 	const channelActivity = $derived(getChannelActivity())
 	import {channelAvatarUrl} from '$lib/utils'
@@ -27,11 +29,16 @@
 	const imageBase = $derived(
 		channel?.image ? {url: channelAvatarUrl(channel.image, 1024, 'webp', 90)} : undefined
 	)
+	const broadcastQuery = useLiveQuery((q) => {
+		const channelId = channel?.id
+		return channelId
+			? q.from({b: broadcastsCollection}).where(({b}) => eq(b.channel_id, channelId))
+			: null
+	})
 	const isChannelLive = $derived.by(() => {
 		const channelId = channel?.id
 		if (!channelId) return false
-		void broadcastsCollection.state.size
-		const remoteLive = broadcastsCollection.state.has(channelId)
+		const remoteLive = (broadcastQuery.data ?? []).length > 0
 		const localLive = Object.values(appState.decks).some(
 			(deck) => deck.broadcasting_channel_id === channelId
 		)

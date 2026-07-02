@@ -3,8 +3,6 @@
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {appState, canEditChannel, removeDeck} from '$lib/app-state.svelte'
-	import {channelsCollection} from '$lib/collections/channels'
-	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {
 		togglePlayPause,
 		next,
@@ -21,6 +19,7 @@
 	import {parseUrl} from 'media-now/parse-url'
 	import * as m from '$lib/paraglide/messages'
 	import Icon from '$lib/components/icon.svelte'
+	import PopoverMenu from '$lib/components/popover-menu.svelte'
 	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import TrackCard from '$lib/components/track-card.svelte'
@@ -55,17 +54,8 @@
 	const displayChannel = $derived(display.displayChannel)
 	const headerChannel = $derived(display.headerChannel)
 	const secondaryChannel = $derived(display.secondaryHeaderChannel)
-	const listenSlug = $derived(
-		deck?.listening_to_channel_id
-			? (channelsCollection.state.get(deck.listening_to_channel_id)?.slug ??
-					broadcastsCollection.state.get(deck.listening_to_channel_id)?.channels?.slug)
-			: undefined
-	)
-	const broadcastSlug = $derived(
-		deck?.broadcasting_channel_id
-			? channelsCollection.state.get(deck.broadcasting_channel_id)?.slug
-			: undefined
-	)
+	const listenSlug = $derived(display.listenSlug)
+	const broadcastSlug = $derived(display.broadcastSlug)
 	const autoUri = $derived(
 		deck?.auto_radio && deck.playlist_slug
 			? viewLabel(deck.view ?? {sources: [{channels: [deck.playlist_slug]}]}) ||
@@ -102,6 +92,8 @@
 
 	let mediaDuration = $derived(deck?.media_duration ?? NaN)
 	let mediaCurrentTime = $derived(deck?.media_current_time ?? 0)
+
+	let deckMenu = $state(/** @type {{close: () => void} | undefined} */ (undefined))
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
@@ -128,21 +120,6 @@
 		/>
 	{/if}
 	<div class="header-info" class:active-track-bg={Boolean(displayTrack)}>
-		{#if showEdgeControls && (!deck?.listening_to_channel_id || isListeningGroupControlDeck)}
-			<button
-				class="close-deck"
-				onclick={() => {
-					const bchId = getBroadcastingChannelId()
-					clearUserInitiatedPlay(deckId)
-					removeDeck(deckId)
-					if (bchId) notifyBroadcastState(bchId)
-				}}
-				aria-label={m.player_tooltip_close_deck()}
-				{@attach tooltip({content: m.player_tooltip_close_deck()})}
-			>
-				<Icon icon="close" />
-			</button>
-		{/if}
 		<div class="channel-panel">
 			{#if headerChannel}
 				<ChannelMicroCard
@@ -233,6 +210,33 @@
 			{:else if !deck?.listening_to_channel_id}
 				<VolumeControl {deckId} />
 			{/if}
+			{#if showEdgeControls && (!deck?.listening_to_channel_id || isListeningGroupControlDeck)}
+				<PopoverMenu align="end" valign="top" closeOnClick={false} bind:this={deckMenu}>
+					{#snippet trigger()}
+						<Icon icon="options-horizontal" />
+					{/snippet}
+					<menu class="nav-vertical">
+						{#if !appState.embed_mode}
+							<a href={resolve('/settings/player')} onclick={() => deckMenu?.close()}>
+								<Icon icon="settings" />
+								{m.settings_player()}
+							</a>
+						{/if}
+						<button
+							class="close-deck"
+							onclick={() => {
+								const bchId = getBroadcastingChannelId()
+								clearUserInitiatedPlay(deckId)
+								removeDeck(deckId)
+								if (bchId) notifyBroadcastState(bchId)
+							}}
+						>
+							<Icon icon="close" />
+							{m.player_tooltip_close_deck()}
+						</button>
+					</menu>
+				</PopoverMenu>
+			{/if}
 			{#if showEdgeControls && isListeningGroupControlDeck}
 				<button
 					class="expand"
@@ -281,10 +285,12 @@
 		padding-block: var(--space-1);
 	}
 
-	.close-deck {
-		order: 0;
+	/* Deck-actions menu (settings + remove) groups with the expand toggle at the
+	   right end of the controls row. margin-left:auto pushes the pair over. */
+	.controls :global(.popover-menu) {
 		flex: 0 0 auto;
 		align-self: center;
+		margin-left: auto;
 	}
 
 	.channel-panel {
@@ -362,7 +368,6 @@
 	.expand {
 		flex: 0 0 auto;
 		align-self: center;
-		margin-left: auto;
 		order: 3;
 	}
 
@@ -442,7 +447,6 @@
 
 		.expand {
 			align-self: center;
-			margin-left: auto;
 		}
 	}
 

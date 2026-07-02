@@ -5,6 +5,7 @@
 	import {searchChannelsCombined} from '$lib/search'
 	import {viewFromUrl} from '$lib/views'
 	import {channelsCollection} from '$lib/collections/channels'
+	import {getFeaturedSuggestions} from '$lib/featured-suggestions.svelte'
 	import {getTopChannelSlugs} from '$lib/utils'
 	import ChannelCard from '$lib/components/channel-card.svelte'
 	import SearchShell from '$lib/components/search-shell.svelte'
@@ -20,7 +21,8 @@
 	const view = $derived(viewFromUrl(page.url))
 	const q = $derived(view.sources[0] ?? {})
 	const hasFilter = $derived(!!q.channels?.length || !!q.search)
-	const featuredChannelSlugs = $derived(getTopChannelSlugs(channelsCollection.state.values(), 6))
+	const suggestions = getFeaturedSuggestions()
+	const featuredChannelSlugs = $derived(getTopChannelSlugs(suggestions.pool, 6))
 
 	/** @type {import('$lib/types.ts').Channel[]} */
 	let channels = $state([])

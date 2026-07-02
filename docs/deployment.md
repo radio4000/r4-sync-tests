@@ -74,7 +74,7 @@ Your `.env` and `static/data/` are untouched. No conflicts, ever.
 
 ### Seed data
 
-`PUBLIC_SEED_URLS` is a comma-separated list of URLs fetched by the browser on first load, imported into IndexedDB. Relative URLs are resolved from the build output; absolute URLs can be remote.
+`PUBLIC_SEED_URLS` is a comma-separated list of URLs fetched by the browser on load, imported into the local collections and `appState.local_channels`. Relative URLs are resolved from the build output; absolute URLs can be remote.
 
 ```sh
 PUBLIC_SEED_URLS=/data/backup.json,https://cdn.example.com/other.json
@@ -110,14 +110,13 @@ Run `bun update -i` to interactively decide which dependencies to update, if any
 
 The app is a Progressive Web App via `@vite-pwa/sveltekit` (Workbox `generateSW` strategy).
 
-At build time, Workbox precaches the full app shell (JS, CSS, HTML, fonts, images). After the first visit, the app loads offline. Previously synced TanStack IndexedDB data (channels, tracks) is also available offline.
+At build time, Workbox precaches the full app shell (JS, CSS, HTML, fonts, images). After the first visit, the app loads offline. Channel/track data is not persisted while IDB cache persistence is disabled (see [state.md](state.md)), so remote data still needs network.
 
 Config lives in `vite.config.ts` → `SvelteKitPWA(...)`. The web app manifest is `static/webmanifest.json` (linked in `src/app.html`); `manifest: false` tells the plugin not to generate its own.
 
 What works offline:
 
 - Full app shell (all routes render)
-- Previously synced channels and tracks (IDB)
 - Importing local backup files
 
 What requires network:
@@ -125,3 +124,7 @@ What requires network:
 - Sign in / account actions
 - Fetching new remote data
 - Media playback (YouTube/SoundCloud streams)
+
+## App updates
+
+Pages are network-first and never precached, so a full page load always runs the latest deploy — the service worker only matters for offline. The update banner (`src/lib/components/app-update-banner.svelte`) therefore keys off the app version, not the service worker: SvelteKit polls `_app/version.json` every 5 minutes (`kit.version` in `svelte.config.js`, version name = git sha) and `updated.current` flips when the running page is older than the deploy. Long-lived tabs get the banner; fresh page loads never do. When a new service worker installs while the page is already current, it stays `waiting` and activates on its own once the last tab closes — no prompt. The banner's reload button activates a waiting worker if there is one and falls back to a plain reload after 1.5s.

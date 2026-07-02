@@ -29,6 +29,7 @@ export function normalizeTrackMedia<
 type TrackQueryParams = {
 	slugEq?: string
 	slugIn?: string[]
+	idIn?: string[]
 	tagsIn?: string[]
 	ftsEq?: string
 	createdAfter?: string
@@ -42,6 +43,9 @@ function parseTrackParams(opts: Parameters<typeof parseLoadSubsetOptions>[0]): T
 			| string
 			| undefined,
 		slugIn: options.filters.find((f) => f.field[0] === 'slug' && f.operator === 'in')?.value as
+			| string[]
+			| undefined,
+		idIn: options.filters.find((f) => f.field[0] === 'id' && f.operator === 'in')?.value as
 			| string[]
 			| undefined,
 		tagsIn: options.filters.find((f) => f.field[0] === 'tags' && f.operator === 'in')?.value as
@@ -68,6 +72,9 @@ function getTrackQueryKey(params: TrackQueryParams): (string | number)[] {
 		if (params.limit) key.push('limit', params.limit)
 		if (params.createdAfter) key.push('after', params.createdAfter)
 		return key
+	}
+	if (params.idIn) {
+		return ['tracks', 'ids', ...params.idIn.toSorted()]
 	}
 	if (params.tagsIn) {
 		const key: (string | number)[] = ['tracks', 'tags', ...params.tagsIn.toSorted()]
@@ -103,6 +110,10 @@ export const tracksCollection = createCollection<Track, string>({
 
 			if (!capabilities.globalBrowse) {
 				const all = [...tracksCollection.state.values()]
+				if (params.idIn?.length) {
+					const set = new Set(params.idIn)
+					return all.filter((t) => set.has(t.id))
+				}
 				if (slugs.length) {
 					const set = new Set(slugs)
 					return all.filter((t) => !!t.slug && set.has(t.slug))
@@ -116,6 +127,18 @@ export const tracksCollection = createCollection<Track, string>({
 					)
 				}
 				return all
+			}
+
+			// Id-based: keep-alive pins (e.g. a deck's queue). Return rows already in
+			// the collection; only fetch ids that aren't loaded yet. This owns those
+			// rows so on-demand GC won't evict them while the pin is subscribed.
+			if (params.idIn?.length) {
+				const idSet = new Set(params.idIn)
+				const present = [...tracksCollection.state.values()].filter((t) => idSet.has(t.id))
+				const missing = params.idIn.filter((id) => !tracksCollection.state.get(id))
+				if (!missing.length) return present
+				const fetched = await fetchTracksByIds(missing)
+				return [...present, ...fetched]
 			}
 
 			// Slug-based: fetch per channel
@@ -227,6 +250,22 @@ async function fetchTracksBySlug(
 	const {data, error} = await query
 	if (error) throw error
 	return ((data || []) as Track[]).map(normalizeTrackMedia)
+}
+
+/** Fetch tracks by id, batched to stay within URL limits. Newest first. */
+async function fetchTracksByIds(ids: string[]): Promise<Track[]> {
+	if (!ids.length) return []
+	const BATCH = 50
+	const all: Track[] = []
+	for (let i = 0; i < ids.length; i += BATCH) {
+		const {data, error} = await sdk.supabase
+			.from('channel_tracks')
+			.select('*')
+			.in('id', ids.slice(i, i + BATCH))
+		if (error) throw error
+		all.push(...((data || []) as Track[]).map(normalizeTrackMedia))
+	}
+	return all
 }
 
 async function handleTrackInsert(
@@ -447,15 +486,17 @@ export async function checkTracksFreshness(slug: string): Promise<boolean> {
 
 /**
  * Fetch tracks created after `createdAfter` for multiple channel slugs in one query.
- * Results are upserted into tracksCollection. Batches slugs to stay within URL limits.
+ * Results are upserted into tracksCollection and returned (newest first).
+ * Batches slugs to stay within URL limits.
  */
 export async function fetchRecentTracksForSlugs(
 	slugs: string[],
 	createdAfter: string
-): Promise<void> {
-	if (!slugs.length) return
+): Promise<Track[]> {
+	if (!slugs.length) return []
 	if (!tracksCollection.isReady()) tracksCollection.startSyncImmediate()
 	const BATCH = 50
+	const all: Track[] = []
 	for (let i = 0; i < slugs.length; i += BATCH) {
 		const batch = slugs.slice(i, i + BATCH)
 		const {data, error} = await sdk.supabase
@@ -469,7 +510,9 @@ export async function fetchRecentTracksForSlugs(
 		tracksCollection.utils.writeBatch(() => {
 			for (const t of tracks) tracksCollection.utils.writeUpsert(t)
 		})
+		all.push(...tracks)
 	}
+	return all.toSorted((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
 }
 
 /**

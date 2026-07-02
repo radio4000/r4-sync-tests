@@ -30,6 +30,7 @@
 	import {trackAppPresence, untrackAppPresence} from '$lib/presence.svelte'
 	import {leaveBroadcast, resyncBroadcastDeck} from '$lib/broadcast.js'
 	import {channelsCollection} from '$lib/collections/channels'
+	import TracksKeepalive from '$lib/components/tracks-keepalive.svelte'
 	import {channelPresence} from '$lib/presence.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import PresenceCount from '$lib/components/presence-count.svelte'
@@ -250,6 +251,19 @@
 			<KeyboardShortcuts />
 			<ToolTip />
 
+			{#each allDeckIds as deckId (deckId)}
+				<!-- Two pins: the whole queue (for next/prev) and, separately, the current
+				     track. The queue pin re-hashes on queue edits and the current-track pin
+				     re-hashes on track changes — but never together, so one always keeps the
+				     playing row resident while the other swaps. -->
+				<TracksKeepalive ids={appState.decks[deckId]?.playlist_tracks ?? []} />
+				<TracksKeepalive
+					ids={appState.decks[deckId]?.playlist_track
+						? [appState.decks[deckId].playlist_track]
+						: []}
+				/>
+			{/each}
+
 			<AppUpdateBanner />
 
 			<div
@@ -315,7 +329,7 @@
 												compactListeningDeckIds.forEach((id) => resyncBroadcastDeck(id))}
 										>
 											{#if compactListenPresenceCount > 0}
-												<PresenceCount count={compactListenPresenceCount} />
+												<PresenceCount count={compactListenPresenceCount} corner />
 											{/if}
 											<Icon icon="signal" size={12} />
 										</button>

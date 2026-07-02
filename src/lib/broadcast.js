@@ -6,6 +6,7 @@ import {
 	setUserInitiatedPlay,
 	clearUserInitiatedPlay,
 	getMediaPlayer,
+	playChannel,
 	applyRemoteState
 } from '$lib/api'
 import {appState, addDeck, removeDeck} from '$lib/app-state.svelte'
@@ -315,6 +316,42 @@ export async function stopBroadcast(channelId) {
 		log.error(`stop failed ${label(channelId)}:`, /** @type {Error} */ (error).message)
 		throw error
 	}
+}
+
+/**
+ * Go live with `channel` from whatever you're currently playing — or auto-play the
+ * channel (from `tid` when given) if nothing is playing — then mark the source deck
+ * as broadcasting. The single "go live" path shared by every broadcast button.
+ * Stopping is just `stopBroadcast(channel.id)` (it already clears deck flags).
+ * @param {{id: string, slug: string}} channel
+ * @param {{deckId?: number, tid?: string}} [opts]
+ * @returns {Promise<{ok: boolean, reason?: 'no-channel' | 'no-track'}>}
+ */
+export async function startChannelBroadcast(channel, {deckId = appState.active_deck_id, tid} = {}) {
+	if (!channel?.id) return {ok: false, reason: 'no-channel'}
+
+	// Prefer whatever is already playing; otherwise fall back to the target deck.
+	const playingDeck = Object.values(appState.decks).find(
+		(d) => Boolean(d?.is_playing && d?.playlist_track)
+	)
+	let sourceDeckId = playingDeck?.id ?? deckId
+	let trackId = playingDeck?.playlist_track ?? appState.decks[deckId]?.playlist_track
+
+	// Nothing playing → auto-play this channel (from tid if given) and broadcast that.
+	if (!trackId) {
+		await playChannel(deckId, {id: channel.id, slug: channel.slug}, tid)
+		sourceDeckId = deckId
+		trackId = appState.decks[deckId]?.playlist_track
+		const player = getMediaPlayer(sourceDeckId)
+		if (player?.paused) player.play()
+	}
+
+	if (!trackId) return {ok: false, reason: 'no-track'}
+
+	await startBroadcast(channel.id, trackId)
+	const deck = appState.decks[sourceDeckId]
+	if (deck) deck.broadcasting_channel_id = channel.id
+	return {ok: true}
 }
 
 /** @param {number} deckId */

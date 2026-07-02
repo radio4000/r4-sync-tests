@@ -170,23 +170,18 @@ menu.nav-vertical {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: var(--space-1) 0.5rem;
+		padding: 0 var(--space-2);
 		text-decoration: none;
 		border-radius: var(--border-radius);
 		min-height: 2rem;
-
-		&:hover {
-			background: light-dark(var(--gray-2), var(--gray-2));
-		}
+		font-size: var(--font-4);
 
 		&.active {
-			background-color: var(--accent-3);
 			color: var(--accent-9);
+			svg {
+				color: var(--accent-9);
+			}
 		}
-	}
-
-	& > :not(:last-child) {
-		border-bottom: 1px solid var(--gray-4);
 	}
 
 	& + & {

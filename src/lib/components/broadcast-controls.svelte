@@ -2,12 +2,11 @@
 	import {resolve} from '$app/paths'
 	import {appState} from '$lib/app-state.svelte'
 	import {
-		startBroadcast,
+		startChannelBroadcast,
 		stopBroadcast,
 		getBroadcastingChannelId,
 		isUserBroadcasting
 	} from '$lib/broadcast'
-	import {getMediaPlayer, playChannel} from '$lib/api'
 	import Icon from '$lib/components/icon.svelte'
 	import * as m from '$lib/paraglide/messages'
 	import {channelPresence} from '$lib/presence.svelte'
@@ -57,10 +56,7 @@
 	async function stopBroadcasting() {
 		error = null
 		try {
-			if (userChannelId) {
-				await stopBroadcast(userChannelId)
-			}
-			if (deck) deck.broadcasting_channel_id = undefined
+			if (userChannelId) await stopBroadcast(userChannelId)
 		} catch (e) {
 			error = /** @type {Error} */ (e).message
 		}
@@ -68,47 +64,14 @@
 
 	async function start() {
 		error = null
-		let sourceDeckId = deckId
-		let trackId = deck?.playlist_track
-		let startedByAutoPlay = false
-
-		// If something is currently playing elsewhere, broadcast that current track instead of switching.
-		if (!trackId && playingDeck?.playlist_track) {
-			sourceDeckId = playingDeck.id
-			trackId = playingDeck.playlist_track
-		}
-
-		// Only auto-play the user's channel if no deck is currently playing.
-		if (!trackId) {
-			if (!channelSlug || !userChannelId) {
-				error = m.broadcast_requires_track()
-				return
-			}
-			await playChannel(deckId, {id: userChannelId, slug: channelSlug})
-			sourceDeckId = deckId
-			trackId = appState.decks[deckId]?.playlist_track
-			startedByAutoPlay = true
-		}
-
-		if (!trackId) {
-			error = m.broadcast_requires_track()
-			return
-		}
-
-		if (startedByAutoPlay) {
-			const player = getMediaPlayer(sourceDeckId)
-			if (player?.paused) player.play()
-		}
-
-		if (userChannelId) {
-			try {
-				await startBroadcast(userChannelId, trackId)
-				if (appState.decks[sourceDeckId]) {
-					appState.decks[sourceDeckId].broadcasting_channel_id = userChannelId
-				}
-			} catch (e) {
-				error = /** @type {Error} */ (e).message
-			}
+		try {
+			const res = await startChannelBroadcast(
+				{id: /** @type {string} */ (userChannelId), slug: /** @type {string} */ (channelSlug)},
+				{deckId}
+			)
+			if (!res.ok && res.reason === 'no-track') error = m.broadcast_requires_track()
+		} catch (e) {
+			error = /** @type {Error} */ (e).message
 		}
 	}
 </script>

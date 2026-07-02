@@ -47,6 +47,21 @@ export async function fetchChannelCount(params: ChannelQueryParams = {}): Promis
 	return count ?? 0
 }
 
+/** Cached global channel/track counts for stats displays (home, menu). */
+export function fetchAppStats(): Promise<{channels: number; tracks: number}> {
+	return queryClient.fetchQuery({
+		queryKey: ['stats', 'counts'],
+		staleTime: 60 * 60 * 1000,
+		queryFn: async () => {
+			const [channels, tracks] = await Promise.all([
+				sdk.supabase.from('channels_with_tracks').select('*', {count: 'exact', head: true}),
+				sdk.supabase.from('channel_tracks').select('*', {count: 'exact', head: true})
+			])
+			return {channels: channels.count ?? 0, tracks: tracks.count ?? 0}
+		}
+	})
+}
+
 /** Parse d2ts loadSubsetOptions into domain params. Shared by queryKey and queryFn. */
 function parseChannelParams(opts: Parameters<typeof parseLoadSubsetOptions>[0]) {
 	let options: ReturnType<typeof parseLoadSubsetOptions>

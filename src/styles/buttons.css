@@ -40,6 +40,7 @@ button:hover,
 .btn:focus,
 .btn:hover {
 	background: var(--gray-4);
+	border-color: var(--gray-5);
 }
 
 button:disabled,

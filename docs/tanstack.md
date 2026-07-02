@@ -1,28 +1,15 @@
 # TanStack Query + DB
 
-Radio4000 notes, not TanStack API docs. Load the TanStack skills first. Keep this file for our boundaries, contracts, and debug routes.
+Radio4000 notes, not TanStack API docs. Load the TanStack skills first; keep this file for our boundaries, contracts, and debug routes.
 
-## read this first
+## skills
 
-Install and list the TanStack intent skills:
+Install and list them, then load the one that fits the task:
 
 ```bash
 bunx @tanstack/intent@latest install
 bunx @tanstack/intent@latest list
 ```
-
-Useful skill files in this repo:
-
-- `node_modules/@tanstack/db/skills/db-core/SKILL.md`
-- `node_modules/@tanstack/db/skills/db-core/collection-setup/SKILL.md`
-- `node_modules/@tanstack/db/skills/db-core/live-queries/SKILL.md`
-- `node_modules/@tanstack/db/skills/db-core/mutations-optimistic/SKILL.md`
-- `node_modules/@tanstack/db/skills/meta-framework/SKILL.md`
-- `node_modules/@tanstack/svelte-db/skills/svelte-db/SKILL.md`
-
-If a question is mostly about TanStack itself, use those or the official docs. Add something here only after we have verified it in our code or debug routes.
-
-## skill mappings
 
 | task                                                           | load                                                                     |
 | -------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -33,11 +20,13 @@ If a question is mostly about TanStack itself, use those or the official docs. A
 | SvelteKit loaders, `ssr = false`, collection preload in routes | `node_modules/@tanstack/db/skills/meta-framework/SKILL.md`               |
 | unsure where the problem sits, need the broad DB model first   | `node_modules/@tanstack/db/skills/db-core/SKILL.md`                      |
 
+If a question is mostly about TanStack itself, use those or the official docs. Add something here only after we have verified it in our code or debug routes.
+
 ## our boundary
 
 TanStack Query caches responses. TanStack DB stores rows. In app code the boundary is `src/lib/collections/` plus `src/lib/useLiveQuery.svelte.ts`.
 
-That wrapper is part of the contract, not a convenience import. Use it when you are proving app behavior. Import `useLiveQuery` from `@tanstack/svelte-db` only when you mean upstream semantics on purpose.
+Always import `useLiveQuery` from `$lib/useLiveQuery.svelte`, never from `@tanstack/svelte-db`. The wrapper fixes Svelte 5 reactivity bugs (`state_unsafe_mutation`), cleans up replaced live query collections, and is the verified path for app behavior. Deps arrays are optional — Svelte 5 auto-tracks reactive reads in the callback.
 
 ## contracts we rely on
 
@@ -45,7 +34,11 @@ That wrapper is part of the contract, not a convenience import. Use it when you 
 
 Treat `collection.state`, `collection.get(id)`, and `collection.toArray` as one-off reads. Fine for event handlers and debug output. Wrong source for reactive UI.
 
-Use `useLiveQuery`, then derive from `query.data`.
+`collection.state` is a plain Map. Reading `.state`, `.state.size`, or `.state.get(id)` inside a `$derived` registers **no** Svelte dependency — the derived re-runs only when some *other* reactive value it reads changes. A `void collection.state.size` "touch" does nothing; it reads a plain number, not a signal.
+
+The trap: a snapshot read wrapped in a `$derived` that *also* reads `appState.decks` (or any churning signal) *appears* reactive, because deck churn re-runs it and it re-reads a fresh snapshot. It goes stale exactly when a row loads in (or a shown row is edited) without a concurrent churn.
+
+Use `useLiveQuery`, then derive from `query.data`:
 
 ```js
 // not reactive to collection mutations
@@ -56,12 +49,6 @@ const query = useLiveQuery((q) => q.from({tracks: tracksCollection}).where(...))
 let tracks = $derived(query.data ?? [])
 ```
 
-### always use our `useLiveQuery` wrapper
-
-Always import from `$lib/useLiveQuery.svelte`, never from `@tanstack/svelte-db` directly.
-
-The wrapper fixes Svelte 5 reactivity bugs (`state_unsafe_mutation`), cleans up replaced live query collections, and is the verified path for app behavior. Deps arrays are optional — Svelte 5 auto-tracks reactive reads in the callback.
-
 ### `queryFn` returns full truth for that fetch shape
 
 For `queryCollectionOptions()`, the `queryFn` result is treated as complete server state for that query shape. Returning `[]` means "no rows for this query," not "leave what we already had alone."
@@ -70,60 +57,34 @@ For on-demand collections, push filtering into the live query when you can. For 
 
 ### `fetchQuery` does not populate collections
 
-`queryClient.fetchQuery()` and `prefetchQuery()` write to Query cache only.
-
-If the UI needs collection data, either:
-
-- let `useLiveQuery` drive the fetch for an on-demand collection
-- write rows into the collection with `utils.writeUpsert` or `writeBatch`
-- preload the collection in a route loader
+`queryClient.fetchQuery()` and `prefetchQuery()` write to Query cache only. If the UI needs collection data, either let `useLiveQuery` drive the fetch, write rows in with `utils.writeUpsert`/`writeBatch`, or preload the collection in a route loader.
 
 ### mutation handlers must write server rows back
 
-For server-backed collections like `tracks` and `channels`, `onInsert` and `onUpdate` must write the server-normalized row back into the collection.
+For server-backed collections like `tracks` and `channels`, `onInsert` and `onUpdate` must write the server-normalized row back into the collection. Without that `writeUpsert`, optimistic state drops before refetch lands and the UI flashes stale data. `src/lib/collections/tracks.ts` and `channels.ts` both depend on this.
 
-Without that `writeUpsert`, optimistic state drops before refetch lands and the UI flashes stale data. `src/lib/collections/tracks.ts` and `src/lib/collections/channels.ts` both depend on this.
+### id-map lookups: trigger on a direct-collection query
 
-### hybrid queries derive from `query.data`
+Resolving specific ids (`ids.map((id) => collection.state.get(id))`) is O(1) per id. Expressing the same as a live query — `useLiveQuery((q) => q.from(...).where(inArray(id, ids)))` — builds a d2ts pipeline that rebuilds on every change; over a multi-thousand-row collection that is a ~1s main-thread block.
 
-When d2ts cannot express the last filter, use a hybrid shape:
+Keep the Map lookups, but make them reactive by reading a **direct-collection** query as a trigger:
 
-1. use `useLiveQuery` for the broad reactive set
-2. derive the unsupported filter from `query.data`
+```js
+const tracksLive = useLiveQuery(tracksCollection) // a collection, not a (q) => ... callback → no d2ts pipeline
+let queueTracks = $derived.by(() => {
+	void tracksLive.data.length // re-runs on any insert/update/delete
+	const state = tracksCollection.state
+	return ids.map((id) => state.get(id)).filter(Boolean)
+})
+```
 
-That is how we handle array `includes`, overlap-style filtering, and similar cases. The crucial bit is where the filter runs: on `query.data`, never on `collection.state`.
+`useLiveQuery(collection)` returns the collection bridged to Svelte via `subscribeChanges` — cheap, no pipeline. Its `data` is reassigned on every change, so reading it (even just `.length`) re-runs the derived, including on in-place edits. Used in `queue-panel.svelte`, `player.svelte` (`syncAutoTracks`), and `channel-activity.svelte.ts`.
 
-## route map
+For an app-lifetime singleton outside a component (e.g. `channel-activity.svelte.ts`), create the direct-collection queries inside `$effect.root` so their internal effects have an owner — same pattern as the persistence effects in `app-state.svelte.ts`.
 
-Each TanStack debug route needs a distinct job.
+## query patterns
 
-- `src/routes/docs/tanstack/+page.svelte` shows live app state: collection sizes, cache keys, persistence.
-- `src/routes/docs/tanstack/tutorial/+page.svelte` is the walkthrough for humans.
-- `src/routes/docs/tanstack/tracks/+page.svelte` probes real track collection and backend wiring.
-- `src/routes/docs/tanstack/channels/+page.svelte` probes real channel collection and backend wiring.
-- `src/routes/docs/tanstack/error-handling/+page.svelte` keeps the error-state rough edge visible and should evolve into assertions.
-
-Do not add more TanStack pages unless the route has a distinct verification job. Otherwise fold it into one of these.
-
-## what still needs proof
-
-The tutorial explains things. It does not prove much. The brittle parts need browser-visible assertions.
-
-Keep these local checks alive:
-
-- `useLiveQuery` updates on insert, update, and delete
-- `$derived` from `collection.state` does not update on those mutations
-- `setQueryData` updates `createQuery` subscribers immediately
-- invalidation changes stale state the way we expect
-- `query.isError` and collection error state stay observable through our wrapper or workaround path
-
-Use [browser-testing.md](browser-testing.md) with `agent-browser` when verifying these routes.
-
-## Radio4000 patterns
-
-### standard
-
-The live query fetches and reads.
+### standard — d2ts expresses the filter
 
 ```js
 const tracks = useLiveQuery((q) =>
@@ -131,23 +92,18 @@ const tracks = useLiveQuery((q) =>
 )
 ```
 
-Use this when d2ts can express the filter directly.
+### hybrid — d2ts can't express the last filter
 
-### hybrid
-
-The live query provides the reactive source set. A local derived expression does the last unsupported filter.
+Live query provides the reactive source set; a local derived does the rest. Filter on `query.data`, never on `collection.state`. This covers array `includes`, overlap-style filtering, and similar.
 
 ```js
 const query = useLiveQuery((q) =>
 	q.from({tracks: tracksCollection}).where(({tracks}) => eq(tracks.channel_id, channelId))
 )
-
 let jazzTracks = $derived((query.data ?? []).filter((track) => track.tags?.includes('jazz')))
 ```
 
-### one-off
-
-Just fetch and move on.
+### one-off — fetch and move on
 
 ```js
 const data = await queryClient.fetchQuery({
@@ -156,11 +112,11 @@ const data = await queryClient.fetchQuery({
 })
 ```
 
-Use this for loaders, freshness checks, and other non-reactive reads.
+For loaders, freshness checks, and other non-reactive reads.
 
 ### reactive limit (pagination)
 
-A reactive `.limit()` on the live query drives pagination. The collection's `queryFn` receives the limit via `ctx.meta?.loadSubsetOptions?.limit` and fetches that many rows from Supabase. Increasing the limit triggers a new fetch; the collection caches all rows it has seen.
+A reactive `.limit()` drives pagination. The `queryFn` receives it via `ctx.meta?.loadSubsetOptions?.limit` and fetches that many rows; increasing it triggers a new fetch and the collection caches all rows seen. Proven in `channels.svelte` and `/docs/tanstack/channels`.
 
 ```js
 let paginatedLimit = $state(PAGE_SIZE)
@@ -179,13 +135,30 @@ function loadMore() {
 let hasMore = $derived(query.data?.length >= paginatedLimit)
 ```
 
-Use this instead of manual `fetchQuery` + `writeBatch` loops. Proven in `channels.svelte` and `/docs/tanstack/channels`.
-
 Caveats learned the hard way:
 
-- `.offset()` on a live query is applied locally by d2ts, not forwarded to Supabase. The sync layer always fetches from row 0 with `limit = offset + pageSize`. Do not use `.offset()` for server-side pagination.
-- For paged views, use `limit = currentPage * pageSize` (accumulate) and `.slice()` locally. The `queryFn` should delta-fetch: look up cached results for the same query shape with a smaller limit and only fetch the new rows. See `channels.ts` queryFn for the pattern.
-- Each dep change in `useLiveQuery` creates a new `createLiveQueryCollection`. Our wrapper calls `cleanup()` on the old collection to stop its d2ts pipeline and pending callbacks. Without this, stale collections cause delayed re-renders.
+- `.offset()` is applied locally by d2ts, not forwarded to Supabase (the sync layer always fetches from row 0 with `limit = offset + pageSize`). Don't use it for server-side pagination.
+- For paged views, accumulate `limit = currentPage * pageSize` and `.slice()` locally. The `queryFn` should delta-fetch: look up cached results for the same query shape with a smaller limit and fetch only the new rows. See `channels.ts` `queryFn`.
+- Each dep change in `useLiveQuery` creates a new `createLiveQueryCollection`; our wrapper `cleanup()`s the old one to stop its d2ts pipeline and pending callbacks. Without this, stale collections cause delayed re-renders.
+
+## debug routes
+
+Each needs a distinct job; fold new probes into these rather than adding pages.
+
+- `/docs/tanstack` — live app state: collection sizes, cache keys, persistence
+- `/docs/tanstack/tutorial` — human walkthrough
+- `/docs/tanstack/tracks`, `/docs/tanstack/channels` — probe real collections + backend wiring
+- `/docs/tanstack/error-handling` — keeps the error-state rough edge visible
+
+## what still needs proof
+
+`collection.state` vs `useLiveQuery` reactivity is proven headlessly in `src/lib/state-reactivity.svelte.test.ts` (`useLiveQuery` updates on insert/update/delete; a `$derived` over `.state` does not, and an unrelated reactive dep masks the bug by re-running the derived).
+
+Still only checked by hand in the browser — keep these alive with `agent-browser` (see [browser-testing.md](browser-testing.md)):
+
+- `setQueryData` updates `createQuery` subscribers immediately
+- invalidation changes stale state the way we expect
+- `query.isError` / collection error state stay observable through our wrapper
 
 ## references
 

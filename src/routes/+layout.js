@@ -24,8 +24,8 @@ const log = logger.ns('layout').seal()
 
 /** @type {import('./$types').LayoutLoad} */
 export async function load() {
-	// Hydrate collections from IDB BEFORE cache restore to avoid on-demand sync bug
-	// See plan-data-flow-bug.md for details
+	// IDB persistence is currently disabled — both resolve immediately.
+	// Order matters when re-enabled: collections before cache restore (on-demand sync bug).
 	if (browser) {
 		await collectionsHydrated
 		await cacheReady

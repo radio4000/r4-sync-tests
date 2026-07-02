@@ -2,7 +2,7 @@
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {appName} from '$lib/config'
-	import {tracksCollection, fetchRecentTracksForSlugs} from '$lib/collections/tracks'
+	import {fetchRecentTracksForSlugs} from '$lib/collections/tracks'
 	import {groupByDay} from '$lib/utils'
 	import {daysAgoIso} from '$lib/dates'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
@@ -27,6 +27,8 @@
 
 	// Fetch tracks: only when requesting a wider window than already loaded
 	let maxLoadedDays = $state(0)
+	/** @type {import('$lib/types').Track[]} */
+	let recentTracks = $state([])
 	$effect(() => {
 		if (!follows.followedChannels.length || days <= maxLoadedDays) return
 		maxLoadedDays = days
@@ -34,24 +36,13 @@
 		fetchRecentTracksForSlugs(
 			follows.followedChannels.map((ch) => ch.slug),
 			since
-		)
+		).then((rows) => {
+			recentTracks = rows
+		})
 	})
 
 	// Feed: tracks from followed channels within selected window, grouped by day
-	const feedTracks = $derived.by(() => {
-		if (!follows.followedChannels.length) return []
-		const since = daysAgoIso(days)
-		const slugSet = new Set(follows.followedChannels.map((ch) => ch.slug))
-		// Access .size so this derived re-runs when tracks are upserted into the collection
-		void tracksCollection.state.size
-		return groupByDay(
-			[...tracksCollection.state.values()]
-				.filter((t) => t?.slug && slugSet.has(t.slug) && (t.created_at ?? '') >= since)
-				.toSorted(
-					(a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
-				)
-		)
-	})
+	const feedTracks = $derived(groupByDay(recentTracks))
 </script>
 
 <Seo title={`${m.nav_feed()} — ${appName}`} plain />

@@ -7,14 +7,14 @@
 	import type {Snippet} from 'svelte'
 	import {eq, inArray} from '@tanstack/db'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {joinBroadcast, leaveBroadcast, startBroadcast, stopBroadcast} from '$lib/broadcast'
+	import {joinBroadcast, leaveBroadcast, startChannelBroadcast, stopBroadcast} from '$lib/broadcast'
 	import PresenceCount from '$lib/components/presence-count.svelte'
 	import {appState, canEditChannel, isLocalChannel} from '$lib/app-state.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import {tracksCollection, checkTracksFreshness, ensureTracksLoaded} from '$lib/collections/tracks'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
-	import {getMediaPlayer, playChannel, shufflePlayChannel, toggleChannelPlay} from '$lib/api'
+	import {shufflePlayChannel, toggleChannelPlay} from '$lib/api'
 	import {shortcutHint} from '$lib/keyboard'
 	import {
 		findAutoDecksForChannel,
@@ -161,9 +161,6 @@
 	let isChannelPlaying = $derived(Boolean(channelDeck?.is_playing))
 	let isAutoEnabled = $derived(Boolean(channelDeck?.auto_radio))
 	let activeAutoDrifted = $derived(Boolean(isAutoEnabled && channelDeck?.auto_radio_drifted))
-	let autoPresenceCount = $derived(
-		channel?.slug ? (channelPresence[channel.slug]?.byUri?.[`@${channel.slug}`] ?? 0) : 0
-	)
 	let livePresenceCount = $derived(
 		channel?.slug ? (channelPresence[channel.slug]?.broadcast ?? 0) : 0
 	)
@@ -178,12 +175,12 @@
 	)
 	let playLabel = $derived(isChannelPlaying ? m.player_tooltip_pause() : m.player_tooltip_play())
 	let shuffleLabel = $derived(m.player_tooltip_shuffle())
-	let listeningTrack = $derived.by(() => {
-		const trackId = channelListeningDeck?.playlist_track
-		if (!trackId) return undefined
-		void tracksCollection.state.size
-		return tracksCollection.state.get(trackId)
-	})
+	const listeningTrackQuery = useLiveQuery((q) =>
+		q
+			.from({t: tracksCollection})
+			.where(({t}) => eq(t.id, channelListeningDeck?.playlist_track ?? ''))
+	)
+	let listeningTrack = $derived(listeningTrackQuery.data?.[0])
 
 	// --- Effects ---
 
@@ -225,22 +222,9 @@
 			if (canEdit) {
 				if (isChannelLive) {
 					await stopBroadcast(channel.id)
-					const deck = appState.decks[appState.active_deck_id]
-					if (deck) deck.broadcasting_channel_id = undefined
-					return
+				} else {
+					await startChannelBroadcast(channel, {tid})
 				}
-
-				const deckId = appState.active_deck_id
-				const deck = appState.decks[deckId]
-				if (!deck?.playlist_track || deck.playlist_slug !== channel.slug) {
-					await playChannel(deckId, {id: channel.id, slug: channel.slug}, tid)
-				}
-				const player = getMediaPlayer(deckId)
-				if (player?.paused) player.play()
-				const trackId = appState.decks[deckId]?.playlist_track
-				if (!trackId) return
-				await startBroadcast(channel.id, trackId)
-				if (appState.decks[deckId]) appState.decks[deckId].broadcasting_channel_id = channel.id
 				return
 			}
 
@@ -442,9 +426,6 @@
 						>
 							<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={14} />
 							<span>{playLabel}</span>
-							{#if autoPresenceCount > 0}
-								<PresenceCount count={autoPresenceCount} />
-							{/if}
 						</button>
 
 						<button

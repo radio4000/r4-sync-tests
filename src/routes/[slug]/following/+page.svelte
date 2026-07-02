@@ -2,11 +2,9 @@
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {page} from '$app/state'
-	import {sdk} from '@radio4000/sdk'
 	import {getChannelCtx} from '$lib/contexts'
-	import {queryClient} from '$lib/collections/query-client'
 	import {appState} from '$lib/app-state.svelte'
-	import {getFollowedChannels} from '$lib/followed-channels.svelte'
+	import {getChannelConnections, getFollowedChannels} from '$lib/followed-channels.svelte'
 	import {dedupeById, extractMentions} from '$lib/utils'
 	import {findChannelBySlug} from '$lib/search'
 	import ChannelsView from '$lib/components/channels-view.svelte'
@@ -39,9 +37,10 @@
 	const follows = getFollowedChannels()
 
 	let q = $state('')
-	let following = $state([])
+	const conn = getChannelConnections('following', () => channel?.id)
+	let following = $derived(conn.channels)
+	let loading = $derived(conn.loading)
 	let featuredChannels = $state([])
-	let loading = $state(true)
 
 	const matches = (/** @type {any} */ c, /** @type {string} */ query) =>
 		!query ||
@@ -86,34 +85,6 @@
 	$effect(() => {
 		if (!channel?.id) return
 		q = ''
-	})
-
-	$effect(() => {
-		if (!channel?.id) return
-		loading = true
-		queryClient
-			.fetchQuery({
-				queryKey: ['channel-following', channel.id],
-				queryFn: async () => {
-					const {data} = await sdk.channels.readFollowings(channel.id)
-					if (!data?.length) return []
-					const ids = data.map((c) => c.id)
-					const {data: enriched} = await sdk.supabase
-						.from('channels_with_tracks')
-						.select('*')
-						.in('id', ids)
-					return dedupeById(/** @type {any[]} */ (enriched || data))
-				},
-				staleTime: 5 * 60 * 1000
-			})
-			.then((data) => {
-				following = data
-				loading = false
-			})
-			.catch(() => {
-				following = []
-				loading = false
-			})
 	})
 
 	$effect(() => {

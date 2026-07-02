@@ -118,7 +118,7 @@ class SoundCloudPlayerElement extends HTMLElement {
 	#updateDuration(ms) {
 		if (!Number.isFinite(ms) || ms <= 0) return
 		const sec = ms / 1000
-		if (Math.abs(sec - this.#lastDuration) > 0.25) {
+		if (!Number.isFinite(this.#lastDuration) || Math.abs(sec - this.#lastDuration) > 0.25) {
 			this.#lastDuration = sec
 			this.#cachedDuration = sec
 			this.dispatchEvent(new Event('durationchange'))

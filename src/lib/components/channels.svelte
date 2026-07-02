@@ -363,13 +363,13 @@
 					onclick={() => setFilter('favorites')}>{m.nav_favorites()}</button
 				>
 			{/if}
-			{#if broadcastsCollection.state.size}
+			{#if broadcastIds.length}
 				<button
 					class="btn chip"
 					class:active={filter === 'broadcasting'}
 					onclick={() => setFilter('broadcasting')}
 					>{m.channels_filter_option_broadcasting()}<span class="channel-badge"
-						>{broadcastsCollection.state.size}</span
+						>{broadcastIds.length}</span
 					></button
 				>
 			{/if}
@@ -492,12 +492,12 @@
 		</PopoverMenu>
 	</ExplorePageHeader>
 
-	{#if filter === 'featured' && broadcastsCollection.state.size > 0}
+	{#if filter === 'featured' && broadcastIds.length > 0}
 		<p class="featured-live-link-wrap">
 			<a class="btn featured-live-link" href={resolve('/explore/channels/broadcasting')}>
 				<Icon icon="signal" />
 				<span>{m.home_broadcasting()}</span>
-				<strong>{broadcastsCollection.state.size.toLocaleString()}</strong>
+				<strong>{broadcastIds.length.toLocaleString()}</strong>
 			</a>
 		</p>
 	{/if}

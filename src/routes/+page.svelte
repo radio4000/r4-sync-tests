@@ -4,7 +4,7 @@
 	import {appState} from '$lib/app-state.svelte'
 	import {appName} from '$lib/config'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
-	import {channelsCollection} from '$lib/collections/channels'
+	import {channelsCollection, fetchAppStats} from '$lib/collections/channels'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
 	import {getFeaturedPool} from '$lib/collections/featured'
@@ -13,12 +13,10 @@
 	import {loadDeckView, playTrack, sortByNewest} from '$lib/api'
 	import {isBroadcasting} from '$lib/deck'
 	import {authStatus} from '$lib/app-state.svelte'
-	import {appPresence, watchPresence, unwatchPresence} from '$lib/presence.svelte'
-	import {sdk} from '@radio4000/sdk'
+	import {appPresence} from '$lib/presence.svelte'
 	import ChannelCard from '$lib/components/channel-card.svelte'
 	import FeaturedChannels from '$lib/components/featured-channels.svelte'
 	import HomeGlobe from '$lib/components/home-globe.svelte'
-	import MyChannelControls from '$lib/components/my-channel-controls.svelte'
 	import {not, isNull, eq} from '@tanstack/db'
 	import Icon from '$lib/components/icon.svelte'
 	import PageHeader from '$lib/components/page-header.svelte'
@@ -84,15 +82,6 @@
 	const broadcastCount = $derived(broadcastRows.length)
 	const favoriteBroadcastCount = $derived(favoriteBroadcastRows.length)
 	const userChannelIsBroadcasting = $derived(isBroadcasting(appState.decks, userChannel?.id))
-
-	// User channel play state
-
-	$effect(() => {
-		const slug = userChannel?.slug
-		if (!slug) return
-		watchPresence(slug)
-		return () => unwatchPresence(slug)
-	})
 
 	const userChannelTrackCount = $derived(userChannel?.track_count ?? 0)
 	const showTrackWidget = $derived(userChannelTrackCount > 0)
@@ -181,18 +170,10 @@
 	let trackCount = $state(0)
 	$effect(() => {
 		if (isSignedIn) return
-		void sdk.supabase
-			.from('channels_with_tracks')
-			.select('*', {count: 'exact', head: true})
-			.then(({count}) => {
-				if (count) channelCount = count
-			})
-		void sdk.supabase
-			.from('channel_tracks')
-			.select('*', {count: 'exact', head: true})
-			.then(({count}) => {
-				if (count) trackCount = count
-			})
+		fetchAppStats().then((stats) => {
+			channelCount = stats.channels
+			trackCount = stats.tracks
+		})
 	})
 </script>
 
@@ -221,9 +202,6 @@
 					<Icon icon="circle-info" />
 				</button>
 			{/if}
-		{/if}
-		{#if userChannel}
-			<MyChannelControls channel={userChannel} />
 		{/if}
 	</PageHeader>
 
@@ -379,7 +357,7 @@
 		{#if activeBroadcasts.length}
 			<section class="section">
 				<h2 class="section-title">
-					<a href={resolve('/channels/broadcasting')}>{m.home_broadcasting()}</a>
+					<a class="btn chip" href={resolve('/channels/broadcasting')}>{m.home_broadcasting()}</a>
 				</h2>
 				<ol class="list">
 					{#each activeBroadcasts as broadcast (broadcast.channel_id)}
@@ -427,7 +405,7 @@
 				{#if showBroadcastCountWidget}
 					<section class="section top-row-live">
 						<h2 class="section-title">
-							<a href={resolve('/channels/broadcasting')}>{m.home_broadcasting()}</a>
+							<a class="btn chip" href={resolve('/channels/broadcasting')}>{m.home_broadcasting()}</a>
 						</h2>
 						<ol class="list">
 							{#each activeBroadcasts as broadcast (broadcast.channel_id)}
@@ -498,10 +476,6 @@
 	}
 
 	.create-channel-action {
-		margin-left: auto;
-	}
-
-	:global(.my-channel) {
 		margin-left: auto;
 	}
 
