@@ -2,6 +2,7 @@
 	import {resolve} from '$app/paths'
 	import {sdk} from '@radio4000/sdk'
 	import {appState} from '$lib/app-state.svelte'
+	import {fetchAppStats} from '$lib/collections/channels'
 	import {appName, conceptIcons} from '$lib/config'
 	import Icon from '$lib/components/icon.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
@@ -23,18 +24,10 @@
 	let channelCount = $state(0)
 	let trackCount = $state(0)
 	$effect(() => {
-		void sdk.supabase
-			.from('channels_with_tracks')
-			.select('*', {count: 'exact', head: true})
-			.then(({count}) => {
-				if (count) channelCount = count
-			})
-		void sdk.supabase
-			.from('channel_tracks')
-			.select('*', {count: 'exact', head: true})
-			.then(({count}) => {
-				if (count) trackCount = count
-			})
+		fetchAppStats().then((stats) => {
+			channelCount = stats.channels
+			trackCount = stats.tracks
+		})
 	})
 </script>
 

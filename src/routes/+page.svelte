@@ -4,7 +4,7 @@
 	import {appState} from '$lib/app-state.svelte'
 	import {appName} from '$lib/config'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
-	import {channelsCollection} from '$lib/collections/channels'
+	import {channelsCollection, fetchAppStats} from '$lib/collections/channels'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
 	import {getFeaturedPool} from '$lib/collections/featured'
@@ -14,7 +14,6 @@
 	import {isBroadcasting} from '$lib/deck'
 	import {authStatus} from '$lib/app-state.svelte'
 	import {appPresence, watchPresence, unwatchPresence} from '$lib/presence.svelte'
-	import {sdk} from '@radio4000/sdk'
 	import ChannelCard from '$lib/components/channel-card.svelte'
 	import FeaturedChannels from '$lib/components/featured-channels.svelte'
 	import HomeGlobe from '$lib/components/home-globe.svelte'
@@ -181,18 +180,10 @@
 	let trackCount = $state(0)
 	$effect(() => {
 		if (isSignedIn) return
-		void sdk.supabase
-			.from('channels_with_tracks')
-			.select('*', {count: 'exact', head: true})
-			.then(({count}) => {
-				if (count) channelCount = count
-			})
-		void sdk.supabase
-			.from('channel_tracks')
-			.select('*', {count: 'exact', head: true})
-			.then(({count}) => {
-				if (count) trackCount = count
-			})
+		fetchAppStats().then((stats) => {
+			channelCount = stats.channels
+			trackCount = stats.tracks
+		})
 	})
 </script>
 
