@@ -112,6 +112,7 @@
 			"name": "fetchChannelCount(params?)",
 			"desc": "Total count for pagination UI (HEAD request, no data)."
 		},
+		{"name": "fetchAppStats()", "desc": "Cached global channel/track counts for stats displays."},
 		{"name": "CHANNELS_PAGE_SIZE", "desc": "Default page size (20)."},
 		{"name": "followsCollection", "desc": "Followed channels (synced)."},
 		{"name": "broadcastsCollection", "desc": "Active broadcasts."},
@@ -143,7 +144,7 @@
 		},
 		{
 			"name": "fetchRecentTracksForSlugs(slugs, since)",
-			"desc": "Fetch recent tracks for channel slugs."
+			"desc": "Fetch recent tracks for channel slugs, newest first. Also upserts into tracksCollection."
 		},
 		{
 			"name": "insertDurationFromMeta(channel, tracks)",
@@ -175,8 +176,28 @@
 
 		{"name": "getFeaturedPool(days?)", "desc": "Load quality channel pool for homepage/featured."},
 		{
-			"name": "loadFeaturedChannelTracks(count?, days?)",
-			"desc": "Pick top channels by score and fetch their tracks."
+			"name": "loadFeaturedChannelTracks(days?)",
+			"desc": "Pick top channels by score, fetch their recent tracks. Returns {channels, tracks}."
+		}
+	],
+
+	"src/lib/followed-channels.svelte.ts": [
+		{
+			"name": "getFollowedChannels()",
+			"desc": "Reactive channels the user follows (ids + hydrated channel objects). Call in component init."
+		},
+		{
+			"name": "getChannelConnections(kind, getChannelId, {hydrate?})",
+			"desc": "Reactive followers/following of any channel. Ids cached 5 min; hydrate: false skips channel objects."
+		},
+		{"name": "fetchFollowerIds(channelId)", "desc": "Cached one-off fetch of follower ids."},
+		{"name": "fetchFollowingIds(channelId)", "desc": "Cached one-off fetch of followed ids."}
+	],
+
+	"src/lib/featured-suggestions.svelte.ts": [
+		{
+			"name": "getFeaturedSuggestions()",
+			"desc": "Reactive featured channel pool + top tags for search/explore empty states. Call in component init."
 		}
 	],
 

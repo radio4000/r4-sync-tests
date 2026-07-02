@@ -10,7 +10,7 @@ Follow/save channels as favorites. Stored in `followers` table with `follower_id
 
 ## Collection
 
-Uses `queryCollectionOptions` like other collections. Data flows through query cache (persisted to IDB). See `src/lib/collections/follows.ts`.
+Uses `queryCollectionOptions` like other collections. Data flows through the query cache. See `src/lib/collections/follows.ts`.
 
 ## API
 

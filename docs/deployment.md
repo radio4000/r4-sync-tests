@@ -74,7 +74,7 @@ Your `.env` and `static/data/` are untouched. No conflicts, ever.
 
 ### Seed data
 
-`PUBLIC_SEED_URLS` is a comma-separated list of URLs fetched by the browser on first load, imported into IndexedDB. Relative URLs are resolved from the build output; absolute URLs can be remote.
+`PUBLIC_SEED_URLS` is a comma-separated list of URLs fetched by the browser on load, imported into the local collections and `appState.local_channels`. Relative URLs are resolved from the build output; absolute URLs can be remote.
 
 ```sh
 PUBLIC_SEED_URLS=/data/backup.json,https://cdn.example.com/other.json
@@ -110,14 +110,13 @@ Run `bun update -i` to interactively decide which dependencies to update, if any
 
 The app is a Progressive Web App via `@vite-pwa/sveltekit` (Workbox `generateSW` strategy).
 
-At build time, Workbox precaches the full app shell (JS, CSS, HTML, fonts, images). After the first visit, the app loads offline. Previously synced TanStack IndexedDB data (channels, tracks) is also available offline.
+At build time, Workbox precaches the full app shell (JS, CSS, HTML, fonts, images). After the first visit, the app loads offline. Channel/track data is not persisted while IDB cache persistence is disabled (see [state.md](state.md)), so remote data still needs network.
 
 Config lives in `vite.config.ts` → `SvelteKitPWA(...)`. The web app manifest is `static/webmanifest.json` (linked in `src/app.html`); `manifest: false` tells the plugin not to generate its own.
 
 What works offline:
 
 - Full app shell (all routes render)
-- Previously synced channels and tracks (IDB)
 - Importing local backup files
 
 What requires network:
