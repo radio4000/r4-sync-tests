@@ -2,16 +2,14 @@
 	import {page} from '$app/state'
 	import {resolve} from '$app/paths'
 	import {goto} from '$app/navigation'
-	import {sdk} from '@radio4000/sdk'
 	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
 	import {appState, canEditChannel} from '$lib/app-state.svelte'
-	import {queryClient} from '$lib/collections/query-client'
 	import {tracksCollection} from '$lib/collections/tracks'
 	import {eq} from '@tanstack/db'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {getFollowedChannels} from '$lib/followed-channels.svelte'
+	import {getChannelConnections, getFollowedChannels} from '$lib/followed-channels.svelte'
 	import {computeChannelMatchScore} from '$lib/channel-match-score'
 	import Tracklist from '$lib/components/tracklist.svelte'
 	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
@@ -20,7 +18,7 @@
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
 	import {relativeDate} from '$lib/dates'
-	import {dedupeById, extractHashtags, channelAvatarUrl} from '$lib/utils'
+	import {extractHashtags, channelAvatarUrl} from '$lib/utils'
 	import {addToPlaylist, joinAutoRadio, playTrack, setPlaylist, togglePlayPause} from '$lib/api'
 	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
 	import {getAutoDecksForView} from '$lib/views.svelte'
@@ -114,17 +112,14 @@
 		selectedTags.length > 0 ? selectedTags.map((t) => `#${t}`).join(' ') : undefined
 	)
 	const follows = getFollowedChannels()
-	let channelFollowers = $state<import('$lib/types').Channel[]>([])
-	let channelFollowing = $state<import('$lib/types').Channel[]>([])
-	let ownChannelFollowers = $state<import('$lib/types').Channel[]>([])
-
-	function normalizeChannels(rows: unknown[]): import('$lib/types').Channel[] {
-		return rows.filter(
-			(c): c is import('$lib/types').Channel =>
-				typeof (c as {id?: unknown})?.id === 'string' &&
-				typeof (c as {slug?: unknown})?.slug === 'string'
-		)
-	}
+	// Follow-graph ids only — the channel objects shown come from the user's
+	// already-loaded followed channels.
+	const followerConn = getChannelConnections('followers', () => channel?.id, {hydrate: false})
+	const followingConn = getChannelConnections('following', () => channel?.id, {hydrate: false})
+	// Own channel's followers — for the "follows you" badge
+	const ownFollowers = getChannelConnections('followers', () => appState.channel?.id, {
+		hydrate: false
+	})
 
 	function compactOverlapText(items: import('$lib/types').Channel[]) {
 		if (items.length === 0) return ''
@@ -140,103 +135,16 @@
 		return `${compact}${value >= 0 ? positive : negative}`
 	}
 
-	$effect(() => {
-		if (!channel?.id) {
-			channelFollowers = []
-			channelFollowing = []
-			return
-		}
-		let stale = false
-		Promise.all([
-			queryClient.fetchQuery({
-				queryKey: ['channel-followers', channel.id],
-				queryFn: async () => {
-					const {data} = await sdk.channels.readFollowers(channel.id)
-					if (!data?.length) return []
-					const ids = data.map((c) => c.id)
-					const {data: enriched} = await sdk.supabase
-						.from('channels_with_tracks')
-						.select('*')
-						.in('id', ids)
-					return normalizeChannels(dedupeById((enriched || data) as Array<{id: string | null}>))
-				},
-				staleTime: 5 * 60 * 1000
-			}),
-			queryClient.fetchQuery({
-				queryKey: ['channel-following', channel.id],
-				queryFn: async () => {
-					const {data} = await sdk.channels.readFollowings(channel.id)
-					if (!data?.length) return []
-					const ids = data.map((c) => c.id)
-					const {data: enriched} = await sdk.supabase
-						.from('channels_with_tracks')
-						.select('*')
-						.in('id', ids)
-					return normalizeChannels(dedupeById((enriched || data) as Array<{id: string | null}>))
-				},
-				staleTime: 5 * 60 * 1000
-			})
-		])
-			.then(([followers, following]) => {
-				if (stale) return
-				channelFollowers = followers
-				channelFollowing = following
-			})
-			.catch(() => {
-				if (stale) return
-				channelFollowers = []
-				channelFollowing = []
-			})
-
-		return () => {
-			stale = true
-		}
-	})
-
-	$effect(() => {
-		const ownChannelId = appState.channel?.id
-		if (!ownChannelId) {
-			ownChannelFollowers = []
-			return
-		}
-		let stale = false
-		queryClient
-			.fetchQuery({
-				queryKey: ['channel-followers', ownChannelId],
-				queryFn: async () => {
-					const {data} = await sdk.channels.readFollowers(ownChannelId)
-					if (!data?.length) return []
-					const ids = data.map((c) => c.id)
-					const {data: enriched} = await sdk.supabase
-						.from('channels_with_tracks')
-						.select('*')
-						.in('id', ids)
-					return normalizeChannels(dedupeById((enriched || data) as Array<{id: string | null}>))
-				},
-				staleTime: 5 * 60 * 1000
-			})
-			.then((followers) => {
-				if (stale) return
-				ownChannelFollowers = followers
-			})
-			.catch(() => {
-				if (stale) return
-				ownChannelFollowers = []
-			})
-		return () => {
-			stale = true
-		}
-	})
-
-	let followedIdSet = $derived(new Set(follows.followedIds))
-	let commonFollowers = $derived(channelFollowers.filter((c) => c.id && followedIdSet.has(c.id)))
-	let commonFollowing = $derived(channelFollowing.filter((c) => c.id && followedIdSet.has(c.id)))
+	let followerIdSet = $derived(new Set(followerConn.ids))
+	let followingIdSet = $derived(new Set(followingConn.ids))
+	let commonFollowers = $derived(follows.followedChannels.filter((c) => followerIdSet.has(c.id)))
+	let commonFollowing = $derived(follows.followedChannels.filter((c) => followingIdSet.has(c.id)))
 	let previewCommonFollowers = $derived(commonFollowers.slice(0, 4))
 	let previewCommonFollowing = $derived(commonFollowing.slice(0, 4))
 
 	// "Follows you" — the viewed channel appears in your own channel followers.
 	let followsYou = $derived(
-		Boolean(channel?.id && ownChannelFollowers.some((c) => c.id === channel.id))
+		Boolean(channel?.id && ownFollowers.ids.includes(channel.id))
 	)
 
 	// Match score — computed from user's own tracks vs this channel's tracks
