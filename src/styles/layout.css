@@ -175,18 +175,12 @@ menu.nav-vertical {
 		border-radius: var(--border-radius);
 		min-height: 2rem;
 
-		&:hover {
-			background: light-dark(var(--gray-2), var(--gray-2));
-		}
-
 		&.active {
-			background-color: var(--accent-3);
 			color: var(--accent-9);
+			svg {
+				color: var(--accent-9);
+			}
 		}
-	}
-
-	& > :not(:last-child) {
-		border-bottom: 1px solid var(--gray-4);
 	}
 
 	& + & {

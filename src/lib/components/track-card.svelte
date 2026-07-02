@@ -226,7 +226,7 @@
 						playTrack(deckId ?? appState.active_deck_id, track.id, null, 'user_click_track')
 					}
 					menu?.close()
-				}}><Icon icon="play-fill" size={14} />{m.common_play()}</button
+				}}><Icon icon="play-fill" />{m.common_play()}</button
 			>
 			{#if !appState.embed_mode}
 				<button
@@ -236,7 +236,7 @@
 					onclick={() => {
 						addToPlaylist(deckId ?? appState.active_deck_id, [track.id])
 						menu?.close()
-					}}><Icon icon="next-fill" size={14} />{m.track_play_next()}</button
+					}}><Icon icon="next-fill" />{m.track_play_next()}</button
 				>
 			{/if}
 			<button
@@ -246,14 +246,14 @@
 				onclick={async () => {
 					await playTrackInNewDeck(track.id, track.slug ?? undefined)
 					menu?.close()
-				}}><Icon icon="sidebar-fill-right" size={14} />{m.track_card_play_in_deck()}</button
+				}}><Icon icon="sidebar-fill-right" />{m.track_card_play_in_deck()}</button
 			>
 			{#if !appState.embed_mode}
 				<button
 					type="button"
 					role="menuitem"
 					{@attach tooltip({content: m.track_add_to_radio()})}
-					onclick={addToRadio}><Icon icon="add" size={14} />{m.track_add_to_radio()}</button
+					onclick={addToRadio}><Icon icon="add" />{m.track_add_to_radio()}</button
 				>
 			{/if}
 			{#if isRealTrack}
@@ -261,26 +261,26 @@
 					type="button"
 					role="menuitem"
 					{@attach tooltip({content: m.share_native()})}
-					onclick={shareTrack}><Icon icon="share" size={14} />{m.share_native()}</button
+					onclick={shareTrack}><Icon icon="share" />{m.share_native()}</button
 				>
 			{/if}
 			{#if onLocate}
 				<button type="button" role="menuitem" onclick={onLocate}
-					><Icon icon="arrow-down" size={14} />{m.track_card_locate_in_list()}</button
+					><Icon icon="arrow-down" />{m.track_card_locate_in_list()}</button
 				>
 			{/if}
 			{#if isRealTrack && !appState.embed_mode}
 				<a href={permalink} role="menuitem"
-					><Icon icon="circle-info" size={14} />{m.track_go_to()}</a
+					><Icon icon="circle-info" />{m.track_go_to()}</a
 				>
 			{:else if track.url && !appState.embed_mode}
 				<a href={track.url} target="_blank" rel="noopener noreferrer" role="menuitem"
-					><Icon icon="circle-info" size={14} />{m.track_card_open_video()}</a
+					><Icon icon="circle-info" />{m.track_card_open_video()}</a
 				>
 			{/if}
 			{#if canEdit}
 				<button type="button" role="menuitem" onclick={editTrack}
-					><Icon icon="edit" size={14} />{m.common_edit()}</button
+					><Icon icon="edit" />{m.common_edit()}</button
 				>
 				<button
 					type="button"
@@ -289,7 +289,7 @@
 					onclick={() => {
 						menu?.close()
 						showDeleteDialog = true
-					}}><Icon icon="delete" size={14} />{m.common_delete()}</button
+					}}><Icon icon="delete" />{m.common_delete()}</button
 				>
 			{/if}
 		</menu>

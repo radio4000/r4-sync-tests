@@ -541,8 +541,8 @@
 								class:active={!deck?.hide_video_player}
 								data-no-close
 							>
+								<Icon icon="tv" />
 								{deck?.hide_video_player ? m.player_hidden() : m.player_visible()}
-								<Icon icon="tv" size={14} />
 							</button>
 							{#if !isListeningToBroadcast && !deck?.auto_radio}
 								<button
@@ -550,8 +550,8 @@
 									class:active={!deck?.hide_queue_panel}
 									data-no-close
 								>
+									<Icon icon="unordered-list" />
 									{deck?.hide_queue_panel ? m.queue_hidden() : m.queue_visible()}
-									<Icon icon="unordered-list" size={14} />
 								</button>
 							{/if}
 							{#if isListeningToBroadcast && hasListeningMultiDeck}
@@ -560,14 +560,14 @@
 									class:active={listeningVideoMixActive}
 									data-no-close
 								>
+									<Icon icon="gradient" />
 									Video mix
-									<Icon icon="gradient" size={14} />
 								</button>
 							{/if}
 
 							<button class:active={isFullscreen} onclick={toggleFullscreen} data-no-close>
+								<Icon icon="fullscreen-alt" />
 								{isFullscreen ? 'Exit full screen' : 'Full screen'}
-								<Icon icon="fullscreen-alt" size={14} />
 							</button>
 
 							{#if !appState.embed_mode}
