@@ -11,6 +11,7 @@
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import IconR4 from '$lib/components/icon-r4.svelte'
+	import NavPopover from '$lib/components/nav-popover.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import InternetIndicator from '$lib/components/internet-indicator.svelte'
 	import * as m from '$lib/paraglide/messages'
@@ -18,6 +19,10 @@
 	import {deckAccent} from '$lib/app-state.svelte'
 
 	const {preloading} = $props()
+
+	// Legacy left-rail nav — superseded by NavPopover. Kept (not removed) behind a
+	// flag for side-by-side comparison; flip to true to restore the old buttons.
+	const showLegacyNav = false
 
 	const isSignedIn = $derived(!!appState.user)
 	const userChannel = $derived(appState.channel)
@@ -102,6 +107,12 @@
 	style={`--app-header-size:${headerSize}px;`}
 	ondblclick={toggleLabels}
 >
+	<!-- Exploratory: single-trigger command palette, shown above the existing nav -->
+	<nav class="nav-palette-trigger">
+		<NavPopover />
+	</nav>
+
+	{#if showLegacyNav}
 	<nav class="nav-secondary">
 		<a
 			href={resolve('/')}
@@ -129,18 +140,26 @@
 			<span class="btn-label">{m.nav_explore()}</span>
 		</a>
 	</nav>
+	{/if}
 
 	<!-- <nav class="pins">
 		<PinsNav />
 	</nav> -->
 
-	<nav class="user-nav">
+	<nav class="user-nav nav-infrastructure">
 		{#await preloading then}
+			<!-- Invisible dialog hosts — kept mounted (used app-wide). -->
 			<EditTrackDialog />
 			<ShareDialog />
 			<ShortcutsDialog />
+			<!-- AddTrackDialog stays mounted so NavPopover's "Add" tile can open it
+			     via appState.modal_track_add. Its own trigger button is hidden via CSS. -->
 			{#if userChannel}
 				<AddTrackDialog class="nav-btn" label="Add" />
+			{/if}
+
+			{#if showLegacyNav}
+				{#if userChannel}
 				<a
 					href={resolve(`/${userChannel.slug}`)}
 					class={[
@@ -182,10 +201,12 @@
 					<span class="btn-label">{m.nav_sign_in()}</span>
 				</a>
 			{/if}
+			{/if}
 		{/await}
 	</nav>
 
 	<nav class="nav-settings">
+		{#if showLegacyNav}
 		<a
 			href={resolve('/menu')}
 			class="btn settings-link nav-btn"
@@ -196,6 +217,7 @@
 			<Icon icon="menu" />
 			<span class="btn-label">Menu</span>
 		</a>
+		{/if}
 		<InternetIndicator href={resolve('/import')} />
 	</nav>
 </header>
@@ -233,6 +255,12 @@
 
 	nav :global(.btn svg) {
 		color: currentColor;
+	}
+
+	/* AddTrackDialog is kept mounted (dialog host for NavPopover) but its
+	   trigger button is redundant with the palette's Add tile. */
+	.nav-infrastructure :global([data-add-track]) {
+		display: none;
 	}
 
 	.nav-secondary {
