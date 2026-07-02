@@ -312,6 +312,7 @@
 	}
 
 	:global(.channel-panel .channel-micro-card) {
+		--track-artwork-size: 1rem;
 		flex: 0 0 auto;
 		max-width: max-content;
 		align-self: center;
@@ -393,6 +394,12 @@
 		max-width: 100%;
 	}
 
+	@media (max-width: 399px) {
+		.controls :global(.volume .range) {
+			display: none;
+		}
+	}
+
 	@media (max-width: 767px) {
 		.header-info {
 			padding-inline: var(--space-1);
@@ -435,14 +442,6 @@
 		.controls :global(.volume) {
 			flex: 1 1 5rem;
 			max-width: none;
-		}
-
-		.controls :global(.speed .speed-btn),
-		.controls :global(.volume .btn),
-		.controls :global(.volume media-mute-button) {
-			min-width: 0;
-			padding-inline: var(--space-1);
-			font-size: var(--font-1);
 		}
 
 		.expand {
