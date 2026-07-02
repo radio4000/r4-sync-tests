@@ -136,16 +136,7 @@ class YouTube2Element extends HTMLElement {
 
 			// @ts-expect-error onVideoProgress is undocumented but works
 			this.api.addEventListener('onVideoProgress', () => {
-				const duration = this.api?.getDuration?.() ?? NaN
-				if (
-					Number.isFinite(duration) &&
-					duration > 0 &&
-					(!Number.isFinite(this.#lastDuration) ||
-						Math.abs(duration - this.#lastDuration) > 0.25)
-				) {
-					this.#lastDuration = duration
-					this.dispatchEvent(new Event('durationchange'))
-				}
+				this.#maybeDispatchDurationChange()
 				// log.debug('onVideoProgress fired, dispatching timeupdate')
 				this.dispatchEvent(new Event('timeupdate'))
 			})
@@ -160,24 +151,47 @@ class YouTube2Element extends HTMLElement {
 		}
 	}
 
+	/**
+	 * The YT API keeps reporting the previous video's data between loadVideoById
+	 * and the new video's metadata arriving — treat that window as "no duration".
+	 */
+	#isSwitchingVideo() {
+		const srcId = this.#extractVideoId(this.src)
+		const loadedId = this.api?.getVideoData?.()?.video_id
+		return Boolean(srcId && loadedId && srcId !== loadedId)
+	}
+
+	#maybeDispatchDurationChange() {
+		const duration = this.duration
+		if (
+			Number.isFinite(duration) &&
+			duration > 0 &&
+			(!Number.isFinite(this.#lastDuration) || Math.abs(duration - this.#lastDuration) > 0.25)
+		) {
+			this.#lastDuration = duration
+			this.dispatchEvent(new Event('durationchange'))
+		}
+	}
+
 	#dispatchStateEvents(state) {
 		const YT = globalThis.YT
 		if (state === YT.PlayerState.PLAYING) {
+			this.#maybeDispatchDurationChange()
 			this.dispatchEvent(new Event('play'))
 			this.dispatchEvent(new Event('playing'))
 		} else if (state === YT.PlayerState.PAUSED) {
 			this.dispatchEvent(new Event('pause'))
 		} else if (state === YT.PlayerState.ENDED) {
 			this.dispatchEvent(new Event('ended'))
-		} else if (
-			state === YT.PlayerState.CUED &&
-			this.hasAttribute('autoplay') &&
-			!this.#autoplayAttempted
-		) {
-			// If video is cued and autoplay is enabled, start playing (only once per video)
-			log.debug('video cued with autoplay, calling playVideo()')
-			this.#autoplayAttempted = true
-			this.api?.playVideo()
+		} else if (state === YT.PlayerState.CUED) {
+			// Cued videos never fire onVideoProgress, so propagate duration here
+			this.#maybeDispatchDurationChange()
+			if (this.hasAttribute('autoplay') && !this.#autoplayAttempted) {
+				// If video is cued and autoplay is enabled, start playing (only once per video)
+				log.debug('video cued with autoplay, calling playVideo()')
+				this.#autoplayAttempted = true
+				this.api?.playVideo()
+			}
 		}
 	}
 
@@ -259,6 +273,7 @@ class YouTube2Element extends HTMLElement {
 	}
 
 	get currentTime() {
+		if (this.#isSwitchingVideo()) return 0
 		return this.api?.getCurrentTime?.() ?? 0
 	}
 
@@ -278,6 +293,7 @@ class YouTube2Element extends HTMLElement {
 	}
 
 	get duration() {
+		if (this.#isSwitchingVideo()) return NaN
 		return this.api?.getDuration?.() ?? NaN
 	}
 
