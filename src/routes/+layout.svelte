@@ -369,9 +369,14 @@
 		overflow: hidden;
 	}
 
+	/* Experimental: header collapses to a single centered trigger that floats
+	   over the content instead of reserving a sidebar/bar. */
 	.layout > :global(header) {
-		position: sticky;
+		position: fixed;
 		top: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 60;
 		flex-shrink: 0;
 	}
 
@@ -518,19 +523,15 @@
 		}
 
 		.layout > :global(header) {
-			position: sticky;
+			position: fixed;
 			top: 0;
+			left: 50%;
+			transform: translateX(-50%);
 			height: auto;
 			min-height: auto;
 			margin: 0;
-			width: 100%;
-			align-self: stretch;
-			order: 2;
-			z-index: 40;
-		}
-
-		.content-wrapper {
-			order: 1;
+			width: auto;
+			z-index: 60;
 		}
 
 		.content {

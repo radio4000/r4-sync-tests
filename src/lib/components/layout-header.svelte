@@ -230,17 +230,24 @@
 		--app-nav-pad-inline: clamp(0.5rem, calc(var(--app-nav-btn-size) * 0.17), 0.62rem);
 		--app-nav-pad-block: clamp(0rem, calc(var(--app-nav-btn-size) * 0.06), 0.18rem);
 		display: flex;
-		flex-flow: column nowrap;
-		gap: clamp(var(--space-1), calc(var(--app-nav-btn-size) * 0.2), 0.8rem);
-		padding: 0.5rem var(--space-1);
-		inline-size: clamp(min-content, var(--app-header-size), max-content);
-		min-inline-size: min-content;
-		max-inline-size: max-content;
-		background: var(--color-interface);
-		border-right: 1px solid var(--gray-4);
-		z-index: 50;
+		flex-flow: row nowrap;
+		align-items: center;
+		gap: var(--space-1);
+		padding: var(--space-1);
+		inline-size: auto;
+		min-inline-size: 0;
+		max-inline-size: none;
+		background: transparent;
+		border: none;
+		z-index: 60;
 		position: relative;
 		overflow: visible;
+	}
+
+	/* Collapsed experimental header: only the palette trigger shows. Other nav
+	   sections stay mounted (dialog hosts) but take no visual space. */
+	.nav-settings {
+		display: none;
 	}
 
 	nav {
@@ -410,20 +417,15 @@
 			--app-nav-pad-inline: var(--space-1);
 			align-items: center;
 			flex-direction: row;
-			justify-content: space-between;
 			gap: 0.5rem;
-			padding: var(--space-1) 0.5rem var(--space-2);
-			inline-size: 100%;
-			width: 100%;
-			min-inline-size: 100%;
-			min-width: 100%;
+			padding: var(--space-1);
+			inline-size: auto;
+			width: auto;
+			min-inline-size: 0;
+			min-width: 0;
 			max-inline-size: none;
-			block-size: auto;
-			min-block-size: auto;
-			max-block-size: none;
-			box-sizing: border-box;
+			background: transparent;
 			border: none;
-			border-top: 1px solid var(--gray-4);
 			border-radius: 0;
 		}
 

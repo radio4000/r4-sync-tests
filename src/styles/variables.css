@@ -47,8 +47,8 @@
 		var(--button-bg-dark, var(--gray-3))
 	);
 	--button-color: light-dark(
-		var(--button-color-light, var(--gray-12)),
-		var(--button-color-dark, var(--gray-12))
+		var(--button-color-light, var(--gray-11)),
+		var(--button-color-dark, var(--gray-11))
 	);
 
 	/* media queries can't use variables, but still, nice to declare what we use */

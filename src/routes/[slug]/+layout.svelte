@@ -299,11 +299,11 @@
 								title={m.channel_card_join_broadcast()}
 								onclick={() => joinBroadcast(appState.active_deck_id, displayChannel.id)}
 							>
-								<ChannelAvatar id={displayChannel.image} alt={displayChannel.name} size={80} />
+								<ChannelAvatar id={displayChannel.image} alt={displayChannel.name} size={160} />
 							</button>
 						{:else}
 							<a href={resolve('/[slug]/image', {slug})} tabindex="-1">
-								<ChannelAvatar id={displayChannel.image} alt={displayChannel.name} size={80} />
+								<ChannelAvatar id={displayChannel.image} alt={displayChannel.name} size={160} />
 							</a>
 						{/if}
 					</div>
@@ -519,7 +519,7 @@
 	}
 
 	.avatar {
-		width: 3rem;
+		width: 6rem;
 		flex-shrink: 0;
 	}
 
@@ -565,13 +565,11 @@
 	}
 
 	.channel-actions {
-		display: flex;
+		margin-top: var(--space-2);
 		align-items: stretch;
 		justify-content: center;
-		gap: var(--space-1);
 		flex: 1 1 auto;
 		min-width: 0;
-		margin: 0;
 	}
 
 	.mode-actions {

@@ -112,6 +112,12 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: flex-start;
+
+		@media (max-width: 600px) {
+			:global(.card .description) {
+				display: none;
+			}
+		}
 	}
 
 	.section-header {

@@ -197,21 +197,17 @@
 	}
 
 	.tile {
+		background: var(--gray-3);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: var(--space-1);
-		padding: var(--space-2) var(--space-1);
-		min-height: 4rem;
-		border: 1px solid var(--color-interface-border);
-		border-radius: var(--border-radius);
-		background: var(--color-interface);
-		color: inherit;
 		text-align: center;
-		text-decoration: none;
-		font-size: var(--font-2);
-		cursor: var(--interactive-cursor, pointer);
+		border-radius: var(--border-radius);
+		aspect-ratio: 1/1;
+		min-height: 3rem;
+		font-size: var(--font-3);
+		padding: var(--space-2) var(--space-1);
 	}
 
 	.tile:hover {
