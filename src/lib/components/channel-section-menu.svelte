@@ -3,15 +3,12 @@
 	import {resolve} from '$app/paths'
 	import * as m from '$lib/paraglide/messages'
 
-	let {slug, channel, trackCount = 0} = $props()
+	let {slug, trackCount = 0} = $props()
 
 	let routeId = $derived(page.route.id)
 </script>
 
 <nav class="channel-section-menu tabs" aria-label="Channel navigation">
-	<a href={resolve('/[slug]', {slug})} class="btn chip" class:active={routeId === '/[slug]'}>
-		{m.home_tab_home()}
-	</a>
 	<a
 		href={resolve('/[slug]/tracks', {slug})}
 		class="btn chip"
@@ -47,15 +44,6 @@
 	>
 		{m.nav_followers()}
 	</a>
-	{#if channel?.longitude && channel?.latitude}
-		<a
-			href={resolve('/[slug]/map', {slug})}
-			class="btn chip"
-			class:active={routeId?.startsWith('/[slug]/map')}
-		>
-			{m.nav_map()}
-		</a>
-	{/if}
 </nav>
 
 <style>

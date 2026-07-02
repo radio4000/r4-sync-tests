@@ -413,31 +413,33 @@
 							</button>
 						{/if}
 
-						<button
-							type="button"
-							class={[
-								'mode-action',
-								'play',
-								{active: isChannelPlaying, drifted: activeAutoDrifted}
-							]}
-							onclick={onPlayAction}
-							disabled={playLoading}
-							{@attach tooltip({content: playTooltip})}
-						>
-							<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={14} />
-							<span>{playLabel}</span>
-						</button>
+						<div class="mode-actions">
+							<button
+								type="button"
+								class={[
+									'mode-action',
+									'play',
+									{active: isChannelPlaying, drifted: activeAutoDrifted}
+								]}
+								onclick={onPlayAction}
+								disabled={playLoading}
+								{@attach tooltip({content: playTooltip})}
+							>
+								<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={14} />
+								<span>{playLabel}</span>
+							</button>
 
-						<button
-							type="button"
-							class={['mode-action', 'shuffle']}
-							onclick={onShuffleAction}
-							disabled={playLoading}
-							{@attach tooltip({content: m.channels_tooltip_shuffle()})}
-						>
-							<Icon icon="shuffle" size={14} />
-							<span>{shuffleLabel}</span>
-						</button>
+							<button
+								type="button"
+								class={['mode-action', 'shuffle']}
+								onclick={onShuffleAction}
+								disabled={playLoading}
+								{@attach tooltip({content: m.channels_tooltip_shuffle()})}
+							>
+								<Icon icon="shuffle" size={14} />
+								<span>{shuffleLabel}</span>
+							</button>
+						</div>
 					</menu>
 				</div>
 			</header>
@@ -446,7 +448,7 @@
 		{#if !isTrackDetail}
 			<menu class="channel-nav">
 				{#if page.route.id !== '/[slug]/image'}
-					<ChannelSectionMenu {slug} channel={displayChannel} trackCount={channelTrackCount} />
+					<ChannelSectionMenu {slug} trackCount={channelTrackCount} />
 				{/if}
 				{#if channelNavControls}
 					<menu class="channel-nav-controls">
@@ -488,7 +490,7 @@
 			'controls controls';
 		grid-template-columns: 1fr auto;
 		gap: var(--space-1);
-		padding: var(--space-2);
+		padding: 2rem var(--space-3) 1rem;
 		min-width: 0;
 		align-items: center;
 		background: var(--gray-2);
@@ -570,6 +572,13 @@
 		flex: 1 1 auto;
 		min-width: 0;
 		margin: 0;
+	}
+
+	.mode-actions {
+		display: grid;
+		grid-auto-flow: column;
+		grid-auto-columns: 1fr;
+		gap: var(--space-1);
 	}
 
 	.channel-secondary-actions {
