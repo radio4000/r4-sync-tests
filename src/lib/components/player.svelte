@@ -37,8 +37,7 @@
 	import {logger} from '$lib/logger'
 	import {parseUrl} from 'media-now/parse-url'
 	import {tracksCollection, updateTrack} from '$lib/collections/tracks'
-	import {channelsCollection} from '$lib/collections/channels'
-	import {broadcastsCollection} from '$lib/collections/broadcasts'
+	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {isDbId, trackImageUrl, extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
 	import Tag from '$lib/components/tag.svelte'
@@ -109,15 +108,22 @@
 	let canPrevFromQueue = $derived(canPrev(activeQueue, track?.id))
 	let canNextFromQueue = $derived(canNext(activeQueue, track?.id))
 
-	// Track list for drift detection — recomputes only when playlist order changes
-	const syncAutoTracks = $derived.by(() =>
-		toAutoTracks(
+	// Track list for drift detection. Resolve each id via O(1) Map lookups on the
+	// collection; a direct-collection live query is the reactive bridge (reading
+	// its `data` re-runs this on any track change) without building a d2ts inArray
+	// pipeline over the whole playlist. See docs/tanstack.md.
+	const tracksLive = useLiveQuery(tracksCollection)
+	const syncAutoTracks = $derived.by(() => {
+		void tracksLive.data.length
+		const state = tracksCollection.state
+		return toAutoTracks(
 			/** @type {import('$lib/types').Track[]} */
-			((deck?.playlist_tracks ?? []).map((id) => tracksCollection.state.get(id)).filter(Boolean))
+			((deck?.playlist_tracks ?? []).map((id) => state.get(id)).filter(Boolean))
 		)
-	)
+	})
 	const syncTotalDuration = $derived(syncAutoTracks.reduce((sum, t) => sum + t.duration, 0))
 
+	let deckMenu = $state(/** @type {{close: () => void} | undefined} */ (undefined))
 	let isFullscreen = $state(false)
 	$effect(() => {
 		const handler = () => (isFullscreen = !!document.fullscreenElement)
@@ -138,17 +144,8 @@
 	const isSyncedListeningMode = $derived(Boolean(isListeningToBroadcast || deck?.auto_radio))
 	let showDeckActions = $derived(!isListeningToBroadcast || isListeningGroupControlDeck)
 
-	const listenSlug = $derived(
-		deck?.listening_to_channel_id
-			? (channelsCollection.state.get(deck.listening_to_channel_id)?.slug ??
-					broadcastsCollection.state.get(deck.listening_to_channel_id)?.channels?.slug)
-			: undefined
-	)
-	const broadcastSlug = $derived(
-		deck?.broadcasting_channel_id
-			? channelsCollection.state.get(deck.broadcasting_channel_id)?.slug
-			: undefined
-	)
+	const listenSlug = $derived(display.listenSlug)
+	const broadcastSlug = $derived(display.broadcastSlug)
 
 	const broadcastingChannel = $derived(display.broadcasterChannel)
 	const headerChannel = $derived(display.headerChannel)
@@ -533,34 +530,12 @@
 				</div>
 			{/if}
 			<menu class="layout-controls top-layout-controls">
-				{#if !isListeningToBroadcast}
-					<button
-						class="close-deck"
-						onclick={() => {
-							const bchId = getBroadcastingChannelId()
-							clearUserInitiatedPlay(deckId)
-							removeDeck(deckId)
-							if (bchId) notifyBroadcastState(bchId)
-						}}
-						{@attach tooltip({content: m.player_tooltip_close_deck(), position: 'top'})}
-					>
-						<Icon icon="close" />
-					</button>
-				{:else if isListeningGroupControlDeck}
-					<button
-						class="close-deck"
-						onclick={() => listeningDeckIds.forEach((id) => leaveBroadcast(id))}
-						{@attach tooltip({content: m.broadcasts_leave(), position: 'top'})}
-					>
-						<Icon icon="close" />
-					</button>
-				{/if}
 				{#if showDeckActions}
-					<PopoverMenu align="right" closeOnClick={false}>
+					<PopoverMenu align="right" closeOnClick={false} bind:this={deckMenu}>
 						{#snippet trigger()}
 							<Icon icon="options-horizontal" />
 						{/snippet}
-						<menu class="deck-context-menu">
+						<menu class="nav-vertical">
 							<button
 								onclick={() => toggleVideo(deckId)}
 								class:active={!deck?.hide_video_player}
@@ -594,6 +569,36 @@
 								{isFullscreen ? 'Exit full screen' : 'Full screen'}
 								<Icon icon="fullscreen-alt" size={14} />
 							</button>
+
+							{#if !appState.embed_mode}
+								<a href={resolve('/settings/player')} onclick={() => deckMenu?.close()}>
+									<Icon icon="settings" />
+									{m.settings_player()}
+								</a>
+							{/if}
+
+							{#if !isListeningToBroadcast}
+								<button
+									class="close-deck"
+									onclick={() => {
+										const bchId = getBroadcastingChannelId()
+										clearUserInitiatedPlay(deckId)
+										removeDeck(deckId)
+										if (bchId) notifyBroadcastState(bchId)
+									}}
+								>
+									<Icon icon="close" />
+									{m.player_tooltip_close_deck()}
+								</button>
+							{:else if isListeningGroupControlDeck}
+								<button
+									class="close-deck"
+									onclick={() => listeningDeckIds.forEach((id) => leaveBroadcast(id))}
+								>
+									<Icon icon="close" />
+									{m.broadcasts_leave()}
+								</button>
+							{/if}
 						</menu>
 					</PopoverMenu>
 				{/if}
@@ -874,37 +879,6 @@
 	.layout-controls {
 		align-items: center;
 		flex-shrink: 0;
-	}
-
-	:global(.deck-context-menu) {
-		display: flex;
-		flex-direction: column;
-		gap: 0.1rem;
-
-		button {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 1rem;
-			width: 100%;
-			padding: var(--space-1) var(--space-2);
-			background: none;
-			border: none;
-			border-radius: var(--border-radius);
-			font-size: var(--font-3);
-			color: var(--color-text);
-			cursor: pointer;
-			white-space: nowrap;
-			text-align: left;
-		}
-
-		button:hover {
-			background: var(--gray-3);
-		}
-
-		button.active :global(svg) {
-			color: var(--accent-9);
-		}
 	}
 
 	.top-layout-controls {
