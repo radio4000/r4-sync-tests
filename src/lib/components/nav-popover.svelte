@@ -12,7 +12,6 @@
 	 * `channel:visited` capture event (see src/lib/collections/capture-events.ts).
 	 */
 	import {resolve} from '$app/paths'
-	import {page} from '$app/state'
 	import {appState} from '$lib/app-state.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
@@ -28,7 +27,6 @@
 	const isSignedIn = $derived(!!appState.user)
 	const userChannel = $derived(appState.channel)
 	const ownChannels = $derived(userChannel ? [userChannel] : [])
-	const contextSlug = $derived(page.params?.slug)
 
 	const followed = getFollowedChannels()
 	const recentChannels = $derived(followed.followedChannels.slice(0, 6))
@@ -68,91 +66,101 @@
 	}
 </script>
 
-<PopoverMenu align="left" valign="bottom" btnClass="nav-brand-trigger">
+<PopoverMenu align="left" valign="bottom" btnClass="nav-brand-trigger" bind:this={menuEl}>
 	{#snippet trigger()}
-		<IconR4 />
-		{#if contextSlug}<span class="brand-context">@{contextSlug}</span>{/if}
+		<IconR4 size={18} />
 		<Icon icon="arrow-down" size={13} />
 	{/snippet}
 
 	<div class="nav-palette">
-			<nav class="tiles">
-				<a class="tile" href={resolve('/')}>
-					<Icon icon={conceptIcons.home} size={22} />
-					<span>Home</span>
+		<div class="palette-tiles">
+			<a class="tile" href={resolve('/')}>
+				<Icon icon={conceptIcons.home} />
+				<span>Home</span>
+			</a>
+			<a class="tile" href={resolve('/explore')}>
+				<Icon icon={conceptIcons.channels} />
+				<span>{m.nav_explore()}</span>
+			</a>
+			{#if userChannel}
+				<button type="button" class="tile" onclick={openAddTrack}>
+					<Icon icon="add" />
+					<span>{m.track_add_title()}</span>
+				</button>
+			{:else if isSignedIn}
+				<a class="tile" href={resolve('/create-channel')}>
+					<Icon icon="user" />
+					<span>{m.home_create_channel()}</span>
 				</a>
-				<a class="tile" href={resolve('/explore')}>
-					<Icon icon={conceptIcons.channels} size={22} />
-					<span>{m.nav_explore()}</span>
-				</a>
-				{#if userChannel}
-					<button class="tile" type="button" onclick={openAddTrack}>
-						<Icon icon="add" size={22} />
-						<span>{m.track_add_title()}</span>
-					</button>
-					<BroadcastToggle channel={userChannel} class="tile" />
-				{:else if isSignedIn}
-					<a class="tile" href={resolve('/create-channel')}>
-						<Icon icon="user" size={22} />
-						<span>{m.nav_channels()}</span>
-					</a>
-				{:else}
-					<a class="tile" href={resolve('/auth')}>
-						<Icon icon="user" size={22} />
-						<span>{m.nav_sign_in()}</span>
-					</a>
-				{/if}
-			</nav>
-
-			<!-- stopPropagation so the input's clear button doesn't close the popover -->
-			<div class="palette-search" role="search" onclick={(e) => e.stopPropagation()}>
-				<SearchInput
-					bind:value={query}
-					debounce={200}
-					placeholder="Search or jump to a channel…"
-					autofocus
-				/>
-			</div>
-
-			{#if query.trim()}
-				<section class="palette-list">
-					<h4>Channels</h4>
-					{#if searching && !results.length}
-						<p class="palette-hint">Searching…</p>
-					{:else if results.length}
-						{#each results as channel (channel.id)}
-							{@render channelRow(channel)}
-						{/each}
-					{:else}
-						<p class="palette-hint">No channels for “{query.trim()}”</p>
-					{/if}
-				</section>
 			{:else}
-				{#if ownChannels.length}
-					<section class="palette-list">
-						<h4>Your channels</h4>
-						{#each ownChannels as channel (channel.id)}
-							{@render channelRow(channel)}
-						{/each}
-					</section>
-				{/if}
-				{#if recentChannels.length}
-					<section class="palette-list">
-						<h4>Following</h4>
-						{#each recentChannels as channel (channel.id)}
-							{@render channelRow(channel)}
-						{/each}
-					</section>
-				{/if}
+				<a class="tile" href={resolve('/auth')}>
+					<Icon icon="user" />
+					<span>{m.auth_create_or_signin()}</span>
+				</a>
 			{/if}
+		</div>
 
-			<footer class="palette-footer">
+		{#if userChannel}
+			<nav class="nav-vertical">
+				<BroadcastToggle channel={userChannel} />
+			</nav>
+		{/if}
+
+		<!-- stopPropagation so the input's clear button doesn't close the popover -->
+		<div class="palette-search" role="search" onclick={(e) => e.stopPropagation()}>
+			<SearchInput
+				bind:value={query}
+				debounce={200}
+				placeholder="Search or jump to a channel…"
+				autofocus
+			/>
+		</div>
+
+		{#if query.trim()}
+			<section class="palette-list">
+				<h4>Channels</h4>
+				{#if searching && !results.length}
+					<p class="palette-hint">Searching…</p>
+				{:else if results.length}
+					{#each results as channel (channel.id)}
+						{@render channelRow(channel)}
+					{/each}
+				{:else}
+					<p class="palette-hint">No channels for “{query.trim()}”</p>
+				{/if}
+			</section>
+		{:else}
+			{#if ownChannels.length}
+				<section class="palette-list">
+					<h4>Your channels</h4>
+					{#each ownChannels as channel (channel.id)}
+						{@render channelRow(channel)}
+					{/each}
+				</section>
+			{/if}
+			{#if recentChannels.length}
+				<section class="palette-list">
+					<h4>Following</h4>
+					{#each recentChannels as channel (channel.id)}
+						{@render channelRow(channel)}
+					{/each}
+				</section>
+			{/if}
+		{/if}
+
+		<footer class="palette-footer">
+			<nav class="nav-vertical">
+				<a href={resolve('/settings')}>
+					<Icon icon="settings" size={16} />
+					<span>{m.nav_settings()}</span>
+				</a>
 				<a href={resolve('/menu')}>
 					<Icon icon="menu" size={16} />
 					<span>Menu</span>
 				</a>
-			</footer>
-		</div>
+			</nav>
+		</footer>
+	</div>
 </PopoverMenu>
 
 {#snippet channelRow(channel)}
@@ -167,74 +175,53 @@
 
 <style>
 	:global(.nav-brand-trigger) {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		padding: var(--space-1) var(--space-2);
-		background: transparent;
-		border: 1px solid transparent;
-		border-radius: var(--border-radius);
-		color: inherit;
-		font-weight: 600;
-		cursor: var(--interactive-cursor, pointer);
 	}
 
 	:global(.nav-brand-trigger:hover) {
 		background: var(--color-interface-elevated);
 	}
 
-	.brand-context {
-		font-weight: 400;
-		white-space: nowrap;
-		color: var(--color-text-2);
-	}
-
 	.nav-palette {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
-		width: min(21rem, calc(100vw - 2rem));
+		width: 100%;
 		max-height: min(34rem, calc(100vh - 5rem));
 		overflow-y: auto;
 	}
 
-	.tiles {
+	.palette-tiles {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(3, 1fr);
 		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
 	}
 
-	.tiles :global(.tile) {
+	.tile {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		gap: var(--space-1);
-		height: auto;
 		padding: var(--space-2) var(--space-1);
-		background: var(--color-interface);
+		min-height: 4rem;
 		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
+		background: var(--color-interface);
 		color: inherit;
-		font-size: var(--font-2);
 		text-align: center;
-	}
-
-	.tiles :global(.tile:hover) {
-		background: var(--color-interface-elevated);
-	}
-
-	.tiles :global(.tile span),
-	.tiles :global(.tile .btn-label) {
-		display: block;
+		text-decoration: none;
 		font-size: var(--font-2);
-		line-height: 1.1;
+		cursor: var(--interactive-cursor, pointer);
 	}
 
-	.tiles :global(.tile.broadcasting) {
-		color: var(--accent-9);
+	.tile:hover {
+		background: var(--color-interface-elevated);
+		border-color: var(--accent-6);
+	}
+
+	.tile :global(svg) {
+		width: 1.25rem;
+		height: 1.25rem;
 	}
 
 	.palette-list {
@@ -302,18 +289,5 @@
 	.palette-footer {
 		border-top: 1px solid var(--color-interface-border);
 		padding-top: var(--space-2);
-	}
-
-	.palette-footer a {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-1);
-		border-radius: var(--border-radius);
-		color: inherit;
-	}
-
-	.palette-footer a:hover {
-		background: var(--color-interface-elevated);
 	}
 </style>
