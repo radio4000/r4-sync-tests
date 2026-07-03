@@ -11,25 +11,23 @@
 		previous,
 		togglePlayPause,
 		toggleDeckCompact,
-		toggleQueuePanel,
-		toggleVideo,
 		getUserInitiatedPlay,
 		setUserInitiatedPlay,
 		resyncAutoRadio,
 		recordSeekPosition,
-		clearUserInitiatedPlay,
 		toggleShuffle
 	} from '$lib/api'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {playbackState, toAutoTracks} from '$lib/player/auto-radio'
-	import {leaveBroadcast, getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast.js'
+	import {getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast.js'
 	import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/broadcast-utils'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
-	import {appState, canEditChannel, removeDeck, deckAccent} from '$lib/app-state.svelte'
+	import {appState, canEditChannel, deckAccent} from '$lib/app-state.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
+	import DeckMenu from '$lib/components/deck-menu.svelte'
 	import SpeedControl from '$lib/components/speed-control.svelte'
 	import VolumeControl from '$lib/components/volume-control.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
@@ -72,10 +70,6 @@
 		!deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
 	)
 	let hasListeningMultiDeck = $derived(listeningDeckIds.length > 1)
-	let listeningVideoMixActive = $derived.by(() => {
-		if (!hasListeningMultiDeck) return false
-		return listeningDeckIds.some((id) => Boolean(appState.decks[id]?.video_mix))
-	})
 	let deckIds = $derived(Object.keys(appState.decks).map(Number))
 	let accentColor = $derived(deckAccent(deckIds, deckId))
 
@@ -124,19 +118,6 @@
 	const syncTotalDuration = $derived(syncAutoTracks.reduce((sum, t) => sum + t.duration, 0))
 
 	let deckMenu = $state(/** @type {{close: () => void} | undefined} */ (undefined))
-	let isFullscreen = $state(false)
-	$effect(() => {
-		const handler = () => (isFullscreen = !!document.fullscreenElement)
-		document.addEventListener('fullscreenchange', handler)
-		return () => document.removeEventListener('fullscreenchange', handler)
-	})
-	function toggleFullscreen() {
-		if (document.fullscreenElement) {
-			document.exitFullscreen()
-		} else {
-			deckEl?.requestFullscreen()
-		}
-	}
 
 	let didPlay = $state(false)
 	let userHasPlayed = $state(false)
@@ -299,16 +280,6 @@
 	function handleSeeked() {
 		if (!mediaElement) return
 		recordSeekPosition(deckId, mediaElement.currentTime ?? 0)
-	}
-
-	function toggleListeningVideoMix() {
-		const next = !listeningVideoMixActive
-		for (const id of listeningDeckIds) {
-			const listeningDeck = appState.decks[id]
-			if (!listeningDeck?.listening_to_channel_id) continue
-			listeningDeck.video_mix = next
-			if (next) listeningDeck.hide_video_player = false
-		}
 	}
 
 	$effect(() => {
@@ -542,71 +513,11 @@
 						{#snippet trigger()}
 							<Icon icon="options-horizontal" />
 						{/snippet}
-						<menu class="nav-vertical">
-							<button
-								onclick={() => toggleVideo(deckId)}
-								class:active={!deck?.hide_video_player}
-								data-no-close
-							>
-								<Icon icon="tv" />
-								{deck?.hide_video_player ? m.player_hidden() : m.player_visible()}
-							</button>
-							{#if !isListeningToBroadcast && !deck?.auto_radio}
-								<button
-									onclick={() => toggleQueuePanel(deckId)}
-									class:active={!deck?.hide_queue_panel}
-									data-no-close
-								>
-									<Icon icon="unordered-list" />
-									{deck?.hide_queue_panel ? m.queue_hidden() : m.queue_visible()}
-								</button>
-							{/if}
-							{#if isListeningToBroadcast && hasListeningMultiDeck}
-								<button
-									onclick={toggleListeningVideoMix}
-									class:active={listeningVideoMixActive}
-									data-no-close
-								>
-									<Icon icon="gradient" />
-									Video mix
-								</button>
-							{/if}
-
-							<button class:active={isFullscreen} onclick={toggleFullscreen} data-no-close>
-								<Icon icon="fullscreen-alt" />
-								{isFullscreen ? 'Exit full screen' : 'Full screen'}
-							</button>
-
-							{#if !appState.embed_mode}
-								<a href={resolve('/settings/player')} onclick={() => deckMenu?.close()}>
-									<Icon icon="settings" />
-									{m.settings_player()}
-								</a>
-							{/if}
-
-							{#if !isListeningToBroadcast}
-								<button
-									class="close-deck"
-									onclick={() => {
-										const bchId = getBroadcastingChannelId()
-										clearUserInitiatedPlay(deckId)
-										removeDeck(deckId)
-										if (bchId) notifyBroadcastState(bchId)
-									}}
-								>
-									<Icon icon="close" />
-									{m.player_tooltip_close_deck()}
-								</button>
-							{:else if isListeningGroupControlDeck}
-								<button
-									class="close-deck"
-									onclick={() => listeningDeckIds.forEach((id) => leaveBroadcast(id))}
-								>
-									<Icon icon="close" />
-									{m.broadcasts_leave()}
-								</button>
-							{/if}
-						</menu>
+						<DeckMenu
+							{deckId}
+							{deckEl}
+							closeMenu={() => deckMenu?.close()}
+						/>
 					</PopoverMenu>
 				{/if}
 				{#if showDeckActions && (hasMultipleDecks || !appState.embed_mode)}

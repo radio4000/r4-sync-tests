@@ -2,24 +2,23 @@
 	import {untrack} from 'svelte'
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
-	import {appState, canEditChannel, removeDeck} from '$lib/app-state.svelte'
+	import {appState, canEditChannel} from '$lib/app-state.svelte'
 	import {
 		togglePlayPause,
 		next,
 		previous,
 		getMediaPlayer,
 		resyncAutoRadio,
-		clearUserInitiatedPlay,
 		toggleDeckCompact,
 		toggleShuffle
 	} from '$lib/api'
-	import {getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {parseUrl} from 'media-now/parse-url'
 	import * as m from '$lib/paraglide/messages'
 	import Icon from '$lib/components/icon.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
+	import DeckMenu from '$lib/components/deck-menu.svelte'
 	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import TrackCard from '$lib/components/track-card.svelte'
@@ -215,26 +214,11 @@
 					{#snippet trigger()}
 						<Icon icon="options-horizontal" />
 					{/snippet}
-					<menu class="nav-vertical">
-						{#if !appState.embed_mode}
-							<a href={resolve('/settings/player')} onclick={() => deckMenu?.close()}>
-								<Icon icon="settings" />
-								{m.settings_player()}
-							</a>
-						{/if}
-						<button
-							class="close-deck"
-							onclick={() => {
-								const bchId = getBroadcastingChannelId()
-								clearUserInitiatedPlay(deckId)
-								removeDeck(deckId)
-								if (bchId) notifyBroadcastState(bchId)
-							}}
-						>
-							<Icon icon="close" />
-							{m.player_tooltip_close_deck()}
-						</button>
-					</menu>
+					<DeckMenu
+						{deckId}
+						compact
+						closeMenu={() => deckMenu?.close()}
+					/>
 				</PopoverMenu>
 			{/if}
 			{#if showEdgeControls && isListeningGroupControlDeck}
