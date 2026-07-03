@@ -217,18 +217,21 @@ export async function playTrack(
 	const previousTrackId = deck.playlist_track
 	const previousPlayId = deck.play_id
 	if (!isEphemeral && previousTrackId && previousTrackId !== id && endReason) {
-		const mediaController = document.querySelector(`media-controller#r5-deck-${deckId}`)
-		const actualPlayTime = mediaController?.getAttribute('mediacurrenttime')
-		const msPlayed = actualPlayTime ? Math.round(Number.parseFloat(actualPlayTime) * 1000) : 0
+		const msPlayed = Math.round(deck.ms_listened ?? 0)
+		const endPosition = Math.round(deck.media_current_time ?? 0)
 		capture('player:track_end', {
 			play_id: previousPlayId,
 			track_id: previousTrackId,
 			channel_slug: deck.playlist_slug,
 			end_reason: endReason,
-			ms_played: msPlayed
+			ms_played: msPlayed,
+			end_position: endPosition
 		})
 	}
 	if (!isEphemeral && startReason && track.slug) {
+		// Keep accumulated listen time when the same track re-triggers — no track_end
+		// was captured above, so resetting would silently drop it
+		if (previousTrackId !== id) deck.ms_listened = 0
 		const playId = uuid()
 		deck.play_id = playId
 		capture('player:track_play', {

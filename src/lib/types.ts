@@ -47,6 +47,7 @@ export interface Deck {
 	speed?: number
 	media_current_time?: number
 	media_duration?: number
+	ms_listened?: number
 }
 
 export interface AppState {

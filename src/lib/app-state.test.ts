@@ -32,7 +32,8 @@ describe('app state persistence', () => {
 			seeked_at: '2026-05-26T00:00:01.000Z',
 			seek_position: 42,
 			media_current_time: 55,
-			media_duration: 120
+			media_duration: 120,
+			ms_listened: 30_000
 		}
 		const state: AppState = {
 			...defaultAppState,
@@ -60,6 +61,7 @@ describe('app state persistence', () => {
 		expect(persistedDeck).not.toHaveProperty('seek_position')
 		expect(persistedDeck).not.toHaveProperty('media_current_time')
 		expect(persistedDeck).not.toHaveProperty('media_duration')
+		expect(persistedDeck).not.toHaveProperty('ms_listened')
 	})
 
 	test('persists queue arrays separately', async () => {
@@ -95,7 +97,8 @@ describe('app state persistence', () => {
 			seeked_at: '2026-05-26T00:00:01.000Z',
 			seek_position: 42,
 			media_current_time: 55,
-			media_duration: 120
+			media_duration: 120,
+			ms_listened: 30_000
 		})
 
 		expect(deck.id).toBe(2)
@@ -112,5 +115,6 @@ describe('app state persistence', () => {
 		expect(deck.seek_position).toBeUndefined()
 		expect(deck.media_current_time).toBeUndefined()
 		expect(deck.media_duration).toBeUndefined()
+		expect(deck.ms_listened).toBeUndefined()
 	})
 })

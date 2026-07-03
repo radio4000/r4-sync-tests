@@ -349,9 +349,16 @@
 		if (!trackId) return
 		const el = mediaElement
 		if (!el) return
+		let prevTime = el.currentTime ?? 0
 		const onTime = () => {
 			if (!deck || deck.playlist_track !== trackId) return
-			deck.media_current_time = el.currentTime ?? 0
+			const currentTime = el.currentTime ?? 0
+			const delta = currentTime - prevTime
+			if (delta > 0 && delta < 3) {
+				deck.ms_listened = (deck.ms_listened ?? 0) + delta * 1000
+			}
+			prevTime = currentTime
+			deck.media_current_time = currentTime
 		}
 		const onDuration = () => {
 			if (!deck || deck.playlist_track !== trackId) return

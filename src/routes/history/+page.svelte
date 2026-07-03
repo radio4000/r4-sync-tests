@@ -12,6 +12,8 @@
 	import * as m from '$lib/paraglide/messages'
 	import {getLocale} from '$lib/paraglide/runtime'
 	import {dayLabel, formatDurationCompact} from '$lib/dates.js'
+	import {getPlayCountThreshold} from '$lib/utils'
+	import {tracksCollection} from '$lib/collections/tracks'
 	import TrackCard from '$lib/components/track-card.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import DateTime from '$lib/components/date-time.svelte'
@@ -72,6 +74,18 @@
 			playback_error: null,
 			tags: null
 		} as unknown as Track
+	}
+
+	function getTrackDurationSec(trackId: string): number | undefined {
+		const duration = tracksCollection.get(trackId)?.duration
+		return duration && duration > 0 ? duration : undefined
+	}
+
+	function isSkippedPlay(play: CaptureEvent, endData?: {ms_played?: number}): boolean {
+		if (!endData) return false
+		const trackId = play.properties?.track_id as string
+		const thresholdMs = getPlayCountThreshold(getTrackDurationSec(trackId)) * 1000
+		return (endData.ms_played ?? 0) < thresholdMs
 	}
 
 	async function playHistoryTrack(play: CaptureEvent) {
@@ -177,9 +191,10 @@
 					{#each day.events as play (play.id)}
 						{@const p = play.properties ?? {}}
 						{@const endData = endDataByPlayId.get(play.id)}
+						{@const skipped = isSkippedPlay(play, endData)}
 						{@const reason = getStartReason(p.start_reason as string)}
 						{@const histTrack = toTrack(play)}
-						<li class="play-row">
+						<li class="play-row" class:skipped>
 							<small class="play-time">
 								<DateTime date={play.created_at} {locale} />
 							</small>
@@ -189,10 +204,12 @@
 							<div class="track-col">
 								<TrackCard track={histTrack} onPlay={() => playHistoryTrack(play)}>
 									{#snippet description()}
-										{#if endData?.ms_played || p.shuffle}
+										{#if endData?.ms_played || p.shuffle || skipped}
 											<small class="play-metas">
 												{#if endData?.ms_played}<span class="play-meta"
 														>{formatDurationCompact(endData.ms_played)}</span
+													>{/if}
+												{#if skipped}<span class="play-meta">{m.history_flag_skipped()}</span
 													>{/if}
 												{#if p.shuffle}<span class="play-meta">{m.history_flag_shuffled()}</span
 													>{/if}
@@ -275,6 +292,10 @@
 		padding-left: 0.5rem;
 		align-items: center;
 		overflow: hidden;
+	}
+
+	.play-row.skipped {
+		opacity: 0.55;
 	}
 
 	.track-col {

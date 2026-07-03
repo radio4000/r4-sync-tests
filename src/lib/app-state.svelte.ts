@@ -14,6 +14,7 @@ function resetTransientDeckState(deck: Deck): Deck {
 	deck.seek_position = undefined
 	deck.media_current_time = undefined
 	deck.media_duration = undefined
+	deck.ms_listened = undefined
 	return deck
 }
 

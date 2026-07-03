@@ -475,3 +475,14 @@ export function fuzzySearch<T>(
 	if (!query?.trim()) return items
 	return fuzzysort.go(query, items, {keys, limit, threshold}).map((r) => r.obj)
 }
+
+/**
+ * Seconds of listening required before a play counts (Last.fm scrobble rule).
+ * Full track if under 2 minutes; otherwise half the duration, capped at 4 minutes.
+ * Unknown duration falls back to the 4-minute cap.
+ */
+export function getPlayCountThreshold(durationSec?: number | null): number {
+	if (!durationSec) return 240
+	if (durationSec < 120) return durationSec
+	return Math.min(durationSec / 2, 240)
+}

@@ -32,3 +32,9 @@ Local only. The collection persists to localStorage under `r5-capture-events`. N
 ## History page
 
 `/history` queries `captureEventsCollection`, filters for `player:track_play` events, and pairs each with its `player:track_end` via `play_id` to show duration and end reason. `/history/stats` aggregates the same data for listening statistics.
+
+## Play count threshold
+
+A play counts only after enough real listening — the Last.fm scrobble rule: full track if under 2 minutes, otherwise half the duration capped at 4 minutes. `getPlayCountThreshold(durationSec)` in `utils.ts` returns the required seconds.
+
+`player:track_play` fires at playback start regardless. `ms_played` on `player:track_end` is accumulated real listening time (`deck.ms_listened`), not playhead position — seeks and pauses don't inflate it. The history UI compares `ms_played` to the threshold at read time to judge counted vs skipped. Plays without an end event yet show normally, not as skipped. Stats count only qualifying plays.

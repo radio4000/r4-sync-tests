@@ -5,7 +5,10 @@
 	import {getLocale} from '$lib/paraglide/runtime'
 	import {captureEventsCollection, buildEndDataMap} from '$lib/collections/capture-events'
 	import {channelsCollection} from '$lib/collections/channels'
-	import {trackMetaCollection} from '$lib/collections/track-meta'
+	import {trackMetaCollection, trackMetaKey} from '$lib/collections/track-meta'
+	import {tracksCollection} from '$lib/collections/tracks'
+	import {getPlayCountThreshold} from '$lib/utils'
+	import {parseUrl} from 'media-now'
 	import {followsCollection} from '$lib/collections/follows'
 	import {queryClient} from '$lib/collections/query-client'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
@@ -24,6 +27,29 @@
 	const follows = $derived(followsQuery.data ?? [])
 
 	let endDataByPlayId = $derived(buildEndDataMap(allEvents, plays))
+
+	function getTrackDurationSec(play: (typeof plays)[number]): number | undefined {
+		const trackId = play.properties?.track_id as string
+		const fromTrack = tracksCollection.get(trackId)?.duration
+		if (fromTrack && fromTrack > 0) return fromTrack
+		const url = play.properties?.url as string | undefined
+		const parsed = url ? parseUrl(url) : null
+		if (!parsed?.id) return undefined
+		const meta = trackMeta.find(
+			(tm) => trackMetaKey(tm.provider, tm.media_id) === trackMetaKey(parsed.provider, parsed.id)
+		)
+		const fromMeta = meta?.youtube_data?.duration
+		return fromMeta && fromMeta > 0 ? fromMeta : undefined
+	}
+
+	function isQualifiedPlay(play: (typeof plays)[number]): boolean {
+		const endData = endDataByPlayId.get(play.id)
+		if (!endData) return false
+		const thresholdMs = getPlayCountThreshold(getTrackDurationSec(play)) * 1000
+		return (endData.ms_played ?? 0) >= thresholdMs
+	}
+
+	let qualifiedPlays = $derived(plays.filter(isQualifiedPlay))
 
 	// Query cache stats (tracks are loaded on-demand per slug, so state may be empty)
 	const tracksCached = $derived(
@@ -68,28 +94,25 @@
 	)
 
 	// Basic stats
-	const totalPlays = $derived(plays.length)
+	const totalPlays = $derived(qualifiedPlays.length)
 	const totalListeningTime = $derived(
 		Math.round(
-			plays.reduce((sum, p) => sum + (endDataByPlayId.get(p.id)?.ms_played || 0), 0) / 1000 / 60
+			qualifiedPlays.reduce((sum, p) => sum + (endDataByPlayId.get(p.id)?.ms_played || 0), 0) /
+				1000 /
+				60
 		)
 	)
-	const uniqueTracks = $derived(new Set(plays.map((p) => p.properties?.track_id as string)).size)
+	const uniqueTracks = $derived(
+		new Set(qualifiedPlays.map((p) => p.properties?.track_id as string)).size
+	)
 	const uniqueChannels = $derived(
-		new Set(plays.map((p) => p.properties?.channel_slug as string)).size
+		new Set(qualifiedPlays.map((p) => p.properties?.channel_slug as string)).size
 	)
-	const skipRate = $derived(
-		plays.length > 0
-			? Math.round(
-					(plays.filter((p) => {
-						const reason = endDataByPlayId.get(p.id)?.end_reason
-						return reason === 'user_next' || reason === 'user_prev'
-					}).length /
-						plays.length) *
-						100
-				)
-			: 0
-	)
+	const skipRate = $derived.by(() => {
+		const withEnd = plays.filter((p) => endDataByPlayId.has(p.id))
+		if (withEnd.length === 0) return 0
+		return Math.round((withEnd.filter((p) => !isQualifiedPlay(p)).length / withEnd.length) * 100)
+	})
 
 	// Collection stats
 	const totalChannelsInDb = $derived(channels.length)
@@ -120,7 +143,7 @@
 			{id: string; title: string; channel_name?: string; slug: string; created_at: string}
 		> = {}
 		plays
-			.filter((p) => new Date(p.created_at).getTime() > sevenDaysAgoMs)
+			.filter((p) => new Date(p.created_at).getTime() > sevenDaysAgoMs && isQualifiedPlay(p))
 			.forEach((p) => {
 				const trackId = p.properties?.track_id as string
 				const playTime = new Date(p.created_at).getTime()
@@ -151,6 +174,7 @@
 			{title: string; channel_name?: string; slug: string; track_id: string; play_count: number}
 		> = {}
 		plays.forEach((p) => {
+			if (!isQualifiedPlay(p)) return
 			const trackId = p.properties?.track_id as string
 			if (!trackPlays[trackId]) {
 				const slug = p.properties?.channel_slug as string
@@ -172,22 +196,22 @@
 
 	// Listening patterns
 	const daysSinceFirstPlay = $derived.by(() => {
-		if (plays.length === 0) return 0
-		const playTimes = plays.map((p) => new Date(p.created_at).getTime())
+		if (qualifiedPlays.length === 0) return 0
+		const playTimes = qualifiedPlays.map((p) => new Date(p.created_at).getTime())
 		const firstPlayMs = Math.min(...playTimes)
 		return Math.floor((Date.now() - firstPlayMs) / (1000 * 60 * 60 * 24))
 	})
 
 	const streakDays = $derived.by(() => {
-		if (plays.length === 0) return 0
-		const dates = plays.map((p) => new Date(p.created_at).toDateString())
+		if (qualifiedPlays.length === 0) return 0
+		const dates = qualifiedPlays.map((p) => new Date(p.created_at).toDateString())
 		return new Set(dates).size
 	})
 
 	const mostActiveHour = $derived.by(() => {
-		if (plays.length === 0) return null
+		if (qualifiedPlays.length === 0) return null
 		const hourCounts: Record<number, number> = {}
-		plays.forEach((p) => {
+		qualifiedPlays.forEach((p) => {
 			const hour = new Date(p.created_at).getHours()
 			hourCounts[hour] = (hourCounts[hour] || 0) + 1
 		})
@@ -200,7 +224,7 @@
 	// Reason analytics
 	const startReasons = $derived.by(() => {
 		const reasons: Record<string, number> = {}
-		plays.forEach((p) => {
+		qualifiedPlays.forEach((p) => {
 			const reason = p.properties?.start_reason as string | undefined
 			if (reason) reasons[reason] = (reasons[reason] || 0) + 1
 		})
@@ -211,7 +235,7 @@
 
 	const endReasons = $derived.by(() => {
 		const reasons: Record<string, number> = {}
-		plays.forEach((p) => {
+		qualifiedPlays.forEach((p) => {
 			const reason = endDataByPlayId.get(p.id)?.end_reason
 			if (reason) reasons[reason] = (reasons[reason] || 0) + 1
 		})
@@ -228,12 +252,12 @@
 		'play_search'
 	]
 	const userInitiatedRate = $derived.by(() => {
-		if (plays.length === 0) return 0
-		const userInitiated = plays.filter((p) => {
+		if (qualifiedPlays.length === 0) return 0
+		const userInitiated = qualifiedPlays.filter((p) => {
 			const reason = p.properties?.start_reason as string | undefined
 			return reason && userInitiatedReasons.includes(reason)
 		}).length
-		return Math.round((userInitiated / plays.length) * 100)
+		return Math.round((userInitiated / qualifiedPlays.length) * 100)
 	})
 </script>
 

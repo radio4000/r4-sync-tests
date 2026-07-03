@@ -578,6 +578,10 @@
 		{
 			"name": "fuzzySearch(query, items, keys, {limit?, threshold?})",
 			"desc": "Generic local fuzzy search."
+		},
+		{
+			"name": "getPlayCountThreshold(durationSec?)",
+			"desc": "Seconds of listening before a play counts (Last.fm scrobble rule)."
 		}
 	],
 
