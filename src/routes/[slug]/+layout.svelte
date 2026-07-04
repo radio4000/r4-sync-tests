@@ -16,12 +16,7 @@
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {shufflePlayChannel, toggleChannelPlay} from '$lib/api'
 	import {shortcutHint} from '$lib/keyboard'
-	import {
-		findAutoDecksForChannel,
-		findChannelDeck,
-		findChannelPlayingDeck,
-		findListeningDeck
-	} from '$lib/deck'
+	import {findAutoDecksForChannel, findChannelDeck, findListeningDeck} from '$lib/deck'
 	import ButtonFollow from '$lib/components/button-follow.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import ChannelCanvasBg from '$lib/components/channel-canvas-bg.svelte'
@@ -143,9 +138,6 @@
 	)
 	let canEdit = $derived(canEditChannel(channel?.id))
 	let anyChannelAutoDecks = $derived(findAutoDecksForChannel(appState.decks, channel?.slug))
-	let channelPlayingDeck = $derived(
-		findChannelPlayingDeck(appState.decks, appState.active_deck_id, channel?.slug)
-	)
 	let channelListeningDeck = $derived(
 		findListeningDeck(appState.decks, appState.active_deck_id, channel?.id)
 	)
@@ -305,7 +297,7 @@
 					</div>
 					<div class="info">
 						<DeckChannelHeader
-							deck={channelListeningDeck ?? channelPlayingDeck ?? anyChannelAutoDecks[0]}
+							deck={channelListeningDeck ?? channelDeck ?? anyChannelAutoDecks[0]}
 							channel={displayChannel}
 							track={listeningTrack}
 							titleElement="h1"

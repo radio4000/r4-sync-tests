@@ -52,18 +52,6 @@ export function findLoadedDeck(decks: Record<number, Deck>, slug?: string): Deck
 	return deckValues(decks).find((d) => d.playlist_slug === slug)
 }
 
-/** Find a deck playing a channel, preferring active deck. */
-export function findChannelPlayingDeck(
-	decks: Record<number, Deck>,
-	activeDeckId: number,
-	slug?: string
-): Deck | undefined {
-	if (!slug) return undefined
-	const active = decks[activeDeckId]
-	if (active && active.playlist_slug === slug) return active
-	return deckValues(decks).find((d) => d.playlist_slug === slug && d.is_playing)
-}
-
 /**
  * Find the deck holding a channel slug — the re-tap target for "play this channel".
  * Prefer the active deck, then a deck currently playing the slug, then any loaded deck.
