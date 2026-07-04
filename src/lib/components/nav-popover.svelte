@@ -103,6 +103,7 @@
 	{/snippet}
 
 	<div class="nav-palette">
+		<div class="palette-scroll">
 		<div class="palette-tiles">
 			<a class="tile" href={resolve('/')}>
 				<Icon icon={conceptIcons.home} />
@@ -152,13 +153,16 @@
 		</div>
 
 		{#if !query.trim() && tags.length}
-			<div class="row tags">
-				{#each tags as tag (tag)}
-					<Tag href={resolve('/search/tracks') + '?q=' + encodeURIComponent('#' + tag)}
-						>#{tag}</Tag
-					>
-				{/each}
-			</div>
+			<section class="palette-list">
+				<h4>{m.nav_top_tags()}</h4>
+				<div class="row tags">
+					{#each tags as tag (tag)}
+						<Tag href={resolve('/search/tracks') + '?q=' + encodeURIComponent('#' + tag)}
+							>#{tag}</Tag
+						>
+					{/each}
+				</div>
+			</section>
 		{/if}
 
 		{#if query.trim()}
@@ -218,6 +222,7 @@
 				{/if}
 			</div>
 		{/if}
+		</div>
 
 		<footer class="palette-footer">
 			<nav class="nav-vertical">
@@ -272,9 +277,17 @@
 	.nav-palette {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-2);
 		width: 100%;
 		max-height: min(34rem, calc(100vh - 5rem));
+		overflow: hidden;
+	}
+
+	.palette-scroll {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		flex: 1 1 auto;
+		min-height: 0;
 		overflow-y: auto;
 	}
 
@@ -295,10 +308,11 @@
 		min-height: 3rem;
 		font-size: var(--font-2);
 		padding: var(--space-2) var(--space-1);
+		text-decoration: none;
 	}
 
 	.tile:hover {
-		background: var(--gray-7);
+		background: var(--gray-8);
 		border-color: var(--accent-6);
 		text-decoration: none;
 	}
@@ -315,7 +329,7 @@
 	.palette-groups {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-2);
+		gap: var(--space-1);
 	}
 
 	.palette-list,
@@ -332,13 +346,13 @@
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
-		color: var(--color-text-2);
+		color: var(--gray-10);
 	}
 
 	.palette-hint {
 		margin: 0;
 		padding: var(--space-1);
-		color: var(--color-text-2);
+		color: var(--gray-10);
 		font-size: var(--font-2);
 	}
 
@@ -346,21 +360,23 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		padding: var(--space-1);
+		padding: var(--space-1) var(--space-2);
 		border-radius: var(--border-radius);
 		color: inherit;
+		text-decoration: none;
 	}
 
 	.channel-row:hover,
 	.channel-row:global([aria-selected='true']) {
-		background: var(--color-interface-elevated);
+		background: var(--gray-6);
+		text-decoration: none;
 	}
 
 	.channel-row :global(img),
 	.channel-row :global(.fallback) {
-		width: 1.75rem;
-		height: 1.75rem;
-		border-radius: calc(var(--border-radius) - 0.2rem);
+		width: 1.5rem;
+		height: 1.5rem;
+		border-radius: var(--border-radius);
 		object-fit: cover;
 		flex: none;
 	}
@@ -368,10 +384,13 @@
 	.channel-meta {
 		display: flex;
 		flex-direction: column;
+		gap: 0;
+		line-height: 1.2;
 		min-width: 0;
 	}
 
 	.channel-name {
+		font-size: var(--font-2);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -379,11 +398,14 @@
 
 	.channel-slug {
 		font-size: var(--font-1);
-		color: var(--color-text-2);
+		color: var(--gray-10);
 	}
 
 	.palette-footer {
+		flex-shrink: 0;
+		margin-top: var(--space-2);
 		border-top: 1px solid var(--color-interface-border);
-		padding-top: var(--space-2);
+		padding-top: var(--space-1);
+		background: var(--color-interface-elevated);
 	}
 </style>
