@@ -549,8 +549,9 @@
 
 	.compact-row p {
 		margin: 0;
+		font-size: var(--font-3);
 		color: var(--gray-11);
-		line-height: 1.25;
+		line-height: 1.2;
 	}
 
 	.compact-avatars {
@@ -563,7 +564,7 @@
 	.compact-avatars :global(svg) {
 		width: 1.2rem;
 		height: 1.2rem;
-		border-radius: 999px;
+		border-radius: 50%;
 		border: 1px solid var(--gray-1);
 		margin-right: calc(-1 * var(--space-1));
 		background: var(--gray-2);

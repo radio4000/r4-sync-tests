@@ -52,8 +52,7 @@
 		"vite": "^8.1.0",
 		"vite-plugin-devtools-json": "^1.0.0",
 		"vitest": "^4.1.9",
-		"workbox-window": "^7.4.1",
-		"yargs": "^18.0.0"
+		"workbox-window": "^7.4.1"
 	},
 	"dependencies": {
 		"@humanspeak/svelte-virtual-list": "^0.5.4",
@@ -68,10 +67,8 @@
 		"@tanstack/svelte-db": "^0.1.89",
 		"@tanstack/svelte-query": "^6.1.36",
 		"@tanstack/svelte-query-devtools": "^6.1.36",
-		"@types/yargs": "^17.0.35",
 		"adze": "^2.3.0",
 		"feed": "^5.2.1",
-		"filenamify": "^7.0.2",
 		"fuzzysort": "^3.1.0",
 		"gsap": "^3.14.2",
 		"idb-keyval": "^6.2.6",
@@ -83,7 +80,6 @@
 		"media-now": "^2.2.3",
 		"obra-icons-svelte": "^1.23.1",
 		"ogl": "^1.0.11",
-		"p-limit": "^7.3.0",
 		"posthog-js": "^1.396.2",
 		"runed": "^0.37.1",
 		"svelte-awesome-color-picker": "^4.1.3",
