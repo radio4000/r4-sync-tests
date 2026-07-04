@@ -98,6 +98,50 @@
 
 	"src/lib/deck.ts": [
 		{
+			"name": "deckTitle(deck, title)",
+			"desc": "Deck title: use the given title, or derive one from the view/slug."
+		},
+		{
+			"name": "deckValues(decks)",
+			"desc": "All decks as an array (from the Record)."
+		},
+		{
+			"name": "findAutoDecksForChannel(decks, slug)",
+			"desc": "Auto-radio decks whose channel matches a slug (via view source or playlist_slug)."
+		},
+		{
+			"name": "pickAutoResyncDeck(decks, activeDeckId, slug, autoDecks)",
+			"desc": "Pick which auto-radio deck to resync: prefer the active deck if it matches, else first auto deck."
+		},
+		{
+			"name": "findPlayingDeck(decks, slug)",
+			"desc": "Find the deck playing a specific channel slug (is_playing)."
+		},
+		{
+			"name": "findLoadedDeck(decks, slug)",
+			"desc": "Find any deck loaded with a specific channel slug (not necessarily playing)."
+		},
+		{
+			"name": "findChannelDeck(decks, activeDeckId, slug)",
+			"desc": "Find the deck holding a channel slug — the re-tap target for \"play this channel\". Prefers active deck, then a deck playing the slug, then any loaded deck."
+		},
+		{
+			"name": "findListeningDeck(decks, activeDeckId, channelId)",
+			"desc": "Find a deck listening to a channel (by channel ID), preferring active deck."
+		},
+		{
+			"name": "isBroadcasting(decks, channelId)",
+			"desc": "Check if any deck is broadcasting for a given channel ID."
+		},
+		{
+			"name": "isChannelPlaying(decks, slug)",
+			"desc": "Check if any deck is playing a given channel slug."
+		},
+		{
+			"name": "isListeningToChannel(decks, channelId)",
+			"desc": "Check if any deck is listening to a given channel ID."
+		},
+		{
 			"name": "sortedListeningDeckIds(decks)",
 			"desc": "Deck IDs currently listening to a broadcast, sorted ascending."
 		},
