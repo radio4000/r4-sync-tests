@@ -15,7 +15,7 @@
 	import {toggleDeckCompact} from '$lib/api'
 	import {isMobileViewport} from '$lib/utils'
 	import {onMount} from 'svelte'
-	import {SvelteMap} from 'svelte/reactivity'
+	import {SvelteMap, MediaQuery} from 'svelte/reactivity'
 	import {beforeNavigate, afterNavigate, goto} from '$app/navigation'
 	import {page} from '$app/state'
 	import {DISABLED_ROUTES, DISABLED_ROUTE_FALLBACK} from '$lib/modes'
@@ -178,8 +178,8 @@
 	})
 
 	// Theme application
-	const prefersLight = $derived(window.matchMedia('(prefers-color-scheme: light)').matches)
-	const theme = $derived(appState.theme ?? (prefersLight ? 'light' : 'dark'))
+	const prefersLight = new MediaQuery('(prefers-color-scheme: light)')
+	const theme = $derived(appState.theme ?? (prefersLight.current ? 'light' : 'dark'))
 	const uiLocale = $derived(appState.language ?? getLocale())
 
 	$effect(() => {

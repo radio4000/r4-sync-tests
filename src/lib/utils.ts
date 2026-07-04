@@ -1,6 +1,6 @@
 import fuzzysort from 'fuzzysort'
 import {parseUrl} from 'media-now'
-import {appCloudinaryUrl} from '$lib/config'
+import {appCloudinaryUrl, MOBILE_BREAKPOINT} from '$lib/config'
 import * as m from '$lib/paraglide/messages'
 
 export function uuid() {
@@ -14,7 +14,7 @@ export function shuffleSeed(): string {
 
 /** Matches the app's mobile CSS breakpoint (deck strip, layout header). */
 export function isMobileViewport(): boolean {
-	return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+	return typeof window !== 'undefined' && window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches
 }
 
 const RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
