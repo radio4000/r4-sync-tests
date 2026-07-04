@@ -18,13 +18,9 @@ See CHANGELOG.md for user-facing history.
 4. Progressive disclosure — secondary controls behind one overflow, not a scrolling icon row.
 5. Mobile budget — deck bar: ≤4 always-visible transport controls + one overflow.
 
-
-
 ## Backlog
 
 - `userHasPlayed` not reset between playlists (`player.svelte`) — flag carries over when switching channels, may cause unexpected autoplay. Needs verification and user testing.
-
-
 
 ## One day
 
@@ -44,4 +40,3 @@ See CHANGELOG.md for user-facing history.
 - atproto as backend — sign in with Bluesky, sync channels/tracks. Major architectural shift. See github.com/radio4000/r4atproto
 - Shared track_meta — collaborative metadata curation between users. See github.com/radio4000/r4-sync-tests/issues/6
 - Hashtag parsing — should `"#one#two"` be one tag or two? Follow Twitter/Bluesky convention. Decide, update LinkEntities test and regexes. Parsing happens in Postgres, not the app — tests should use the same regexes. Same question applies to `parseQuery` in `views.ts`. Tokenizer splits on whitespace only.
-

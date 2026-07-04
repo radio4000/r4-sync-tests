@@ -516,8 +516,7 @@ export function expandDeck(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	for (const d of Object.values(appState.decks)) {
-		const inGroup =
-			d === deck || Boolean(deck.listening_to_channel_id && d.listening_to_channel_id)
+		const inGroup = d === deck || Boolean(deck.listening_to_channel_id && d.listening_to_channel_id)
 		if (inGroup) {
 			d.expanded = true
 			d.compact = false

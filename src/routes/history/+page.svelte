@@ -209,8 +209,7 @@
 												{#if endData?.ms_played}<span class="play-meta"
 														>{formatDurationCompact(endData.ms_played)}</span
 													>{/if}
-												{#if skipped}<span class="play-meta">{m.history_flag_skipped()}</span
-													>{/if}
+												{#if skipped}<span class="play-meta">{m.history_flag_skipped()}</span>{/if}
 												{#if p.shuffle}<span class="play-meta">{m.history_flag_shuffled()}</span
 													>{/if}
 											</small>

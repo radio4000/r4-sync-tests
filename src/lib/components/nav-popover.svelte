@@ -43,7 +43,9 @@
 
 	const suggestions = getFeaturedSuggestions()
 	const featuredChannels = $derived(suggestions.pool.slice(0, 6))
-	const showFeatured = $derived(!ownChannels.length && !recentChannels.length && featuredChannels.length > 0)
+	const showFeatured = $derived(
+		!ownChannels.length && !recentChannels.length && featuredChannels.length > 0
+	)
 	const tags = $derived(suggestions.tags.slice(0, 8))
 
 	let query = $state('')
@@ -106,124 +108,124 @@
 
 	<div class="nav-palette">
 		<div class="palette-scroll">
-		<div class="palette-tiles">
-			<a class="tile" href={resolve('/')}>
-				<Icon icon={conceptIcons.home} />
-				<span>{m.nav_home()}</span>
-			</a>
-			<a class="tile" href={resolve('/explore')}>
-				<Icon icon={conceptIcons.channels} />
-				<span>{m.nav_explore()}</span>
-			</a>
-			<a class="tile" href={resolve('/channels/all') + '?display=map'}>
-				<Icon icon={conceptIcons.map} />
-				<span>{m.nav_map()}</span>
-			</a>
-			{#if userChannel}
-				<button type="button" class="tile" onclick={openAddTrack}>
-					<Icon icon="add" />
-					<span>{m.track_add_title()}</span>
-				</button>
-			{:else if isSignedIn}
-				<a class="tile" href={resolve('/create-channel')}>
-					<Icon icon="user" />
-					<span>{m.home_create_channel()}</span>
+			<div class="palette-tiles">
+				<a class="tile" href={resolve('/')}>
+					<Icon icon={conceptIcons.home} />
+					<span>{m.nav_home()}</span>
 				</a>
-			{:else}
-				<a class="tile" href={resolve('/auth')}>
-					<Icon icon="user" />
-					<span>{m.nav_sign_in()}</span>
+				<a class="tile" href={resolve('/explore')}>
+					<Icon icon={conceptIcons.channels} />
+					<span>{m.nav_explore()}</span>
 				</a>
-			{/if}
-		</div>
-
-		{#if userChannel}
-			<nav class="nav-vertical">
-				<BroadcastToggle channel={userChannel} />
-			</nav>
-		{/if}
-
-		<!-- stopPropagation so the input's clear button doesn't close the popover -->
-		<div class="palette-search" role="search" onclick={(e) => e.stopPropagation()}>
-			<SearchInput
-				bind:value={query}
-				debounce={200}
-				placeholder={m.search_jump_placeholder()}
-				onkeydown={handleSearchKeydown}
-				autofocus
-			/>
-		</div>
-
-		{#if !query.trim() && tags.length}
-			<section class="palette-list">
-				<h4>{m.nav_top_tags()}</h4>
-				<div class="row tags">
-					{#each tags as tag (tag)}
-						<Tag href={resolve('/search/tracks') + '?q=' + encodeURIComponent('#' + tag)}
-							>#{tag}</Tag
-						>
-					{/each}
-				</div>
-			</section>
-		{/if}
-
-		{#if query.trim()}
-			<section class="palette-list">
-				<h4>{m.nav_channels()}</h4>
-				{#if searching && !results.length}
-					<p class="palette-hint">{m.search_loading_channels()}</p>
-				{:else if results.length}
-					<div
-						class="channel-listbox"
-						role="listbox"
-						tabindex="0"
-						aria-label={m.nav_channels()}
-						bind:this={resultsListboxEl}
-						{@attach listboxNav({wrap: true, onSelect: (_, el) => el.click()})}
-					>
-						{#each results as channel (channel.id)}
-							{@render channelRow(channel, `${uid}-result-${channel.id}`)}
-						{/each}
-					</div>
+				<a class="tile" href={resolve('/channels/all') + '?display=map'}>
+					<Icon icon={conceptIcons.map} />
+					<span>{m.nav_map()}</span>
+				</a>
+				{#if userChannel}
+					<button type="button" class="tile" onclick={openAddTrack}>
+						<Icon icon="add" />
+						<span>{m.track_add_title()}</span>
+					</button>
+				{:else if isSignedIn}
+					<a class="tile" href={resolve('/create-channel')}>
+						<Icon icon="user" />
+						<span>{m.home_create_channel()}</span>
+					</a>
 				{:else}
-					<p class="palette-hint">{m.search_no_results()} “{query.trim()}”</p>
-				{/if}
-			</section>
-		{:else if ownChannels.length || recentChannels.length || showFeatured}
-			<div
-				class="palette-groups"
-				role="listbox"
-				tabindex="0"
-				aria-label={m.nav_channels()}
-				bind:this={noQueryListboxEl}
-				{@attach listboxNav({wrap: true, onSelect: (_, el) => el.click()})}
-			>
-				{#if ownChannels.length}
-					<section class="palette-list">
-						<h4>{m.nav_your_channels()}</h4>
-						{#each ownChannels as channel (channel.id)}
-							{@render channelRow(channel, `${uid}-own-${channel.id}`)}
-						{/each}
-					</section>
-				{/if}
-				{#if recentChannels.length}
-					<section class="palette-list">
-						<h4>{m.nav_following()}</h4>
-						{#each recentChannels as channel (channel.id)}
-							{@render channelRow(channel, `${uid}-recent-${channel.id}`)}
-						{/each}
-					</section>
-				{/if}
-				{#if showFeatured}
-					<section class="palette-list">
-						<h4>{m.channels_filter_option_featured()}</h4>
-						{#each featuredChannels as channel (channel.id)}
-							{@render channelRow(channel, `${uid}-featured-${channel.id}`)}
-						{/each}
-					</section>
+					<a class="tile" href={resolve('/auth')}>
+						<Icon icon="user" />
+						<span>{m.nav_sign_in()}</span>
+					</a>
 				{/if}
 			</div>
-		{/if}
+
+			{#if userChannel}
+				<nav class="nav-vertical">
+					<BroadcastToggle channel={userChannel} />
+				</nav>
+			{/if}
+
+			<!-- stopPropagation so the input's clear button doesn't close the popover -->
+			<div class="palette-search" role="search" onclick={(e) => e.stopPropagation()}>
+				<SearchInput
+					bind:value={query}
+					debounce={200}
+					placeholder={m.search_jump_placeholder()}
+					onkeydown={handleSearchKeydown}
+					autofocus
+				/>
+			</div>
+
+			{#if !query.trim() && tags.length}
+				<section class="palette-list">
+					<h4>{m.nav_top_tags()}</h4>
+					<div class="row tags">
+						{#each tags as tag (tag)}
+							<Tag href={resolve('/search/tracks') + '?q=' + encodeURIComponent('#' + tag)}
+								>#{tag}</Tag
+							>
+						{/each}
+					</div>
+				</section>
+			{/if}
+
+			{#if query.trim()}
+				<section class="palette-list">
+					<h4>{m.nav_channels()}</h4>
+					{#if searching && !results.length}
+						<p class="palette-hint">{m.search_loading_channels()}</p>
+					{:else if results.length}
+						<div
+							class="channel-listbox"
+							role="listbox"
+							tabindex="0"
+							aria-label={m.nav_channels()}
+							bind:this={resultsListboxEl}
+							{@attach listboxNav({wrap: true, onSelect: (_, el) => el.click()})}
+						>
+							{#each results as channel (channel.id)}
+								{@render channelRow(channel, `${uid}-result-${channel.id}`)}
+							{/each}
+						</div>
+					{:else}
+						<p class="palette-hint">{m.search_no_results()} “{query.trim()}”</p>
+					{/if}
+				</section>
+			{:else if ownChannels.length || recentChannels.length || showFeatured}
+				<div
+					class="palette-groups"
+					role="listbox"
+					tabindex="0"
+					aria-label={m.nav_channels()}
+					bind:this={noQueryListboxEl}
+					{@attach listboxNav({wrap: true, onSelect: (_, el) => el.click()})}
+				>
+					{#if ownChannels.length}
+						<section class="palette-list">
+							<h4>{m.nav_your_channels()}</h4>
+							{#each ownChannels as channel (channel.id)}
+								{@render channelRow(channel, `${uid}-own-${channel.id}`)}
+							{/each}
+						</section>
+					{/if}
+					{#if recentChannels.length}
+						<section class="palette-list">
+							<h4>{m.nav_following()}</h4>
+							{#each recentChannels as channel (channel.id)}
+								{@render channelRow(channel, `${uid}-recent-${channel.id}`)}
+							{/each}
+						</section>
+					{/if}
+					{#if showFeatured}
+						<section class="palette-list">
+							<h4>{m.channels_filter_option_featured()}</h4>
+							{#each featuredChannels as channel (channel.id)}
+								{@render channelRow(channel, `${uid}-featured-${channel.id}`)}
+							{/each}
+						</section>
+					{/if}
+				</div>
+			{/if}
 		</div>
 
 		<footer class="palette-footer">

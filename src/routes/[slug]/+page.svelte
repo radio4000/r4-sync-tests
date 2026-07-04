@@ -143,9 +143,7 @@
 	let previewCommonFollowing = $derived(commonFollowing.slice(0, 4))
 
 	// "Follows you" — the viewed channel appears in your own channel followers.
-	let followsYou = $derived(
-		Boolean(channel?.id && ownFollowers.ids.includes(channel.id))
-	)
+	let followsYou = $derived(Boolean(channel?.id && ownFollowers.ids.includes(channel.id)))
 
 	// Match score — computed from user's own tracks vs this channel's tracks
 	let userChannelSlug = $derived(appState.channel?.slug ?? '')

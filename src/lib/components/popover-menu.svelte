@@ -51,7 +51,8 @@
 		// pinned near the bottom of the viewport, like the mobile header).
 		const spaceBelow = window.innerHeight - rect.bottom
 		const spaceAbove = rect.top
-		const opensUp = valign === 'top' || (spaceBelow < popoverRect.height + 8 && spaceAbove > spaceBelow)
+		const opensUp =
+			valign === 'top' || (spaceBelow < popoverRect.height + 8 && spaceAbove > spaceBelow)
 		const top = opensUp
 			? Math.max(8, rect.top - popoverRect.height - 4)
 			: Math.min(rect.bottom + 4, window.innerHeight - popoverRect.height - 8)

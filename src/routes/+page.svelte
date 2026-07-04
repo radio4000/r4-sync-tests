@@ -405,7 +405,9 @@
 				{#if showBroadcastCountWidget}
 					<section class="section top-row-live">
 						<h2 class="section-title">
-							<a class="btn chip" href={resolve('/channels/broadcasting')}>{m.home_broadcasting()}</a>
+							<a class="btn chip" href={resolve('/channels/broadcasting')}
+								>{m.home_broadcasting()}</a
+							>
 						</h2>
 						<ol class="list">
 							{#each activeBroadcasts as broadcast (broadcast.channel_id)}

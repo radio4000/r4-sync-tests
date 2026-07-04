@@ -142,7 +142,10 @@
 	<ChannelsViewControls bind:display bind:order bind:direction />
 {/snippet}
 
-<Seo title={`${m.channel_section_featured_channels()} - ${channel?.name || m.channel_page_fallback()}`} plain />
+<Seo
+	title={`${m.channel_section_featured_channels()} - ${channel?.name || m.channel_page_fallback()}`}
+	plain
+/>
 
 <article class="channels-page fill-height">
 	<Subpage

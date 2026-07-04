@@ -34,9 +34,9 @@ Always import `useLiveQuery` from `$lib/useLiveQuery.svelte`, never from `@tanst
 
 Treat `collection.state`, `collection.get(id)`, and `collection.toArray` as one-off reads. Fine for event handlers and debug output. Wrong source for reactive UI.
 
-`collection.state` is a plain Map. Reading `.state`, `.state.size`, or `.state.get(id)` inside a `$derived` registers **no** Svelte dependency — the derived re-runs only when some *other* reactive value it reads changes. A `void collection.state.size` "touch" does nothing; it reads a plain number, not a signal.
+`collection.state` is a plain Map. Reading `.state`, `.state.size`, or `.state.get(id)` inside a `$derived` registers **no** Svelte dependency — the derived re-runs only when some _other_ reactive value it reads changes. A `void collection.state.size` "touch" does nothing; it reads a plain number, not a signal.
 
-The trap: a snapshot read wrapped in a `$derived` that *also* reads `appState.decks` (or any churning signal) *appears* reactive, because deck churn re-runs it and it re-reads a fresh snapshot. It goes stale exactly when a row loads in (or a shown row is edited) without a concurrent churn.
+The trap: a snapshot read wrapped in a `$derived` that _also_ reads `appState.decks` (or any churning signal) _appears_ reactive, because deck churn re-runs it and it re-reads a fresh snapshot. It goes stale exactly when a row loads in (or a shown row is edited) without a concurrent churn.
 
 Use `useLiveQuery`, then derive from `query.data`:
 

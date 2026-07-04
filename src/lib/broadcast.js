@@ -331,8 +331,8 @@ export async function startChannelBroadcast(channel, {deckId = appState.active_d
 	if (!channel?.id) return {ok: false, reason: 'no-channel'}
 
 	// Prefer whatever is already playing; otherwise fall back to the target deck.
-	const playingDeck = Object.values(appState.decks).find(
-		(d) => Boolean(d?.is_playing && d?.playlist_track)
+	const playingDeck = Object.values(appState.decks).find((d) =>
+		Boolean(d?.is_playing && d?.playlist_track)
 	)
 	let sourceDeckId = playingDeck?.id ?? deckId
 	let trackId = playingDeck?.playlist_track ?? appState.decks[deckId]?.playlist_track

@@ -47,7 +47,6 @@
 		if (next !== 'in-common') return
 		goto(resolve('/[slug]/followers/in-common', {slug: page.params.slug ?? ''}))
 	}
-
 </script>
 
 <ChannelNavControlsPortal controls={navControls} />

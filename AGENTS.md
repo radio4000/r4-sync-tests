@@ -26,7 +26,7 @@ For any task or question:
 - [tone](docs/tone.md) - voice and tone for all copy (UI, docs, changelog)
 - [code-style](docs/code-style.md) - code conventions, HTML/CSS, Svelte, global styles
 
-## Tips and debugging 
+## Tips and debugging
 
 Name CSS classes by primitive/identity (`tabs`, `btn`, `chip`, `link`, etc.), not by location (`explore-section-menu`) — reusable vocabulary styled once in `src/styles/`.
 `window.r5` exposes `sdk`, `appState`, `queryClient`, `tracksCollection`, `channelsCollection` for console testing.
@@ -38,4 +38,3 @@ Verify with `bun run test` (one known failing test is expected), `bun run types`
 Be concise. Short answers, no walls of text. No essays — a few sentences, then the decision or question. Start by restating the problem in 1-2 sentences so it's clear what you think we're solving. When asking the human something, make it a single clear question they can answer in one line.
 
 GL HF
-
