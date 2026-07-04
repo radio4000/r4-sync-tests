@@ -367,6 +367,7 @@
 	.description {
 		color: light-dark(var(--gray-11), var(--gray-10));
 		overflow-wrap: break-word;
+		font-size: var(--font-3);
 	}
 
 	.actions :global(.channel-badge) {
