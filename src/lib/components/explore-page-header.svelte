@@ -1,8 +1,39 @@
 <script>
+	import {page} from '$app/state'
+	import {resolve} from '$app/paths'
+	import * as m from '$lib/paraglide/messages'
 	import PageHeader from './page-header.svelte'
-	import ExploreSectionMenu from './explore-section-menu.svelte'
+	import SectionMenu from './section-menu.svelte'
 
 	const {children, filterChips = undefined} = $props()
+
+	const isChannels = $derived(
+		page.route.id?.startsWith('/channels') || page.route.id?.startsWith('/explore/channels')
+	)
+	const isTracks = $derived(
+		page.route.id?.startsWith('/tracks') || page.route.id?.startsWith('/explore/tracks')
+	)
+	const isTags = $derived(
+		page.route.id?.startsWith('/tags') || page.route.id?.startsWith('/explore/tags')
+	)
+	const activeLabel = $derived(
+		isChannels
+			? m.explore_tab_channels()
+			: isTracks
+				? m.explore_tab_tracks()
+				: isTags
+					? m.explore_tab_tags()
+					: m.nav_explore()
+	)
+	const exploreItems = $derived([
+		{
+			href: resolve('/explore/channels/featured'),
+			label: m.explore_tab_channels(),
+			active: isChannels
+		},
+		{href: resolve('/explore/tracks/recent'), label: m.explore_tab_tracks(), active: isTracks},
+		{href: resolve('/explore/tags/featured'), label: m.explore_tab_tags(), active: isTags}
+	])
 </script>
 
 <PageHeader wrap>
@@ -10,7 +41,7 @@
 		{@render children?.()}
 	</nav>
 	<nav class="explore-nav-row">
-		<ExploreSectionMenu />
+		<SectionMenu items={exploreItems} label={activeLabel} />
 		{#if filterChips}
 			<nav class="explore-filter-chips">
 				{@render filterChips()}

@@ -1,7 +1,6 @@
-import {createCollection} from '@tanstack/svelte-db'
-import {localStorageCollectionOptions} from '@tanstack/db'
 import {LOCAL_STORAGE_KEYS} from '$lib/storage-keys'
 import type {TrackMetadataFields} from '$lib/types'
+import {createLocalCollection} from './utils'
 
 // Track metadata collection - local-only cache for YouTube/MusicBrainz/Discogs enrichment
 // No server sync needed, persists to localStorage, syncs across tabs
@@ -10,17 +9,17 @@ export interface TrackMeta extends TrackMetadataFields {
 	provider?: string | null
 }
 
+/** Composite key for track-meta rows: provider is often unknown, so it defaults in. */
 export function trackMetaKey(provider: string | null | undefined, mediaId: string): string {
 	return `${provider ?? 'unknown'}:${mediaId}`
 }
 
-export const trackMetaCollection = createCollection<TrackMeta, string>(
-	localStorageCollectionOptions({
-		storageKey: LOCAL_STORAGE_KEYS.trackMeta,
-		getKey: (item) => trackMetaKey(item.provider, item.media_id)
-	})
-)
+export const trackMetaCollection = createLocalCollection<TrackMeta, string>({
+	storageKey: LOCAL_STORAGE_KEYS.trackMeta,
+	getKey: (item) => trackMetaKey(item.provider, item.media_id)
+})
 
+/** Remove cached metadata for the given tracks (e.g. after a track's url changes). */
 export function deleteTrackMeta(
 	items: Array<{media_id?: string | null; provider?: string | null}>
 ) {

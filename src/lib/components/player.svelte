@@ -490,17 +490,9 @@
 			{/if}
 			{#if headerChannel}
 				<div class="header-channel">
-					<ChannelMicroCard
-						channel={headerChannel}
-						href={appState.embed_mode ? undefined : resolve('/[slug]', {slug: headerChannel.slug})}
-					/>
+					{@render headerChannelCard(headerChannel)}
 					{#if secondaryHeaderChannel}
-						<ChannelMicroCard
-							channel={secondaryHeaderChannel}
-							href={appState.embed_mode
-								? undefined
-								: resolve('/[slug]', {slug: secondaryHeaderChannel.slug})}
-						/>
+						{@render headerChannelCard(secondaryHeaderChannel)}
 					{/if}
 					{#each headerTags as tag (tag.value)}
 						<Tag href={tag.href} value={tag.value}>{tag.value}</Tag>
@@ -686,6 +678,13 @@
 		{/if}
 	</section>
 </div>
+
+{#snippet headerChannelCard(/** @type {Channel} */ ch)}
+	<ChannelMicroCard
+		channel={ch}
+		href={appState.embed_mode ? undefined : resolve('/[slug]', {slug: ch.slug})}
+	/>
+{/snippet}
 
 {#snippet btnPrev()}
 	<button

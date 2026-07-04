@@ -48,20 +48,13 @@
 				{userChannel.name}
 				<small>@{userChannel.slug}</small>
 			</a>
-			<a href={resolve('/settings/account')}>
-				<Icon icon="user" />
-				{m.settings_account()}
-				<small>{appState.user?.email}</small>
-			</a>
-			<button onclick={() => sdk.auth.signOut()}>
-				<Icon icon="eject" />
-				{m.auth_log_out()}
-			</button>
 		{:else if isSignedIn}
 			<a href={resolve('/create-channel')}>
 				<Icon icon="user" />
 				{m.home_create_channel()}
 			</a>
+		{/if}
+		{#if isSignedIn}
 			<a href={resolve('/settings/account')}>
 				<Icon icon="user" />
 				{m.settings_account()}

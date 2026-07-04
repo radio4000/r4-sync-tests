@@ -1,9 +1,8 @@
-import {createCollection} from '@tanstack/svelte-db'
-import {localStorageCollectionOptions} from '@tanstack/db'
 import {uuid} from '$lib/utils'
 import {LOCAL_STORAGE_KEYS} from '$lib/storage-keys'
 import {serializeView, type View, type ViewURI} from '$lib/views'
 import {logger} from '$lib/logger'
+import {createLocalCollection} from './utils'
 
 const log = logger.ns('views').seal()
 
@@ -16,13 +15,13 @@ export interface SavedView {
 	created_at: string
 }
 
-export const viewsCollection = createCollection<SavedView, string>(
-	localStorageCollectionOptions({
-		storageKey: LOCAL_STORAGE_KEYS.views,
-		getKey: (item) => item.id
-	})
-)
+/** Local-only saved views (search/filter combos), optionally pinned to the nav. */
+export const viewsCollection = createLocalCollection<SavedView, string>({
+	storageKey: LOCAL_STORAGE_KEYS.views,
+	getKey: (item) => item.id
+})
 
+/** Save a new view under `name`, serializing it to a shareable URI. */
 export function createView(name: string, view: View, description?: string): SavedView {
 	const entry: SavedView = {
 		id: uuid(),
@@ -36,6 +35,7 @@ export function createView(name: string, view: View, description?: string): Save
 	return entry
 }
 
+/** Patch a saved view's fields (only keys present in `updates` are changed). */
 export function updateView(
 	id: string,
 	updates: Partial<Pick<SavedView, 'name' | 'description' | 'uri' | 'position'>>

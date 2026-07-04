@@ -70,8 +70,20 @@ export function slugify(str: string): string {
 		.replace(RE_MULTI_DASH, '-')
 }
 
+/** Promise that resolves after `ms` milliseconds. */
 export function delay(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/** Random delay between min and max milliseconds */
+export function delayRandom(min: number, max: number): Promise<void> {
+	return delay(Math.random() * (max - min) + min)
+}
+
+/** Delay with jitter: base ± (base * jitter) */
+export function delayWithJitter(base: number, jitter: number = 0.2): Promise<void> {
+	const variance = base * jitter
+	return delay(base + (Math.random() * 2 - 1) * variance)
 }
 
 export function trimWithEllipsis(text?: string | null, maxLength: number = 267) {
@@ -118,15 +130,16 @@ export const ENTITY_REGEX =
 export const HASH_PREFIX_REGEX = /^#/
 
 /**
- * Parse text for entities (hashtags and mentions)
+ * Parse text for entities (hashtags and mentions), invoking `callback` per match.
+ * Falsy callback results are dropped from the returned array.
  */
-export function parseEntities(
+export function parseEntities<T>(
 	text: string,
-	callback: (match: string, prefix: string, entity: string, offset: number) => unknown
-): unknown[] {
+	callback: (match: string, prefix: string, entity: string, offset: number) => T
+): T[] {
 	if (!text || typeof text !== 'string') return []
 
-	const entities: unknown[] = []
+	const entities: T[] = []
 	text.replace(ENTITY_REGEX, (match, prefix, entity, offset) => {
 		entities.push(callback(match, prefix, entity, offset))
 		return match
@@ -139,93 +152,18 @@ export function parseEntities(
  * Extract hashtags from text
  */
 export function extractHashtags(text: string): string[] {
-	if (!text || typeof text !== 'string') return []
-
-	const hashtags: string[] = []
-	text.replace(ENTITY_REGEX, (match, _prefix, entity) => {
-		if (entity.startsWith('#')) {
-			hashtags.push(entity.toLowerCase())
-		}
-		return match
-	})
-
-	return hashtags
+	return parseEntities(text, (_match, _prefix, entity) =>
+		entity.startsWith('#') ? entity.toLowerCase() : ''
+	)
 }
 
 /**
  * Extract mentions from text
  */
 export function extractMentions(text: string): string[] {
-	if (!text || typeof text !== 'string') return []
-
-	const mentions: string[] = []
-	text.replace(ENTITY_REGEX, (match, _prefix, entity) => {
-		if (entity.startsWith('@')) {
-			mentions.push(entity.toLowerCase())
-		}
-		return match
-	})
-
-	return mentions
-}
-
-/**
- * Generate a unique, deterministic frequency based on the channel name and slug.
- * All frequency values are rounded to one decimal place.
- * Values are generated inside a given range.
- */
-export async function generateFrequency(
-	channelName: string,
-	channelSlug: string,
-	minFreq: number,
-	maxFreq: number
-) {
-	// Combine the channel name and slug
-	const inputString = channelName + channelSlug
-
-	// Generate a hash of the inputString
-	const encoder = new TextEncoder()
-	const data = encoder.encode(inputString)
-	const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-	const hashArray = new Uint8Array(hashBuffer)
-
-	// Convert the hash array to a big integer
-	const hashBigInt = hashArray.reduce((acc, byte) => acc * BigInt(256) + BigInt(byte), BigInt(0))
-
-	// Scale the hash integer to the given frequency range
-	const rangeSize = (maxFreq - minFreq) * 10 // Multiply by 10 to account for the decimal place
-	const uniqueFreq = minFreq + Number(hashBigInt % BigInt(rangeSize)) / 10
-
-	// Round to one decimal place
-	const uniqueFreqRounded = Math.round(uniqueFreq * 10) / 10
-
-	return uniqueFreqRounded
-}
-
-export function timeAgo(dateString: string): string {
-	const now = Date.now()
-	const startTime = new Date(dateString).getTime()
-	const durationMs = Math.max(0, now - startTime)
-
-	if (durationMs < 60000) return 'just started'
-	if (durationMs < 3600000) return `${Math.floor(durationMs / 60000)}m ago`
-
-	const hours = Math.floor(durationMs / 3600000)
-	const minutes = Math.floor((durationMs % 3600000) / 60000)
-	return `${hours}h ${minutes}m ago`
-}
-
-/** Random delay between min and max milliseconds */
-export function delayRandom(min: number, max: number): Promise<void> {
-	const ms = Math.random() * (max - min) + min
-	return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-/** Delay with jitter: base ± (base * jitter) */
-export function delayWithJitter(base: number, jitter: number = 0.2): Promise<void> {
-	const variance = base * jitter
-	const ms = base + (Math.random() * 2 - 1) * variance
-	return new Promise((resolve) => setTimeout(resolve, ms))
+	return parseEntities(text, (_match, _prefix, entity) =>
+		entity.startsWith('@') ? entity.toLowerCase() : ''
+	)
 }
 
 /**
@@ -245,20 +183,6 @@ export function trackImageUrl(
 	size: 'default' | 'mqdefault' | 'hqdefault' | 'sddefault' | 'maxresdefault' = 'mqdefault'
 ) {
 	return `https://i.ytimg.com/vi/${mediaId}/${size}.jpg`
-}
-
-/** Pick N random elements from array (no duplicates) */
-export function pickRandomN<T>(n: number) {
-	return (arr: T[]): T[] => {
-		if (n >= arr.length) return [...arr]
-		const copy = [...arr]
-		const result: T[] = []
-		for (let i = 0; i < n && copy.length > 0; i++) {
-			const idx = Math.floor(Math.random() * copy.length)
-			result.push(copy.splice(idx, 1)[0])
-		}
-		return result
-	}
 }
 
 /**
@@ -303,14 +227,6 @@ export function getTopChannelSlugs(
 		)
 		.slice(0, limit)
 		.map((c) => c.slug as string)
-}
-
-/** Top tag values from a collection of tracks. */
-export function getTopTagValues(tracks: Array<{tags?: string[] | null}>, limit: number): string[] {
-	if (!tracks.length) return []
-	return getChannelTags(tracks)
-		.slice(0, limit)
-		.map((t) => t.value)
 }
 
 /**
@@ -371,104 +287,6 @@ export function dedupeById<T extends {id: string | null}>(rows: T[]): T[] {
 		if (row?.id && !seen.has(row.id)) seen.set(row.id, row)
 	}
 	return [...seen.values()]
-}
-
-export interface TagGraphNode {
-	id: string
-	label: string
-	count: number
-}
-
-export interface TagGraphEdge {
-	id: string
-	source: string
-	target: string
-	weight: number
-}
-
-export interface TagGraph {
-	nodes: TagGraphNode[]
-	edges: TagGraphEdge[]
-}
-
-export interface TagGraphOptions {
-	minEdgeWeight?: number
-	maxTags?: number
-	maxEdgesPerNode?: number
-}
-
-/**
- * Build a tag co-occurrence graph from tracks.
- * Nodes are tags (raw strings, no `#` prefix). Edges connect tags that appear on the same track.
- * Edge weight = number of tracks where both tags appear together.
- */
-export function buildTagGraph(
-	tracks: Array<{tags?: string[] | null}>,
-	options?: TagGraphOptions
-): TagGraph {
-	const {minEdgeWeight = 2, maxTags = 500, maxEdgesPerNode = 20} = options ?? {}
-
-	// Count tags
-	const tagCounts: Record<string, number> = {}
-	for (const track of tracks) {
-		for (const tag of track.tags ?? []) {
-			const key = tag.toLowerCase()
-			tagCounts[key] = (tagCounts[key] || 0) + 1
-		}
-	}
-
-	// Top maxTags by count
-	const sorted = Object.entries(tagCounts)
-		.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-		.slice(0, maxTags)
-	const topTagSet = new Set(sorted.map(([t]) => t))
-
-	const nodes: TagGraphNode[] = sorted.map(([tag, count]) => ({id: tag, label: tag, count}))
-
-	// Co-occurrence edge weights
-	const edgeWeights: Record<string, number> = {}
-	for (const track of tracks) {
-		const tags = [
-			...new Set((track.tags ?? []).map((t) => t.toLowerCase()).filter((t) => topTagSet.has(t)))
-		]
-		for (let i = 0; i < tags.length; i++) {
-			for (let j = i + 1; j < tags.length; j++) {
-				const a = tags[i] < tags[j] ? tags[i] : tags[j]
-				const b = tags[i] < tags[j] ? tags[j] : tags[i]
-				const key = `${a}\0${b}`
-				edgeWeights[key] = (edgeWeights[key] || 0) + 1
-			}
-		}
-	}
-
-	// Filter and limit edges
-	const edgesPerNode: Record<string, number> = {}
-	const edges: TagGraphEdge[] = []
-
-	const sortedEdges = Object.entries(edgeWeights)
-		.filter(([, w]) => w >= minEdgeWeight)
-		.sort((a, b) => b[1] - a[1])
-
-	for (const [key, weight] of sortedEdges) {
-		const sep = key.indexOf('\0')
-		const source = key.slice(0, sep)
-		const target = key.slice(sep + 1)
-		if ((edgesPerNode[source] ?? 0) >= maxEdgesPerNode) continue
-		if ((edgesPerNode[target] ?? 0) >= maxEdgesPerNode) continue
-		edgesPerNode[source] = (edgesPerNode[source] ?? 0) + 1
-		edgesPerNode[target] = (edgesPerNode[target] ?? 0) + 1
-		edges.push({id: key, source, target, weight})
-	}
-
-	// Remove isolated nodes — tags with no edges after weight/count filtering
-	const connectedTags = new Set<string>()
-	for (const edge of edges) {
-		connectedTags.add(edge.source)
-		connectedTags.add(edge.target)
-	}
-	const filteredNodes = nodes.filter((n) => connectedTags.has(n.id))
-
-	return {nodes: filteredNodes, edges}
 }
 
 /**

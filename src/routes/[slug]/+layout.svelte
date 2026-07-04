@@ -28,7 +28,7 @@
 	import DeckChannelHeader from '$lib/components/deck-channel-header.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
-	import ChannelSectionMenu from '$lib/components/channel-section-menu.svelte'
+	import SectionMenu, {channelSectionMenuItems} from '$lib/components/section-menu.svelte'
 	import * as m from '$lib/paraglide/messages'
 	import {watchPresence, unwatchPresence, channelPresence} from '$lib/presence.svelte'
 	import {pickRouteChannel, updateStableChannelId} from '$lib/channel-route'
@@ -62,9 +62,7 @@
 	)
 	let channelId = $state('')
 	let channelIdSourceSlug = $state('')
-	let channelFromSlug = $derived(
-		/** @type {import('$lib/types').Channel | undefined} */ /** @type {unknown} */ channelBySlugQuery.data
-	)
+	let channelFromSlug = $derived(channelBySlugQuery.data)
 	$effect(() => {
 		const next = updateStableChannelId(slug, channelId, channelIdSourceSlug, channelFromSlug)
 		if (next.channelId !== channelId) channelId = next.channelId
@@ -83,9 +81,7 @@
 					.findOne()
 			: null
 	)
-	let channelFromId = $derived(
-		/** @type {import('$lib/types').Channel | undefined} */ /** @type {unknown} */ channelByIdQuery.data
-	)
+	let channelFromId = $derived(channelByIdQuery.data)
 	let channel = $derived(pickRouteChannel(slug, channelFromSlug, channelFromId))
 	let channelIsLoading = $derived(
 		!channel && (channelBySlugQuery.isLoading || (Boolean(channelId) && channelByIdQuery.isLoading))
@@ -449,7 +445,15 @@
 		{#if !isTrackDetail}
 			<menu class="channel-nav">
 				{#if page.route.id !== '/[slug]/image'}
-					<ChannelSectionMenu {slug} trackCount={channelTrackCount} />
+					<SectionMenu
+						items={channelSectionMenuItems({
+							slug,
+							trackCount: channelTrackCount,
+							routeId: page.route.id
+						})}
+						label="Channel navigation"
+						scroll
+					/>
 				{/if}
 				{#if channelNavControls}
 					<menu class="channel-nav-controls">

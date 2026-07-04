@@ -14,6 +14,7 @@
 		toggleShuffle
 	} from '$lib/api'
 	import {isMobileViewport} from '$lib/utils'
+	import {isGroupControlDeck, sortedListeningDeckIds} from '$lib/deck'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {parseUrl} from 'media-now/parse-url'
@@ -36,16 +37,8 @@
 	let {deckId, showEdgeControls = true} = $props()
 
 	let deck = $derived(appState.decks[deckId])
-	let isActiveDeck = $derived(appState.active_deck_id === deckId)
-	let listeningDeckIds = $derived(
-		Object.keys(appState.decks)
-			.map(Number)
-			.sort((a, b) => a - b)
-			.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
-	)
-	let isListeningGroupControlDeck = $derived(
-		!deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
-	)
+	let listeningDeckIds = $derived(sortedListeningDeckIds(appState.decks))
+	let isListeningGroupControlDeck = $derived(isGroupControlDeck(deck, deckId, listeningDeckIds))
 
 	// deckId never changes for this component instance — it's rendered inside
 	// an {#each ... (deckId)} keyed block, so a changed deckId remounts it.
@@ -91,16 +84,12 @@
 	let canPrevFromQueue = $derived(canPrev(activeQueue, track?.id))
 	let canNextFromQueue = $derived(canNext(activeQueue, track?.id))
 
-	let mediaDuration = $derived(deck?.media_duration ?? NaN)
-	let mediaCurrentTime = $derived(deck?.media_current_time ?? 0)
-
 	let deckMenu = $state(/** @type {{close: () => void} | undefined} */ (undefined))
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
 <div
 	class="deck-compact-bar"
-	class:active-deck={isActiveDeck}
 	onclick={(e) => {
 		if (e.target instanceof Element && e.target.closest('a, button, input, menu')) return
 		appState.active_deck_id = deckId
@@ -144,8 +133,8 @@
 		{/if}
 		{#if appState.show_track_range_control !== false && displayTrack}
 			<PlayerProgress
-				currentTime={mediaCurrentTime}
-				{mediaDuration}
+				currentTime={deck?.media_current_time ?? 0}
+				mediaDuration={deck?.media_duration ?? NaN}
 				trackDuration={displayTrack?.duration}
 				isPlaying={Boolean(deck?.is_playing)}
 				disabled={Boolean(deck?.listening_to_channel_id)}

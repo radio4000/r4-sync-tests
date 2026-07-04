@@ -188,23 +188,6 @@ button.chip,
 	}
 }
 
-.btn.icon-label-below,
-button.icon-label-below {
-	flex-direction: column;
-	gap: 0.12rem;
-	padding: 0.26rem var(--space-2);
-	min-width: 3.1rem;
-	min-height: 3.2rem;
-	height: auto;
-}
-
-.btn.icon-label-right,
-button.icon-label-right {
-	flex-direction: row;
-	gap: var(--space-1);
-	padding: var(--space-1) var(--space-2);
-}
-
 .btn-label {
 	font-size: var(--font-1);
 	line-height: 1;
@@ -243,7 +226,7 @@ button.icon-label-right {
 }
 
 .mode-action.drifted {
-	color: var(--orange-9);
+	color: var(--color-warning);
 }
 
 /* Select: use normal text color and no border (styled via forms.css) */

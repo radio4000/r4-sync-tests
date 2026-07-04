@@ -12,15 +12,7 @@ import {logger} from '$lib/logger'
 import {capture} from '$lib/analytics'
 import {sdk} from '@radio4000/sdk'
 import {shuffleArray, isDbId, isMobileViewport, uuid} from '$lib/utils'
-import {
-	getActiveQueue,
-	queueInsertManyAfter,
-	queueNext,
-	queuePrev,
-	queueRemove,
-	queueShuffleKeepCurrent,
-	queueRotate
-} from '$lib/player/queue'
+import {getActiveQueue, queueInsertManyAfter, queueNext, queuePrev} from '$lib/player/queue'
 import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 
 import type {Channel, Deck, Track, PlayEndReason, PlayStartReason} from '$lib/types'
@@ -58,6 +50,25 @@ function sameStringArray(a: string[], b: string[]): boolean {
 function maybeBroadcastNotify() {
 	const broadcastingChannelId = getBroadcastingChannelId()
 	if (broadcastingChannelId) notifyBroadcastState(broadcastingChannelId)
+}
+
+/** Clear a deck's auto-radio mode flags (not auto_radio_rotation_start — callers that need a
+ *  full reset, like a normal-play mode switch, clear that separately). */
+function clearAutoRadio(deck: Deck) {
+	deck.auto_radio = undefined
+	deck.auto_radio_drifted = undefined
+}
+
+/** Apply a change to a deck, or to every deck in its listening group if it's listening to a
+ *  broadcast — the group of decks tuned to the same channel act as one unit for layout toggles. */
+function applyToListeningGroup(deck: Deck, fn: (d: Deck) => void) {
+	if (deck.listening_to_channel_id) {
+		for (const d of Object.values(appState.decks)) {
+			if (d.listening_to_channel_id) fn(d)
+		}
+	} else {
+		fn(deck)
+	}
 }
 
 /** Sort by a date field. Returns a comparator function. */
@@ -119,6 +130,10 @@ async function waitForMediaPlayer(deckId: number, timeoutMs = 3000): Promise<Med
 	return null
 }
 
+// --- Auth ---
+
+/** Verify auth state and refresh appState.channels/channel from the logged-in user's channels.
+ *  Call on boot and after sign-in/out. */
 export async function checkUser() {
 	try {
 		log.debug('checkUser')
@@ -155,6 +170,12 @@ export async function checkUser() {
 	}
 }
 
+// --- Track/channel playback ---
+
+/** Core playback entry point: loads a track into a deck and plays it, building the deck's
+ *  playlist from same-channel tracks when needed. Every play action (click, next/prev,
+ *  auto-radio, broadcast sync) routes through here with a startReason/endReason pair used
+ *  for history and analytics. */
 export async function playTrack(
 	deckId: number,
 	id: string,
@@ -175,8 +196,7 @@ export async function playTrack(
 	// Switching from live/auto to a normal play action should reuse this deck and clear mode state.
 	if (isNormalPlayStart(startReason)) {
 		if (deck.listening_to_channel_id) leaveBroadcast(deckId)
-		deck.auto_radio = undefined
-		deck.auto_radio_drifted = undefined
+		clearAutoRadio(deck)
 		deck.auto_radio_rotation_start = undefined
 	}
 
@@ -304,6 +324,7 @@ export async function playTrack(
 	}
 }
 
+/** Play a channel's tracks latest-first (or from trackId if given), replacing the deck's queue. */
 export async function playChannel(
 	deckId: number,
 	{id, slug}: {id: string; slug: string},
@@ -312,10 +333,7 @@ export async function playChannel(
 	log.log('play_channel', {deckId, id, slug})
 	leaveBroadcast(deckId)
 	const d = getDeck(deckId)
-	if (d) {
-		d.auto_radio = undefined
-		d.auto_radio_drifted = undefined
-	}
+	if (d) clearAutoRadio(d)
 	await ensureTracksLoaded(slug)
 	const tracks = [...tracksCollection.state.values()]
 		.filter((t) => t?.slug === slug)
@@ -330,6 +348,7 @@ export async function playChannel(
 	await playTrack(deckId, trackId ?? ids[0], null, 'play_channel')
 }
 
+/** Play a track in a fresh deck rather than the active one (e.g. "open in new deck"). */
 export async function playTrackInNewDeck(trackId: string, slug?: string) {
 	const deck = addDeck()
 	deck.compact = true
@@ -340,21 +359,12 @@ export async function playTrackInNewDeck(trackId: string, slug?: string) {
 	await playTrack(deck.id, trackId, null, 'user_click_track')
 }
 
-export async function playChannelInNewDeck(channel: {id: string; slug: string}, trackId?: string) {
-	const deck = addDeck()
-	appState.active_deck_id = deck.id
-	await playChannel(deck.id, channel, trackId)
-}
-
 /** Play channel starting from random track with shuffle enabled */
 export async function shufflePlayChannel(deckId: number, {id, slug}: {id: string; slug: string}) {
 	log.log('shuffle_play_channel', {deckId, id, slug})
 	leaveBroadcast(deckId)
 	const d = getDeck(deckId)
-	if (d) {
-		d.auto_radio = undefined
-		d.auto_radio_drifted = undefined
-	}
+	if (d) clearAutoRadio(d)
 	await ensureTracksLoaded(slug)
 	const tracks = [...tracksCollection.state.values()].filter((t) => t?.slug === slug)
 	if (!tracks.length) {
@@ -371,6 +381,8 @@ export async function shufflePlayChannel(deckId: number, {id, slug}: {id: string
 	capture('player:channel_play', {channel_slug: slug, shuffle: true})
 	await playTrack(deckId, ids[randomIndex], null, 'play_channel')
 }
+
+// --- Queue management ---
 
 /** Low-level queue setter. Clears deck.view when queue identity changes — callers that need
  *  view-backed queues should use loadDeckView() instead. */
@@ -412,6 +424,7 @@ export function loadDeckView(
 	deck.view = normalizeView(view)
 }
 
+/** Append track IDs to the end of a deck's queue. */
 export function addToPlaylist(deckId: number, trackIds: string[]) {
 	const deck = getDeck(deckId)
 	if (!deck) {
@@ -426,8 +439,7 @@ export function addToPlaylist(deckId: number, trackIds: string[]) {
 		deck.playlist_tracks_shuffled = shuffleArray(deck.playlist_tracks)
 	}
 	deck.view = undefined
-	deck.auto_radio = undefined
-	deck.auto_radio_drifted = undefined
+	clearAutoRadio(deck)
 	log.log('addToPlaylist', {
 		deckId,
 		added: trackIds.length,
@@ -445,8 +457,7 @@ export function playNext(deckId: number, trackIds: string | string[]) {
 	if (!currentId) {
 		deck.playlist_tracks = ids
 		deck.view = undefined
-		deck.auto_radio = undefined
-		deck.auto_radio_drifted = undefined
+		clearAutoRadio(deck)
 		return
 	}
 	deck.playlist_tracks = queueInsertManyAfter(deck.playlist_tracks, currentId, ids)
@@ -458,24 +469,11 @@ export function playNext(deckId: number, trackIds: string | string[]) {
 		)
 	}
 	deck.view = undefined
-	deck.auto_radio = undefined
-	deck.auto_radio_drifted = undefined
+	clearAutoRadio(deck)
 	log.log('play_next', {deckId, ids, after: currentId})
 }
 
-/** Remove track from queue */
-export function removeFromQueue(deckId: number, trackId: string) {
-	const deck = getDeck(deckId)
-	if (!deck) return
-	deck.playlist_tracks = queueRemove(deck.playlist_tracks, trackId)
-	if (deck.shuffle) {
-		deck.playlist_tracks_shuffled = queueRemove(deck.playlist_tracks_shuffled, trackId)
-	}
-	deck.view = undefined
-	deck.auto_radio = undefined
-	deck.auto_radio_drifted = undefined
-	log.log('remove_from_queue', {deckId, trackId})
-}
+// --- UI toggles: theme, panels, deck layout ---
 
 /** @param value 'light', 'dark', or undefined for system */
 export function setTheme(value: string | undefined) {
@@ -496,17 +494,12 @@ export function toggleQueuePanel(deckId: number) {
 	maybeBroadcastNotify()
 }
 
+/** Toggle video player visibility. Listening decks (tuned to the same broadcast) toggle together. */
 export function toggleVideo(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.hide_video_player
-	if (deck.listening_to_channel_id) {
-		for (const d of Object.values(appState.decks)) {
-			if (d.listening_to_channel_id) d.hide_video_player = newValue
-		}
-	} else {
-		deck.hide_video_player = newValue
-	}
+	applyToListeningGroup(deck, (d) => (d.hide_video_player = newValue))
 	maybeBroadcastNotify()
 }
 
@@ -537,17 +530,10 @@ export function toggleDeckCompact(deckId: number) {
 		expandDeck(deckId)
 		return
 	}
-	if (deck.listening_to_channel_id) {
-		for (const d of Object.values(appState.decks)) {
-			if (d.listening_to_channel_id) {
-				d.compact = newValue
-				if (newValue && d.expanded) d.expanded = false
-			}
-		}
-	} else {
-		deck.compact = newValue
-		if (deck.compact && deck.expanded) deck.expanded = false
-	}
+	applyToListeningGroup(deck, (d) => {
+		d.compact = newValue
+		if (newValue && d.expanded) d.expanded = false
+	})
 }
 
 export function togglePlayerExpanded(deckId: number) {
@@ -560,21 +546,14 @@ export function togglePlayerExpanded(deckId: number) {
 		else toggleDeckCompact(deckId)
 		return
 	}
-	if (deck.listening_to_channel_id) {
-		for (const d of Object.values(appState.decks)) {
-			if (d.listening_to_channel_id) {
-				d.expanded = newValue
-				if (newValue && d.compact) d.compact = false
-				if (newValue && d.hide_video_player) d.hide_video_player = false
-			}
-		}
-	} else {
-		deck.expanded = newValue
-		if (deck.expanded && deck.compact) deck.compact = false
-		if (deck.expanded && deck.hide_video_player) deck.hide_video_player = false
-	}
+	applyToListeningGroup(deck, (d) => {
+		d.expanded = newValue
+		if (newValue && d.compact) d.compact = false
+		if (newValue && d.hide_video_player) d.hide_video_player = false
+	})
 }
 
+/** Focus the search input if a deck is visible to make room for it, else navigate to /search. */
 export function openSearch(event?: KeyboardEvent) {
 	event?.preventDefault()
 	const hasVisibleDeck = Object.values(appState.decks).some((d) => !d.compact)
@@ -613,20 +592,6 @@ export async function togglePlayPause(deckId: number) {
 		player.pause()
 	}
 	maybeBroadcastNotify()
-}
-
-/** Play from this track to end of list */
-export function playFromHere(deckId: number, trackId: string) {
-	const deck = getDeck(deckId)
-	if (!deck) return
-	const idx = deck.playlist_tracks.indexOf(trackId)
-	if (idx === -1) return
-	const fromHere = deck.playlist_tracks.slice(idx)
-	deck.playlist_tracks = fromHere
-	deck.playlist_tracks_shuffled = shuffleArray(fromHere)
-	deck.view = undefined
-	playTrack(deckId, trackId, null, 'user_click_track')
-	log.log('play_from_here', {deckId, trackId, remaining: fromHere.length})
 }
 
 /** Clear the queue but keep current track */
@@ -685,29 +650,7 @@ export function toggleShuffle(deckId: number) {
 	}
 }
 
-/** Shuffle remaining tracks in place */
-export function shuffleRemaining(deckId: number) {
-	const deck = getDeck(deckId)
-	if (!deck) return
-	const current = deck.playlist_track
-	if (!current) return
-	deck.playlist_tracks = queueShuffleKeepCurrent(deck.playlist_tracks, current)
-	deck.playlist_tracks_shuffled = queueShuffleKeepCurrent(deck.playlist_tracks_shuffled, current)
-	log.log('shuffle_remaining', {deckId, current})
-}
-
-/** Rotate queue: move played tracks to end */
-export function rotateQueue(deckId: number) {
-	const deck = getDeck(deckId)
-	if (!deck) return
-	const current = deck.playlist_track
-	if (!current) return
-	deck.playlist_tracks = queueRotate(deck.playlist_tracks, current)
-	if (deck.shuffle) {
-		deck.playlist_tracks_shuffled = queueRotate(deck.playlist_tracks_shuffled, current)
-	}
-	log.log('rotate_queue', {deckId, current})
-}
+// --- Transport controls: play, pause, seek, next, prev ---
 
 export function play(deckId: number, player?: MediaPlayer | null) {
 	const deck = getDeck(deckId)
@@ -832,6 +775,8 @@ export function eject(deckId: number) {
 	deck.is_playing = false
 }
 
+// --- Auto-radio ---
+
 /**
  * Join auto-radio: deterministic "live radio" playback.
  * Computes the weekly shuffle and seeks to the current position so all
@@ -906,15 +851,6 @@ async function seekToAutoRadioOffset(
  * Uses the stored rotation params to recompute the expected track + offset,
  * navigating to the right track if needed, then seeking.
  */
-/** Exit auto-radio mode on a deck, leaving playback running at the current position. */
-export function leaveAutoRadio(deckId: number) {
-	const deck = getDeck(deckId)
-	if (!deck) return
-	deck.auto_radio = undefined
-	deck.auto_radio_drifted = undefined
-	deck.auto_radio_rotation_start = undefined
-}
-
 export async function resyncAutoRadio(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck?.auto_radio || !deck.view || deck.auto_radio_rotation_start == null) return
@@ -966,6 +902,8 @@ export async function resyncAutoRadio(deckId: number) {
 	}
 }
 
+// --- Channel entry points ("tap play") ---
+
 /**
  * Default "tap play" for a channel. Starts live auto-radio when the channel has
  * enough duration data, otherwise falls back to latest-first playback.
@@ -1010,6 +948,8 @@ export async function toggleChannelPlay(channel: {id: string; slug: string}, tra
 	else await playChannelAuto(channel)
 }
 
+/** Start (or resync a drifted) auto-radio for a channel. Reuses an existing auto-radio deck
+ *  for this channel if one exists, else joins fresh on the active deck. */
 export async function toggleChannelAutoRadio(slug: string, tracks?: Track[]) {
 	const autoDecks = findAutoDecksForChannel(appState.decks, slug)
 	const resyncId = pickAutoResyncDeck(appState.decks, appState.active_deck_id, slug, autoDecks)
@@ -1028,6 +968,8 @@ async function loadChannelTracks(slug: string): Promise<Track[]> {
 	await ensureTracksLoaded(slug)
 	return [...tracksCollection.state.values()].filter((t) => t.slug === slug)
 }
+
+// --- Local data ---
 
 /**
  * Clears all local data (localStorage and IndexedDB).

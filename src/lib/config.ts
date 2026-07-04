@@ -74,4 +74,3 @@ export const DEFAULT_MAP_SHOW_GRATICULES = true
 export const posthogKey =
 	env.PUBLIC_POSTHOG_KEY ?? 'phc_hjAzrJR1oqwdWF2chYKVdAkAQAXtTgd576iTuMTfuEO'
 export const posthogHost = env.PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com'
-export const youtubeApiKey = env.PUBLIC_YOUTUBE_KEY ?? 'AIzaSyDCLAKtHqvRA8ucWLnFtLEPq6qC2fWomQk'

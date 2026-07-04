@@ -16,7 +16,6 @@
 <style>
 	figure {
 		position: relative;
-		/* container-type: inline-size; */
 	}
 
 	figure :global(button) {

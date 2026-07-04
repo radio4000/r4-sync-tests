@@ -12,7 +12,6 @@
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {eq} from '@tanstack/db'
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
-	const channelActivity = $derived(getChannelActivity())
 	import {channelAvatarUrl} from '$lib/utils'
 	import {toChannelCardMedia} from '$lib/components/channel-ui-state.js'
 	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
@@ -20,6 +19,7 @@
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import Icon from '$lib/components/icon.svelte'
 
+	const channelActivity = $derived(getChannelActivity())
 	const channelCtx = getChannelCtx()
 	const tracksQuery = getTracksQueryCtx()
 	let channel = $derived(channelCtx.data ?? null)

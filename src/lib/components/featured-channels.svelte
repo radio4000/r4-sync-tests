@@ -13,7 +13,6 @@
 	// Daily-seeded by default (same rotation as /featured); reshuffle picks a
 	// random seed for instant variety. Shared pickFeatured keeps both in sync.
 	let seed = $state(dailySeed())
-	let shuffling = $state(false)
 
 	const channels = $derived(pickFeatured(pool, {count: pickCount, seed}))
 	const first = $derived(channels[0] ?? null)
@@ -29,13 +28,7 @@
 	}
 
 	function reshuffle() {
-		if (!pool.length || shuffling) return
-		shuffling = true
-		try {
-			seed = shuffleSeed()
-		} finally {
-			shuffling = false
-		}
+		if (pool.length) seed = shuffleSeed()
 	}
 </script>
 
@@ -56,12 +49,7 @@
 					</button>
 				{/if}
 				{#if pool.length > pickCount}
-					<button
-						type="button"
-						title={m.home_featured_refresh()}
-						onclick={reshuffle}
-						disabled={shuffling}
-					>
+					<button type="button" title={m.home_featured_refresh()} onclick={reshuffle}>
 						<Icon icon="switch-alt" />
 					</button>
 				{/if}

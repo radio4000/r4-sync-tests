@@ -44,6 +44,8 @@ img {
 	font-size: var(--font-1);
 	color: var(--gray-5);
 	text-align: center;
+	max-width: 100%;
+	display: block;
 }
 
 h1,
@@ -78,11 +80,6 @@ p {
 dl.meta,
 ul {
 	font-size: var(--font-4);
-}
-
-img {
-	max-width: 100%;
-	display: block;
 }
 
 a {

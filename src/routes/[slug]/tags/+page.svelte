@@ -2,9 +2,7 @@
 	import {replaceState} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {getTracksQueryCtx} from '$lib/contexts'
-	import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
-	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {eq} from '@tanstack/db'
+	import {getMatchingTracksQuery} from '../matching-tracks-query.svelte.ts'
 	import {Tween} from 'svelte/motion'
 	import {cubicOut} from 'svelte/easing'
 	import {page} from '$app/state'
@@ -26,7 +24,6 @@
 	} from '$lib/dates.js'
 
 	let slug = $derived(page.params.slug ?? '')
-	let matchingSlug = $derived((page.url.searchParams.get('matching') ?? '').trim().toLowerCase())
 
 	// Get tracks from layout (query stays alive during navigation)
 	const tracksQuery = getTracksQueryCtx()
@@ -35,20 +32,12 @@
 	let channel = $derived(channelCtx.data)
 	let tracks = $derived(tracksQuery.data || [])
 	let allTags = $derived(getChannelTags(tracks))
-	const matchingTracksQuery = useLiveQuery(
-		(q) =>
-			matchingSlug
-				? q
-						.from({tracks: tracksCollection})
-						.where(({tracks}) => eq(tracks.slug, matchingSlug))
-						.orderBy(({tracks}) => tracks.created_at, 'desc')
-				: null,
-		[() => matchingSlug]
-	)
+	const matchingQuery = getMatchingTracksQuery(() => slug)
+	let matchingSlug = $derived(matchingQuery.matchingSlug)
 	let matchingTags = $derived.by(() => {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local dedupe, not reactive state
 		const set = new Set()
-		for (const track of matchingTracksQuery.data ?? []) {
+		for (const track of matchingQuery.tracks) {
 			for (const tag of track.tags ?? []) set.add(tag.toLowerCase())
 		}
 		return set
@@ -239,11 +228,6 @@
 	})
 
 	$effect(() => {
-		if (!matchingSlug || matchingSlug === slug) return
-		void ensureTracksLoaded(matchingSlug)
-	})
-
-	$effect(() => {
 		const parts = []
 		if (matchingSlug) parts.push(`matching=${encodeURIComponent(matchingSlug)}`)
 		if (display !== 'list') parts.push(`display=${encodeURIComponent(display)}`)
@@ -332,7 +316,9 @@
 	{/if}
 {/snippet}
 
-{#if !channel}
+{#if channelCtx.isLoading}
+	<p style="padding: 1rem;">{m.common_loading()}</p>
+{:else if !channel}
 	<p style="padding: 1rem;">{m.channel_not_found()}</p>
 {:else}
 	<Subpage

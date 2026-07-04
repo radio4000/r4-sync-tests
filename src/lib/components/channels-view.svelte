@@ -2,7 +2,6 @@
 	import {goto} from '$app/navigation'
 	import {page} from '$app/state'
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
-	const channelActivity = $derived(getChannelActivity())
 	import {toChannelCardMedia} from '$lib/components/channel-ui-state.js'
 	import {
 		handleCanvasClick as onCanvasClick,
@@ -10,6 +9,8 @@
 	} from '$lib/components/channels-view-shared.js'
 	import ChannelCard from './channel-card.svelte'
 	import ChannelsViewControls from './channels-view-controls.svelte'
+
+	const channelActivity = $derived(getChannelActivity())
 
 	/** @type {{channels?: any[], order?: string, direction?: 'asc' | 'desc', display?: 'grid' | 'list' | 'map' | 'infinite', header?: import('svelte').Snippet, showToolbar?: boolean, syncToUrl?: boolean}} */
 	let {

@@ -3,6 +3,7 @@
 	import {appState, removeDeck} from '$lib/app-state.svelte'
 	import {toggleVideo, toggleQueuePanel, clearUserInitiatedPlay} from '$lib/api'
 	import {getBroadcastingChannelId, notifyBroadcastState, leaveBroadcast} from '$lib/broadcast.js'
+	import {isGroupControlDeck, sortedListeningDeckIds} from '$lib/deck'
 	import Icon from '$lib/components/icon.svelte'
 	import * as m from '$lib/paraglide/messages'
 
@@ -11,15 +12,8 @@
 
 	let deck = $derived(appState.decks[deckId])
 	let isListeningToBroadcast = $derived(Boolean(deck?.listening_to_channel_id))
-	let listeningDeckIds = $derived(
-		Object.keys(appState.decks)
-			.map(Number)
-			.sort((a, b) => a - b)
-			.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
-	)
-	let isListeningGroupControlDeck = $derived(
-		!deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
-	)
+	let listeningDeckIds = $derived(sortedListeningDeckIds(appState.decks))
+	let isListeningGroupControlDeck = $derived(isGroupControlDeck(deck, deckId, listeningDeckIds))
 	let hasListeningMultiDeck = $derived(listeningDeckIds.length > 1)
 	let listeningVideoMixActive = $derived.by(() => {
 		if (!hasListeningMultiDeck) return false

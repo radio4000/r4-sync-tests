@@ -109,3 +109,28 @@ export function isListeningToChannel(decks: Record<number, Deck>, channelId?: st
 	if (!channelId) return false
 	return deckValues(decks).some((d) => d.listening_to_channel_id === channelId)
 }
+
+/** Deck IDs currently listening to a broadcast, sorted ascending. */
+export function sortedListeningDeckIds(decks: Record<number, Deck>): number[] {
+	return deckValues(decks)
+		.filter((d) => Boolean(d.listening_to_channel_id))
+		.map((d) => d.id)
+		.sort((a, b) => a - b)
+}
+
+/**
+ * Whether this deck should show the shared listening-group controls (sync button,
+ * leave-broadcast) — true for non-listening decks, or the first deck in a listening group.
+ */
+export function isGroupControlDeck(
+	deck: Deck | undefined,
+	deckId: number,
+	listeningDeckIds: number[]
+): boolean {
+	return !deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
+}
+
+/** Whether the player UI should render, based on the `?player=false` URL param. */
+export function showPlayerParam(url: URL): boolean {
+	return url.searchParams.get('player') !== 'false'
+}

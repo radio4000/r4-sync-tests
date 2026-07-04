@@ -52,9 +52,7 @@ export async function getFeaturedPool(days = 30): Promise<Channel[]> {
 		})
 		if (data.length) {
 			await (channelsCollection.isReady() ? Promise.resolve() : channelsCollection.preload())
-			channelsCollection.utils.writeBatch(() => {
-				for (const ch of data) channelsCollection.utils.writeUpsert(ch)
-			})
+			channelsCollection.utils.writeUpsert(data)
 		}
 		return data.filter((ch) => ch.latest_track_at && ch.latest_track_at >= since)
 	} catch (e) {

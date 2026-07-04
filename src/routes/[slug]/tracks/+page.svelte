@@ -3,9 +3,7 @@
 	import {goto} from '$app/navigation'
 	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
 	import {appState, canEditChannel} from '$lib/app-state.svelte'
-	import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
-	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {eq} from '@tanstack/db'
+	import {getMatchingTracksQuery} from '../matching-tracks-query.svelte.ts'
 	import Tracklist from '$lib/components/tracklist.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
 	import Subpage from '$lib/components/subpage.svelte'
@@ -25,7 +23,6 @@
 		shuffleSeed
 	} from '$lib/utils'
 	import {processViewTracks, getAutoDecksForView} from '$lib/views.svelte'
-	import type {Track} from '$lib/types'
 	import type {View} from '$lib/views'
 	import * as m from '$lib/paraglide/messages'
 
@@ -50,7 +47,6 @@
 	let searchInput = $state(page.url.searchParams.get('q') ?? '')
 	let selectedTags = $derived(page.url.searchParams.get('tags')?.split(',').filter(Boolean) ?? [])
 	let searchValue = $derived(page.url.searchParams.get('q') ?? '')
-	let matchingSlug = $derived((page.url.searchParams.get('matching') ?? '').trim().toLowerCase())
 	let urlOrder = $derived(readViewOrder(page.url.searchParams.get('order')))
 	let urlDirection = $derived(readViewDirection(page.url.searchParams.get('direction')))
 	let urlSeed = $derived((page.url.searchParams.get('seed') ?? '').trim())
@@ -115,17 +111,9 @@
 
 	let slug = $derived(page.params.slug)
 	let channel = $derived(channelCtx.data)
-	const matchingTracksQuery = useLiveQuery(
-		(q) =>
-			matchingSlug
-				? q
-						.from({tracks: tracksCollection})
-						.where(({tracks}) => eq(tracks.slug, matchingSlug))
-						.orderBy(({tracks}) => tracks.created_at, 'desc')
-				: null,
-		[() => matchingSlug]
-	)
-	let matchingTracks = $derived((matchingTracksQuery.data ?? []) as Track[])
+	const matchingQuery = getMatchingTracksQuery(() => slug)
+	let matchingSlug = $derived(matchingQuery.matchingSlug)
+	let matchingTracks = $derived(matchingQuery.tracks)
 	let matchingTrackKeys = $derived.by(
 		() => new Set(matchingTracks.map(canonicalTrackKey).filter((v): v is string => Boolean(v)))
 	)
@@ -214,11 +202,6 @@
 		if (selectedTags.length) return selectedTags.map((tag) => `#${tag}`).join(' ')
 		if (matchingSlug) return `@${matchingSlug}`
 		return ''
-	})
-
-	$effect(() => {
-		if (!matchingSlug || matchingSlug === slug) return
-		void ensureTracksLoaded(matchingSlug)
 	})
 
 	$effect(() => {

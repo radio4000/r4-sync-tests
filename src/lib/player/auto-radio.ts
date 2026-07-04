@@ -165,34 +165,3 @@ export function playbackState(
 		secondsUntilNextTrack
 	}
 }
-
-/** AutoRadio controller — stateful wrapper for use in a component */
-export class AutoRadio {
-	#rotationStartUnix: number
-	#shuffled: AutoTrack[] = []
-	#totalDuration = 0
-	#week = -1
-
-	constructor(rotationStartUnix: number) {
-		this.#rotationStartUnix = rotationStartUnix
-	}
-
-	setTracks(tracks: AutoTrack[], nowMs = Date.now()): void {
-		const result = weeklyShuffle(tracks, this.#rotationStartUnix, nowMs)
-		this.#shuffled = result.tracks
-		this.#totalDuration = result.totalDuration
-		this.#week = sundayWeekNumber(nowMs)
-	}
-
-	tick(nowMs = Date.now()): PlaybackSnapshot | null {
-		// Re-shuffle only when the week rolls over
-		const week = sundayWeekNumber(nowMs)
-		if (week !== this.#week && this.#shuffled.length > 0) {
-			const result = weeklyShuffle(this.#shuffled, this.#rotationStartUnix, nowMs)
-			this.#shuffled = result.tracks
-			this.#totalDuration = result.totalDuration
-			this.#week = week
-		}
-		return playbackState(this.#shuffled, this.#totalDuration, this.#rotationStartUnix, nowMs)
-	}
-}

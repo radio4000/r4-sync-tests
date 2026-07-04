@@ -1,6 +1,7 @@
 <script>
 	import {page} from '$app/state'
 	import {appState, deckAccent} from '$lib/app-state.svelte'
+	import {showPlayerParam} from '$lib/deck'
 	import {captureEventsCollection} from '$lib/collections/capture-events'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {eq, inArray} from '@tanstack/db'
@@ -29,7 +30,7 @@
 	let allDecksCompact = $derived(
 		deckIds.length > 0 && deckIds.every((id) => appState.decks[id]?.compact)
 	)
-	let showPlayer = $derived(page.url.searchParams.get('player') !== 'false')
+	let showPlayer = $derived(showPlayerParam(page.url))
 	// One live query shared by the strip and every deck (passed down as a prop)
 	const historyQuery = useLiveQuery((q) =>
 		q.from({e: captureEventsCollection}).where(({e}) => eq(e.event, 'player:track_play'))

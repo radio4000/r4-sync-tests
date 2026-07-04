@@ -181,6 +181,21 @@
 	})
 </script>
 
+{#snippet trackItem(track, index)}
+	<TrackCard
+		{track}
+		{index}
+		{deckId}
+		selected={selectedTrackId === track.id}
+		onPlay={playContext ? playFromList : undefined}
+		canEdit={canEditItem(track)}
+		showSlug={false}
+		{onTagClick}
+	/>
+	{#if showSlug}<ChannelMicroCard slug={track.slug} />{/if}
+	{@render footer?.({track})}
+{/snippet}
+
 {#if tracks.length}
 	{#if virtual}
 		<div class={{'virtual-tracklist': true, 'hide-artwork': appState.hide_track_artwork}}>
@@ -212,18 +227,7 @@
 							data-track-id={item.track.id}
 							onclick={(event) => selectTrackFromEvent(event, item.track?.id)}
 						>
-							<TrackCard
-								track={item.track}
-								index={item.index}
-								{deckId}
-								selected={selectedTrackId === item.track?.id}
-								onPlay={playContext ? playFromList : undefined}
-								canEdit={canEditItem(item.track)}
-								showSlug={false}
-								{onTagClick}
-							/>
-							{#if showSlug}<ChannelMicroCard slug={item.track.slug} />{/if}
-							{@render footer?.({track: item.track})}
+							{@render trackItem(item.track, item.index)}
 						</div>
 					{/if}
 				{/snippet}
@@ -262,18 +266,7 @@
 									data-track-id={track.id}
 									onclick={(event) => selectTrackFromEvent(event, track.id)}
 								>
-									<TrackCard
-										{track}
-										{index}
-										{deckId}
-										selected={selectedTrackId === track.id}
-										onPlay={playContext ? playFromList : undefined}
-										canEdit={canEditItem(track)}
-										showSlug={false}
-										{onTagClick}
-									/>
-									{#if showSlug}<ChannelMicroCard slug={track.slug} />{/if}
-									{@render footer?.({track})}
+									{@render trackItem(track, index)}
 								</li>
 							{/each}
 						</ul>
@@ -307,18 +300,7 @@
 					data-track-id={track.id}
 					onclick={(event) => selectTrackFromEvent(event, track.id)}
 				>
-					<TrackCard
-						{track}
-						{index}
-						{deckId}
-						selected={selectedTrackId === track.id}
-						onPlay={playContext ? playFromList : undefined}
-						canEdit={canEditItem(track)}
-						showSlug={false}
-						{onTagClick}
-					/>
-					{#if showSlug}<ChannelMicroCard slug={track.slug} />{/if}
-					{@render footer?.({track})}
+					{@render trackItem(track, index)}
 				</li>
 			{/each}
 		</ul>

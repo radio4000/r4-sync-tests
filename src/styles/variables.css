@@ -36,11 +36,6 @@
 	--color-interface-elevated: var(--gray-2);
 	--color-interface-border: var(--gray-6);
 
-	/* panel backgrounds */
-	--header-bg: var(--color-interface-elevated);
-	--aside-bg: var(--color-interface-elevated);
-	--footer-bg: var(--color-interface-elevated);
-
 	/* buttons (*-light/*-dark overrides come from the theme editor) */
 	--button-bg: light-dark(
 		var(--button-bg-light, var(--gray-3)),

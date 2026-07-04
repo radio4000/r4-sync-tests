@@ -6,8 +6,7 @@ import {logger} from '$lib/logger'
 
 const log = logger.ns('broadcasts').seal()
 import {appState} from '$lib/app-state.svelte'
-
-/** @typedef {import('$lib/types').BroadcastWithChannel} BroadcastWithChannel */
+import type {BroadcastWithChannel} from '$lib/types'
 
 const BROADCAST_SELECT = `
 	channel_id,
@@ -16,23 +15,15 @@ const BROADCAST_SELECT = `
 	channels:channels_with_tracks (*)
 `
 
-/**
- * Fetch all active broadcasts with their channel and track data.
- * Type-narrows Supabase response to BroadcastWithChannel[].
- * @returns {Promise<BroadcastWithChannel[]>}
- */
-export async function readBroadcasts() {
+/** Fetch all active broadcasts with their channel and track data. */
+export async function readBroadcasts(): Promise<BroadcastWithChannel[]> {
 	const {data, error} = await sdk.supabase.from('broadcast').select(BROADCAST_SELECT)
 	if (error) throw error
-	return /** @type {BroadcastWithChannel[]} */ (/** @type {unknown} */ (data || []))
+	return (data || []) as unknown as BroadcastWithChannel[]
 }
 
-/**
- * Fetch a single broadcast by channel ID.
- * @param {string} channelId
- * @returns {Promise<BroadcastWithChannel | null>}
- */
-export async function readBroadcast(channelId) {
+/** Fetch a single broadcast by channel ID. */
+export async function readBroadcast(channelId: string): Promise<BroadcastWithChannel | null> {
 	const {data, error} = await sdk.supabase
 		.from('broadcast')
 		.select(BROADCAST_SELECT)
@@ -40,14 +31,14 @@ export async function readBroadcast(channelId) {
 		.single()
 	if (error?.code === 'PGRST116') return null // not found
 	if (error) throw error
-	return /** @type {BroadcastWithChannel} */ (/** @type {unknown} */ (data))
+	return data as unknown as BroadcastWithChannel
 }
 
 export const broadcastsCollection = createCollection(
 	queryCollectionOptions({
 		queryKey: () => ['broadcasts'],
 		queryClient,
-		getKey: (/** @type {BroadcastWithChannel} */ item) => item.channel_id,
+		getKey: (item: BroadcastWithChannel) => item.channel_id,
 		staleTime: 0,
 		queryFn: async () => {
 			const broadcasts = await readBroadcasts()
@@ -57,11 +48,8 @@ export const broadcastsCollection = createCollection(
 	})
 )
 
-/**
- * Reconcile broadcastsCollection state from a fresh snapshot.
- * @param {BroadcastWithChannel[]} broadcasts
- */
-function reconcileBroadcastsSnapshot(broadcasts) {
+/** Reconcile broadcastsCollection state from a fresh snapshot. */
+function reconcileBroadcastsSnapshot(broadcasts: BroadcastWithChannel[]): void {
 	if (broadcastsCollection.status !== 'ready') return
 	const nextIds = new Set(broadcasts.map((b) => b.channel_id))
 	for (const b of broadcasts) broadcastsCollection.utils.writeUpsert(b)
@@ -73,11 +61,8 @@ function reconcileBroadcastsSnapshot(broadcasts) {
 	syncBroadcastingState([...broadcastsCollection.state.values()])
 }
 
-/**
- * Sync broadcasting_channel_id on all decks from the broadcasts list
- * @param {BroadcastWithChannel[]} broadcasts
- */
-function syncBroadcastingState(broadcasts) {
+/** Sync broadcasting_channel_id on all decks from the broadcasts list. */
+function syncBroadcastingState(broadcasts: BroadcastWithChannel[]): void {
 	const userChannelId = appState.channels?.[0]
 	const isUserBroadcasting = userChannelId && broadcasts.some((b) => b.channel_id === userChannelId)
 	for (const deck of Object.values(appState.decks)) {
@@ -98,7 +83,7 @@ sdk.supabase
 		}
 
 		if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-			const newData = /** @type {{channel_id: string}} */ (payload.new)
+			const newData = payload.new as {channel_id: string}
 			const broadcast = await readBroadcast(newData.channel_id)
 			if (broadcast) {
 				broadcastsCollection.utils.writeUpsert(broadcast)
@@ -107,7 +92,7 @@ sdk.supabase
 		}
 
 		if (payload.eventType === 'DELETE') {
-			const oldData = /** @type {{channel_id: string}} */ (payload.old)
+			const oldData = payload.old as {channel_id: string}
 			if (broadcastsCollection.state.has(oldData.channel_id)) {
 				broadcastsCollection.utils.writeDelete(oldData.channel_id)
 			}

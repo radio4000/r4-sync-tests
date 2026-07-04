@@ -12,7 +12,6 @@
 	import {fetchChannelCount, CHANNELS_PAGE_SIZE} from '$lib/collections/channels'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
-	const channelActivity = $derived(getChannelActivity())
 	import {toChannelCardMedia} from '$lib/components/channel-ui-state.js'
 	import {
 		viewIconMap,
@@ -34,6 +33,8 @@
 	import ExplorePageHeader from './explore-page-header.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import * as m from '$lib/paraglide/messages'
+
+	const channelActivity = $derived(getChannelActivity())
 
 	const {
 		display: initialDisplay = undefined,
@@ -93,19 +94,19 @@
 
 	const currentPage = $derived(Math.max(1, parseInt(page.url.searchParams.get('page') ?? '1') || 1))
 	const pageSize = $derived(Math.max(1, parseInt(page.url.searchParams.get('per') ?? '12') || 12))
-	let filter = $derived(
+	const filter = $derived(
 		filterProp && filterProp in filterLabelMap
 			? filterProp
 			: appState.channels_filter in filterLabelMap
 				? appState.channels_filter
 				: defaultFilter
 	)
-	let order = $derived(appState.channels_order || 'shuffle')
-	let orderDirection = $derived(appState.channels_order_direction)
+	const order = $derived(appState.channels_order || 'shuffle')
+	const orderDirection = $derived(appState.channels_order_direction)
 
 	const VALID_DISPLAYS = new Set(['grid', 'list', 'map', 'tuner', 'infinite'])
 	/** @type {'grid' | 'list' | 'map' | 'tuner' | 'infinite'}*/
-	let display = $derived.by(() => {
+	const display = $derived.by(() => {
 		const urlDisplay = page.url.searchParams.get('display')
 		if (urlDisplay && VALID_DISPLAYS.has(urlDisplay)) return /** @type {any} */ (urlDisplay)
 		if (VALID_DISPLAYS.has(appState.channels_display)) return appState.channels_display
@@ -340,7 +341,6 @@
 			goto(resolve(/** @type {any} */ (filterBasePath + '/' + slugFor(value))))
 			return
 		}
-		appState.channels_filter = value
 		const query = new URL(page.url).searchParams
 		query.set('filter', value)
 		query.delete('page')

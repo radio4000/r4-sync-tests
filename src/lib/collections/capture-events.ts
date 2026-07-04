@@ -1,21 +1,20 @@
-import {createCollection} from '@tanstack/svelte-db'
-import {localStorageCollectionOptions} from '@tanstack/db'
 import {uuid} from '$lib/utils'
 import {LOCAL_STORAGE_KEYS} from '$lib/storage-keys'
 import {logger} from '$lib/logger'
+import {createLocalCollection} from './utils'
 
 const log = logger.ns('capture-events').seal()
 
 import type {CaptureEvent} from '$lib/types'
 export type {CaptureEvent}
 
-export const captureEventsCollection = createCollection<CaptureEvent, string>(
-	localStorageCollectionOptions({
-		storageKey: LOCAL_STORAGE_KEYS.captureEvents,
-		getKey: (item) => item.id
-	})
-)
+/** Local-only log of player/UI events (plays, skips, dialogs) for stats and debugging. */
+export const captureEventsCollection = createLocalCollection<CaptureEvent, string>({
+	storageKey: LOCAL_STORAGE_KEYS.captureEvents,
+	getKey: (item) => item.id
+})
 
+/** Record a capture event; returns its id. Failures are logged, never thrown. */
 export function addCaptureEvent(event: string, properties?: Record<string, unknown>): string {
 	const id = uuid()
 	try {
@@ -33,6 +32,7 @@ export function addCaptureEvent(event: string, properties?: Record<string, unkno
 
 export type EndData = {ms_played?: number; end_reason?: string}
 
+/** Match each play event to its track_end event (by play_id) for stats/history views. */
 export function buildEndDataMap(
 	allEvents: CaptureEvent[],
 	plays: CaptureEvent[]
@@ -54,6 +54,7 @@ export function buildEndDataMap(
 	return map
 }
 
+/** Delete all capture events, e.g. when the user clears their history. */
 export function clearCaptureEvents() {
 	try {
 		const ids = [...captureEventsCollection.state.keys()]

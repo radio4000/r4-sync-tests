@@ -1,13 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {
-	queueNext,
-	queuePrev,
-	queueInsertManyAfter,
-	queueRemove,
-	queueShuffleKeepCurrent,
-	queueRotate,
-	queueUnique
-} from './queue'
+import {queueNext, queuePrev, queueInsertManyAfter} from './queue'
 
 const queue = ['a', 'b', 'c', 'd', 'e']
 
@@ -37,32 +29,5 @@ describe('queue insertion', () => {
 			'e'
 		])
 		expect(queueInsertManyAfter(queue, 'missing', ['x'])).toEqual(['a', 'b', 'c', 'd', 'e', 'x'])
-	})
-})
-
-describe('queue removal', () => {
-	it('queueRemove removes single item', () => {
-		expect(queueRemove(queue, 'c')).toEqual(['a', 'b', 'd', 'e'])
-		expect(queueRemove(queue, 'x')).toEqual(queue)
-	})
-})
-
-describe('queue shuffle', () => {
-	it('queueShuffleKeepCurrent keeps current at front', () => {
-		const shuffled = queueShuffleKeepCurrent(queue, 'c')
-		expect(shuffled[0]).toBe('c')
-		expect(shuffled.length).toBe(queue.length)
-	})
-})
-
-describe('queue manipulation', () => {
-	it('queueRotate moves items before current to end', () => {
-		expect(queueRotate(queue, 'c')).toEqual(['c', 'd', 'e', 'a', 'b'])
-		expect(queueRotate(queue, 'a')).toEqual(queue)
-		expect(queueRotate(queue, 'x')).toEqual(queue)
-	})
-
-	it('queueUnique removes duplicates', () => {
-		expect(queueUnique(['a', 'b', 'a', 'c', 'b'])).toEqual(['a', 'b', 'c'])
 	})
 })

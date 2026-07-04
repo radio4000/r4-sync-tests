@@ -29,7 +29,8 @@
 		}
 		if (attemptedKey === fetchKey) return
 
-		attemptedKey = fetchKey
+		const requestKey = fetchKey
+		attemptedKey = requestKey
 		loading = true
 		error = ''
 		let cancelled = false
@@ -42,7 +43,9 @@
 					error = `MusicBrainz metadata unavailable: ${err instanceof Error ? err.message : String(err)}`
 				}
 			} finally {
-				if (!cancelled) {
+				// Always clear loading for this same request key, even if this run got
+				// cancelled by a reactive re-run (prevents stuck loading state).
+				if (attemptedKey === requestKey) {
 					loading = false
 				}
 			}

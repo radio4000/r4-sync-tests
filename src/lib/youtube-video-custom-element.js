@@ -122,9 +122,6 @@ class YouTube2Element extends HTMLElement {
 					onError: (error) => {
 						log.error('YouTube error:', error.data)
 						this.#errorCode = error.data
-						// Fire durationchange to reset UI on error
-						// this.dispatchEvent(new Event('durationchange'))
-						// this.#ready.reject(new Error(`YouTube error: ${error.data}`))
 						this.dispatchEvent(new Event('error'))
 					},
 					onAutoplayBlocked: (notsure) => {
@@ -244,7 +241,6 @@ class YouTube2Element extends HTMLElement {
 		if (!this.api) return
 
 		// If video is in unstarted state (-1), try to cue it first
-		//
 		const state = this.api.getPlayerState()
 		if (state === -1 && this.src) {
 			const videoId = this.#extractVideoId(this.src)
@@ -281,14 +277,6 @@ class YouTube2Element extends HTMLElement {
 		if (this.currentTime === val) return
 		this.#loadComplete.then(() => {
 			this.api?.seekTo(val, true)
-
-			// why this?
-			// if (this.paused) {
-			// 	this.#seekComplete?.then(() => {
-			// 		if (!this.#seekComplete) return
-			// 		this.api?.pauseVideo()
-			// 	})
-			// }
 		})
 	}
 

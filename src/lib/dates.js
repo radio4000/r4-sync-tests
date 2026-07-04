@@ -135,20 +135,6 @@ export function relativeDate(dateString) {
 	return `${days} day${days > 1 ? 's' : ''} ago`
 }
 
-/** Returns a fancy cosmic time duration string
- * @param {string | null | undefined} dateString */
-export function relativeDateSolar(dateString) {
-	if (!dateString) return 'unknown'
-	const days = differenceInDays(dateString)
-	const years = Math.floor(days / 365)
-	const remainingDays = days % 365
-	const yearsString = years ? `${years} sun orbit${years > 1 ? 's' : ''}` : ''
-	const andString = years && remainingDays ? ', ' : ''
-	const daysString =
-		remainingDays === 0 ? '' : `${remainingDays} earth rotation${remainingDays > 1 ? 's' : ''}`
-	return `${yearsString}${andString}${daysString}` || 'today'
-}
-
 /** More detailed relative date with months/years
  * @param {string} dateString */
 export function relativeDateDetailed(dateString) {
@@ -162,48 +148,6 @@ export function relativeDateDetailed(dateString) {
 	if (diffDays < 30) return `${diffDays} days ago`
 	if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`
 	return `${Math.floor(diffDays / 365)} years ago`
-}
-
-/** Relative time for recent events, absolute date+time for older
- * @param {string | Date} dateInput */
-export function relativeTime(dateInput) {
-	if (!dateInput) return ''
-	const date = new Date(dateInput)
-	const diffMs = Date.now() - date.getTime()
-	const diffMins = Math.floor(diffMs / 60000)
-
-	// Recent: relative time
-	if (diffMins < 60) return `${Math.max(1, diffMins)}m ago`
-	if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`
-
-	// Older: date + time
-	const isThisYear = date.getFullYear() === new Date().getFullYear()
-	return date.toLocaleDateString('en-US', {
-		month: 'short',
-		day: 'numeric',
-		...(isThisYear ? {} : {year: 'numeric'}),
-		hour: '2-digit',
-		minute: '2-digit',
-		hour12: false
-	})
-}
-
-/** Value-neutral: just the year - archives aren't stale
- * @param {string | null | undefined} dateString */
-export function dateYear(dateString) {
-	if (!dateString) return ''
-	return new Date(dateString).getFullYear().toString()
-}
-
-/** Smart date: recent shows relative time, older shows just year
- * @param {string | null | undefined} dateString */
-export function dateProvenance(dateString) {
-	if (!dateString) return ''
-	const days = differenceInDays(dateString)
-	if (days < 7) return 'this week'
-	if (days < 30) return 'this month'
-	if (days < 90) return 'recent'
-	return dateYear(dateString)
 }
 
 // ---------------------------------------------------------------------------
@@ -289,15 +233,4 @@ export function generateMonthPeriods(start, end) {
 		}
 	}
 	return periods
-}
-
-/** Filter items by a date-range period.
- * @param {{created_at: string}[]} items
- * @param {TimePeriod} period
- * @returns {{created_at: string}[]} */
-export function filterByDateRange(items, period) {
-	return items.filter((item) => {
-		const date = new Date(item.created_at)
-		return date >= period.startDate && date < period.endDate
-	})
 }

@@ -202,6 +202,7 @@
 
 	.flip-desc {
 		color: var(--gray-10);
+		overflow-wrap: anywhere;
 	}
 
 	.flip-label {
@@ -210,10 +211,6 @@
 		padding: 0.5rem;
 		min-height: 6rem;
 		max-width: 100%;
-		overflow-wrap: anywhere;
-	}
-
-	.flip-desc {
 		overflow-wrap: anywhere;
 	}
 </style>
