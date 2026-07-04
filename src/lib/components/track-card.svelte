@@ -270,9 +270,7 @@
 				>
 			{/if}
 			{#if isRealTrack && !appState.embed_mode}
-				<a href={permalink} role="menuitem"
-					><Icon icon="circle-info" />{m.track_go_to()}</a
-				>
+				<a href={permalink} role="menuitem"><Icon icon="circle-info" />{m.track_go_to()}</a>
 			{:else if track.url && !appState.embed_mode}
 				<a href={track.url} target="_blank" rel="noopener noreferrer" role="menuitem"
 					><Icon icon="circle-info" />{m.track_card_open_video()}</a
@@ -386,7 +384,7 @@
 		flex-flow: column;
 		justify-content: center;
 		min-width: 0;
-		gap: 0.1rem;
+		gap: 0;
 	}
 
 	.title {
@@ -406,18 +404,11 @@
 			color: inherit;
 			cursor: var(--interactive-cursor, pointer);
 		}
-		.active & {
-			color: var(--accent-10);
-		}
 	}
 
 	.active {
 		background: var(--gray-2);
 		border-color: var(--gray-5);
-		--tag-bg: var(--accent-2);
-		--tag-bg-hover: var(--accent-3);
-		--tag-bg-active: var(--accent-4);
-		--tag-color: var(--accent-10);
 	}
 
 	.selected {

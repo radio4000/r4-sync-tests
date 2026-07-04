@@ -412,7 +412,7 @@
 						</button>
 					</div>
 				</div>
-				<menu class="tags-menu">
+				<menu class="tags-filter">
 					{#each visibleTags as { value, count } (value)}
 						<button
 							type="button"
@@ -515,11 +515,11 @@
 		}
 	}
 
-	.tags-menu {
+	.tags-filter {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-1);
-		max-height: min(32vh, 20rem);
+		max-height: min(32vh, 22rem);
 		overflow: auto;
 		button.active {
 			background: var(--accent-5);

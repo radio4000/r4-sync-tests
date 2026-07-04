@@ -209,10 +209,9 @@ menu.nav-options {
 	}
 }
 
-menu.tags-menu {
+menu.nav-vertical.tags-menu {
 	max-height: 300px;
 	overflow-y: auto;
-	flex-direction: column;
 	gap: 0;
 }
 
@@ -286,6 +285,16 @@ menu {
 	gap: var(--space-1);
 	overflow-x: auto;
 	scrollbar-width: thin;
+	scrollbar-color: transparent transparent;
+	transition: scrollbar-color var(--duration-2);
+
+	&:hover {
+		scrollbar-color: var(--gray-7) transparent;
+	}
+
+	&:not(:hover)::-webkit-scrollbar-thumb {
+		background: transparent;
+	}
 
 	:where(.btn.chip) {
 		flex: 0 0 auto;
