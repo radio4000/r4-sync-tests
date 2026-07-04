@@ -62,6 +62,9 @@ export const conceptIcons = {
 	delete: 'delete'
 } as const
 
+/** Matches `@media (max-width: 768px)` in CSS — JS only; CSS literals stay as-is */
+export const MOBILE_BREAKPOINT = 768
+
 export const MAP_TILE_STYLES = ['carto', 'topo', 'satellite'] as const
 export type MapTileStyle = (typeof MAP_TILE_STYLES)[number]
 export const DEFAULT_MAP_TILE_STYLE: MapTileStyle = 'satellite'

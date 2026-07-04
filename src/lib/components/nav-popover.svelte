@@ -7,8 +7,10 @@
 	 * pattern (see listbox-nav.svelte.js) — arrow keys from the search input
 	 * move into the results, Enter jumps to the first result.
 	 *
-	 * Exploratory: rendered alongside the existing sidebar for side-by-side
-	 * comparison. See docs discussion on "simpler Radio4000".
+	 * Exploratory, currently unmounted — the default responsive header
+	 * (sidebar/bottom bar in layout-header.svelte) is back as the main nav.
+	 * To try this again, render <NavPopover /> anywhere in the header.
+	 * See docs discussion on "simpler Radio4000".
 	 *
 	 * TODO: "Recently visited" has no data source yet — we seed it from followed
 	 * channels (recent-activity order). A real recents list needs a

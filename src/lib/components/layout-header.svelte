@@ -2,6 +2,7 @@
 	import {page} from '$app/state'
 	import {resolve} from '$app/paths'
 	import {onMount} from 'svelte'
+	import {MediaQuery} from 'svelte/reactivity'
 	import {appState} from '$lib/app-state.svelte'
 	import AddTrackDialog from '$lib/components/track-add-dialog.svelte'
 	import EditTrackDialog from '$lib/components/track-edit-dialog.svelte'
@@ -11,18 +12,13 @@
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import IconR4 from '$lib/components/icon-r4.svelte'
-	import NavPopover from '$lib/components/nav-popover.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import InternetIndicator from '$lib/components/internet-indicator.svelte'
 	import * as m from '$lib/paraglide/messages'
-	import {appName, conceptIcons} from '$lib/config'
+	import {appName, conceptIcons, MOBILE_BREAKPOINT} from '$lib/config'
 	import {deckAccent} from '$lib/app-state.svelte'
 
 	const {preloading} = $props()
-
-	// Legacy left-rail nav — superseded by NavPopover. Kept (not removed) behind a
-	// flag for side-by-side comparison; flip to true to restore the old buttons.
-	const showLegacyNav = false
 
 	const isSignedIn = $derived(!!appState.user)
 	const userChannel = $derived(appState.channel)
@@ -41,7 +37,8 @@
 	const MOBILE_DEFAULT = 90
 	const STORAGE_KEY_LABELS_VISIBLE = 'r5:layout-header-labels-visible'
 
-	let isMobileViewport = $state(false)
+	const mobileViewport = new MediaQuery(`(max-width: ${MOBILE_BREAKPOINT}px)`)
+
 	let headerSize = $state(DESKTOP_DEFAULT)
 	let labelsVisible = $state(true)
 	let labelLayout = $state(/** @type {'none' | 'right' | 'below'} */ ('none'))
@@ -54,13 +51,9 @@
 		return mobile ? [MOBILE_MIN, MOBILE_MAX] : [DESKTOP_MIN, DESKTOP_MAX]
 	}
 
-	function detectMobileViewport() {
-		return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
-	}
-
 	function applyModeFromSize() {
 		if (!labelsVisible) labelLayout = 'none'
-		else labelLayout = isMobileViewport ? 'below' : 'right'
+		else labelLayout = mobileViewport.current ? 'below' : 'right'
 	}
 
 	function loadSizeForViewport(mobile) {
@@ -82,20 +75,14 @@
 	}
 
 	onMount(() => {
-		isMobileViewport = detectMobileViewport()
 		const stored =
 			typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY_LABELS_VISIBLE) : null
 		labelsVisible = stored == null ? true : stored === '1'
-		loadSizeForViewport(isMobileViewport)
-		const onViewportResize = () => {
-			const nextMobile = detectMobileViewport()
-			if (nextMobile !== isMobileViewport) {
-				isMobileViewport = nextMobile
-				loadSizeForViewport(nextMobile)
-			}
-		}
-		window.addEventListener('resize', onViewportResize)
-		return () => window.removeEventListener('resize', onViewportResize)
+		applyModeFromSize()
+	})
+
+	$effect(() => {
+		loadSizeForViewport(mobileViewport.current)
 	})
 </script>
 
@@ -103,16 +90,10 @@
 	class:labels-none={labelLayout === 'none'}
 	class:labels-right={labelLayout === 'right'}
 	class:labels-below={labelLayout === 'below'}
-	class:mobile={isMobileViewport}
+	class:mobile={mobileViewport.current}
 	style={`--app-header-size:${headerSize}px;`}
 	ondblclick={toggleLabels}
 >
-	<!-- Exploratory: single-trigger command palette, shown above the existing nav -->
-	<nav class="nav-palette-trigger">
-		<NavPopover />
-	</nav>
-
-	{#if showLegacyNav}
 	<nav class="nav-secondary">
 		<a
 			href={resolve('/')}
@@ -140,26 +121,18 @@
 			<span class="btn-label">{m.nav_explore()}</span>
 		</a>
 	</nav>
-	{/if}
 
 	<!-- <nav class="pins">
 		<PinsNav />
 	</nav> -->
 
-	<nav class="user-nav nav-infrastructure">
+	<nav class="user-nav">
 		{#await preloading then}
-			<!-- Invisible dialog hosts — kept mounted (used app-wide). -->
 			<EditTrackDialog />
 			<ShareDialog />
 			<ShortcutsDialog />
-			<!-- AddTrackDialog stays mounted so NavPopover's "Add" tile can open it
-			     via appState.modal_track_add. Its own trigger button is hidden via CSS. -->
 			{#if userChannel}
 				<AddTrackDialog class="nav-btn" label="Add" />
-			{/if}
-
-			{#if showLegacyNav}
-				{#if userChannel}
 				<a
 					href={resolve(`/${userChannel.slug}`)}
 					class={[
@@ -201,12 +174,10 @@
 					<span class="btn-label">{m.nav_sign_in()}</span>
 				</a>
 			{/if}
-			{/if}
 		{/await}
 	</nav>
 
 	<nav class="nav-settings">
-		{#if showLegacyNav}
 		<a
 			href={resolve('/menu')}
 			class="btn settings-link nav-btn"
@@ -217,7 +188,6 @@
 			<Icon icon="menu" />
 			<span class="btn-label">Menu</span>
 		</a>
-		{/if}
 		<InternetIndicator href={resolve('/import')} />
 	</nav>
 </header>
@@ -230,24 +200,17 @@
 		--app-nav-pad-inline: clamp(0.5rem, calc(var(--app-nav-btn-size) * 0.17), 0.62rem);
 		--app-nav-pad-block: clamp(0rem, calc(var(--app-nav-btn-size) * 0.06), 0.18rem);
 		display: flex;
-		flex-flow: row nowrap;
-		align-items: center;
-		gap: var(--space-1);
-		padding: var(--space-1);
-		inline-size: auto;
-		min-inline-size: 0;
-		max-inline-size: none;
-		background: transparent;
-		border: none;
-		z-index: 60;
+		flex-flow: column nowrap;
+		gap: clamp(var(--space-1), calc(var(--app-nav-btn-size) * 0.2), 0.8rem);
+		padding: 0.5rem var(--space-1);
+		inline-size: clamp(min-content, var(--app-header-size), max-content);
+		min-inline-size: min-content;
+		max-inline-size: max-content;
+		background: var(--color-interface);
+		border-right: 1px solid var(--gray-4);
+		z-index: 50;
 		position: relative;
 		overflow: visible;
-	}
-
-	/* Collapsed experimental header: only the palette trigger shows. Other nav
-	   sections stay mounted (dialog hosts) but take no visual space. */
-	.nav-settings {
-		display: none;
 	}
 
 	nav {
@@ -262,12 +225,6 @@
 
 	nav :global(.btn svg) {
 		color: currentColor;
-	}
-
-	/* AddTrackDialog is kept mounted (dialog host for NavPopover) but its
-	   trigger button is redundant with the palette's Add tile. */
-	.nav-infrastructure :global([data-add-track]) {
-		display: none;
 	}
 
 	.nav-secondary {
@@ -417,15 +374,20 @@
 			--app-nav-pad-inline: var(--space-1);
 			align-items: center;
 			flex-direction: row;
+			justify-content: space-between;
 			gap: 0.5rem;
-			padding: var(--space-1);
-			inline-size: auto;
-			width: auto;
-			min-inline-size: 0;
-			min-width: 0;
+			padding: var(--space-1) 0.5rem var(--space-2);
+			inline-size: 100%;
+			width: 100%;
+			min-inline-size: 100%;
+			min-width: 100%;
 			max-inline-size: none;
-			background: transparent;
+			block-size: auto;
+			min-block-size: auto;
+			max-block-size: none;
+			box-sizing: border-box;
 			border: none;
+			border-top: 1px solid var(--gray-4);
 			border-radius: 0;
 		}
 
