@@ -107,7 +107,7 @@
 		if (isMobileViewport()) expandDeck(deckId)
 	}}
 >
-	<div class="header-info deck-chrome" class:active-track-bg={Boolean(displayTrack)}>
+	<div class="header-info" class:active-track-bg={Boolean(displayTrack)}>
 		<div class="channel-panel">
 			{#if headerChannel}
 				<ChannelMicroCard
@@ -393,13 +393,7 @@
 
 	@media (max-width: 768px) {
 		.header-info {
-			grid-template-areas:
-				'channel track track'
-				'controls controls controls'
-				'progress progress progress';
 			padding-inline: var(--space-1);
-			gap: var(--space-1);
-			align-items: center;
 		}
 
 		:global(.channel-panel .channel-micro-card) {
@@ -413,75 +407,22 @@
 			text-overflow: ellipsis;
 		}
 
-		.track-panel {
-			display: block;
-		}
-
-		/* Volume range hide + progress-below come from .deck-chrome in
-		   styles/deck.css — shared with the deck player's bottom chrome */
-		.controls {
-			display: grid;
-			grid-template-columns: 1fr auto 1fr;
-			align-items: center;
-			width: 100%;
-			overflow: visible;
-		}
-
-		.controls-center {
-			grid-column: 2;
-			justify-content: center;
-		}
-
-		.controls :global(.popover-menu) {
-			grid-column: 3;
-			justify-self: end;
-			position: static;
-			margin-left: 0;
-		}
-
-		.controls-center :global(.speed),
-		.controls-center :global(.volume) {
-			flex: 0 0 auto;
-		}
-
+		/* Tapping the bar expands the deck on mobile — hide the duplicate */
 		.expand {
 			display: none;
 		}
 	}
 
-	/* Below 520px: channel + track + play on one row, progress below.
-	   Times hidden. Hidden via CSS only — everything stays in the DOM. */
-	@media (max-width: 520px) {
-		.header-info {
-			grid-template-columns: auto minmax(0, 1fr) auto;
-			grid-template-areas:
-				'channel track controls'
-				'progress progress progress';
-		}
-
+	/* Mini player: channel + track + play on one row, progress below, times
+	   hidden. Hidden via CSS only — everything stays in the DOM. Above
+	   1024px: the full desktop bar. */
+	@media (max-width: 1024px) {
 		.deck-compact-bar :global(.progress time) {
 			display: none;
 		}
 
 		.track-panel :global(.popover-menu) {
 			display: none;
-		}
-
-		/* Extra specificity to beat .deck-chrome mobile rules in deck.css */
-		.header-info .controls {
-			display: flex;
-			width: auto;
-			justify-content: flex-end;
-		}
-
-		.header-info .controls-center {
-			grid-column: unset;
-			justify-content: flex-end;
-		}
-
-		.header-info .controls :global(.popover-menu) {
-			grid-column: unset;
-			justify-self: unset;
 		}
 
 		.controls-center > :global(*:not(.play)) {

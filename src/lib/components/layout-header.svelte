@@ -194,15 +194,15 @@
 
 <style>
 	header {
-		--app-nav-btn-size: clamp(2.05rem, calc(var(--app-header-size) * 0.34), 3.3rem);
-		--app-nav-glyph-size: clamp(0.88rem, calc(var(--app-nav-btn-size) * 0.42), 1.32rem);
-		--app-nav-gap: 0.34rem;
-		--app-nav-pad-inline: clamp(0.5rem, calc(var(--app-nav-btn-size) * 0.17), 0.62rem);
-		--app-nav-pad-block: clamp(0rem, calc(var(--app-nav-btn-size) * 0.06), 0.18rem);
+		--app-nav-btn-size: clamp(2rem, calc(var(--app-header-size) * 0.3), 3.5rem);
+		--app-nav-glyph-size: clamp(1.3rem, calc(var(--app-nav-btn-size) * 0.5), 1.5rem);
+		--app-nav-gap: 0.4rem;
+		--app-nav-pad-inline: clamp(0.5rem, calc(var(--app-nav-btn-size) * 0.2), 0.62rem);
+		--app-nav-pad-block: clamp(0rem, calc(var(--app-nav-btn-size) * 0.06), 0.2rem);
 		display: flex;
 		flex-flow: column nowrap;
 		gap: clamp(var(--space-1), calc(var(--app-nav-btn-size) * 0.2), 0.8rem);
-		padding: 0.5rem var(--space-1);
+		padding: var(--space-2) var(--space-1);
 		inline-size: clamp(min-content, var(--app-header-size), max-content);
 		min-inline-size: min-content;
 		max-inline-size: max-content;
@@ -239,12 +239,10 @@
 		min-width: var(--app-nav-btn-size);
 		height: auto;
 		width: auto;
-		margin: 0;
 		padding: var(--app-nav-pad-block) var(--app-nav-pad-inline);
 		gap: var(--app-nav-gap);
 		border-color: transparent;
 		background: transparent;
-		box-shadow: none;
 		transition:
 			min-width 120ms ease,
 			min-height 120ms ease,
@@ -308,7 +306,7 @@
 	}
 
 	.channel-link.nav-btn {
-		padding: var(--space-1) 0.32rem var(--space-1);
+		padding: var(--space-1) var(--space-2) var(--space-1);
 		--channel-avatar-size: var(--app-nav-glyph-size);
 
 		:global(img, .fallback, svg) {

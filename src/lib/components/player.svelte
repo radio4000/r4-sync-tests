@@ -479,19 +479,6 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<header class="header" onclick={() => (appState.active_deck_id = deckId)}>
 		<div class="header-top">
-			{#if deck?.expanded}
-				<button
-					class="minimize"
-					onclick={() => toggleDeckCompact(deckId)}
-					aria-label={m.player_tooltip_compact()}
-					{@attach tooltip({
-						content: m.player_tooltip_compact() + shortcutHint('toggleCompactDeck'),
-						position: 'top'
-					})}
-				>
-					<Icon icon="arrow-down" />
-				</button>
-			{/if}
 			{#if hasMultipleDecks}
 				<div
 					class="header-id"
@@ -540,6 +527,19 @@
 						})}
 					>
 						<Icon icon="deck-panel" />
+					</button>
+				{/if}
+				{#if deck?.expanded}
+					<button
+						class="minimize"
+						onclick={() => toggleDeckCompact(deckId)}
+						aria-label={m.player_tooltip_compact()}
+						{@attach tooltip({
+							content: m.player_tooltip_compact() + shortcutHint('toggleCompactDeck'),
+							position: 'top'
+						})}
+					>
+						<Icon icon="arrow-down" />
 					</button>
 				{/if}
 			</menu>
@@ -602,7 +602,7 @@
 	<!-- 3. Queue/history (injected by deck) -->
 	{@render children?.()}
 
-	<section class="bottom-chrome deck-chrome">
+	<section class="bottom-chrome">
 		<!-- 4. Channel/track info + mode info -->
 		<footer
 			class="track-panel"
@@ -798,10 +798,6 @@
 		border-radius: 4px;
 	}
 
-	:global(.volume) {
-		margin-left: auto;
-	}
-
 	.controls {
 		display: flex;
 		align-items: center;
@@ -811,6 +807,25 @@
 		width: 100%;
 		flex-shrink: 0;
 		padding: 0.5rem;
+
+		:global(.volume) {
+			margin-left: auto;
+		}
+
+		/* Mobile: transport centered, speed/volume collapse to their buttons */
+		@media (max-width: 768px) {
+			justify-content: center;
+
+			:global(.speed),
+			:global(.volume) {
+				flex: 0 0 auto;
+				margin-left: 0;
+			}
+
+			:global(.volume .range) {
+				display: none;
+			}
+		}
 	}
 
 	.controls :global(.auto-btn) {
@@ -914,6 +929,11 @@
 
 		@media (max-width: 768px) {
 			margin-top: 0;
+
+			/* Progress bar moves below the controls */
+			> :global(.progress) {
+				order: 2;
+			}
 		}
 	}
 
