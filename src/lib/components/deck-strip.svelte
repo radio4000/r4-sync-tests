@@ -418,7 +418,7 @@
 		@media (max-width: 768px) {
 			& {
 				border-left: none;
-				border-top: 1px solid var(--gray-4);
+				/*border-top: 1px solid var(--gray-4);*/
 			}
 
 			.deck-sections {

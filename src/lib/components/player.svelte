@@ -483,7 +483,11 @@
 				<button
 					class="minimize"
 					onclick={() => toggleDeckCompact(deckId)}
-					aria-label={m.player_minimize()}
+					aria-label={m.player_tooltip_compact()}
+					{@attach tooltip({
+						content: m.player_tooltip_compact() + shortcutHint('toggleCompactDeck'),
+						position: 'top'
+					})}
 				>
 					<Icon icon="arrow-down" />
 				</button>
@@ -522,11 +526,7 @@
 						{#snippet trigger()}
 							<Icon icon="options-horizontal" />
 						{/snippet}
-						<DeckMenu
-							{deckId}
-							{deckEl}
-							closeMenu={() => deckMenu?.close()}
-						/>
+						<DeckMenu {deckId} {deckEl} closeMenu={() => deckMenu?.close()} />
 					</PopoverMenu>
 				{/if}
 				{#if showDeckActions && (hasMultipleDecks || !appState.embed_mode)}
@@ -602,20 +602,7 @@
 	<!-- 3. Queue/history (injected by deck) -->
 	{@render children?.()}
 
-	<section class="bottom-chrome">
-		{#if appState.show_track_range_control !== false && displayTrack}
-			<PlayerProgress
-				currentTime={mediaCurrentTime}
-				{mediaDuration}
-				trackDuration={track?.duration}
-				isPlaying={Boolean(deck?.is_playing)}
-				disabled={isListeningToBroadcast}
-				onseek={(val) => {
-					if (deck) deck.media_current_time = val
-					if (mediaElement) mediaElement.currentTime = val
-				}}
-			/>
-		{/if}
+	<section class="bottom-chrome deck-chrome">
 		<!-- 4. Channel/track info + mode info -->
 		<footer
 			class="track-panel"
@@ -649,6 +636,20 @@
 				/>
 			{/if}
 		</footer>
+
+		{#if appState.show_track_range_control !== false && displayTrack}
+			<PlayerProgress
+				currentTime={mediaCurrentTime}
+				{mediaDuration}
+				trackDuration={track?.duration}
+				isPlaying={Boolean(deck?.is_playing)}
+				disabled={isListeningToBroadcast}
+				onseek={(val) => {
+					if (deck) deck.media_current_time = val
+					if (mediaElement) mediaElement.currentTime = val
+				}}
+			/>
+		{/if}
 
 		{#if !isListeningToBroadcast || deck?.auto_radio}
 			<menu class="controls">
@@ -755,6 +756,11 @@
 		.minimize {
 			display: flex;
 			align-items: center;
+		}
+
+		/* .minimize takes over collapsing on mobile fullscreen — hide the duplicate */
+		:global(.deck.expanded) .compact-toggle {
+			display: none;
 		}
 	}
 
@@ -941,12 +947,5 @@
 	.listening-track-panel :global(article) {
 		flex: 1 1 auto;
 		min-width: 0;
-	}
-
-	@media (max-width: 768px) {
-		.controls {
-			gap: 0.1rem;
-			justify-content: flex-start;
-		}
 	}
 </style>

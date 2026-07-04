@@ -107,21 +107,7 @@
 		if (isMobileViewport()) expandDeck(deckId)
 	}}
 >
-	{#if appState.show_track_range_control !== false && displayTrack}
-		<PlayerProgress
-			currentTime={mediaCurrentTime}
-			{mediaDuration}
-			trackDuration={displayTrack?.duration}
-			isPlaying={Boolean(deck?.is_playing)}
-			disabled={Boolean(deck?.listening_to_channel_id)}
-			onseek={(val) => {
-				if (deck) deck.media_current_time = val
-				const mediaElement = getMediaPlayer(deckId)
-				if (mediaElement) mediaElement.currentTime = val
-			}}
-		/>
-	{/if}
-	<div class="header-info" class:active-track-bg={Boolean(displayTrack)}>
+	<div class="header-info deck-chrome" class:active-track-bg={Boolean(displayTrack)}>
 		<div class="channel-panel">
 			{#if headerChannel}
 				<ChannelMicroCard
@@ -156,73 +142,93 @@
 				/>
 			</div>
 		{/if}
+		{#if appState.show_track_range_control !== false && displayTrack}
+			<PlayerProgress
+				currentTime={mediaCurrentTime}
+				{mediaDuration}
+				trackDuration={displayTrack?.duration}
+				isPlaying={Boolean(deck?.is_playing)}
+				disabled={Boolean(deck?.listening_to_channel_id)}
+				onseek={(val) => {
+					if (deck) deck.media_current_time = val
+					const mediaElement = getMediaPlayer(deckId)
+					if (mediaElement) mediaElement.currentTime = val
+				}}
+			/>
+		{/if}
 		<menu class="controls">
-			{#if !deck?.listening_to_channel_id && !deck?.auto_radio}
-				<button
-					onclick={() => previous(deckId, 'user_prev')}
-					aria-label={m.player_compact_prev()}
-					disabled={!canPrevFromQueue}
-				>
-					<Icon icon="previous-fill" />
-				</button>
-				<button
-					class="play"
-					class:active={deck?.is_playing}
-					onclick={() => togglePlayPause(deckId)}
-					aria-label={m.player_compact_play_pause()}
-					disabled={!canPlayFromQueue}
-				>
-					<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
-				</button>
-				<button
-					onclick={() => next(deckId, 'user_next')}
-					aria-label={m.player_compact_next()}
-					disabled={!canNextFromQueue}
-				>
-					<Icon icon="next-fill" />
-				</button>
-				{#if activeQueue.length > 2}
+			<div class="controls-center">
+				{#if !deck?.listening_to_channel_id && !deck?.auto_radio}
 					<button
-						onclick={() => toggleShuffle(deckId)}
-						class:active={deck?.shuffle}
-						aria-label={m.player_tooltip_shuffle()}
-						{@attach tooltip({content: m.player_tooltip_shuffle() + shortcutHint('toggleShuffle')})}
+						onclick={() => previous(deckId, 'user_prev')}
+						aria-label={m.player_compact_prev()}
+						disabled={!canPrevFromQueue}
 					>
-						<Icon icon="shuffle" />
+						<Icon icon="previous-fill" />
 					</button>
+					<button
+						class="play"
+						class:active={deck?.is_playing}
+						onclick={() => togglePlayPause(deckId)}
+						aria-label={m.player_compact_play_pause()}
+						disabled={!canPlayFromQueue}
+					>
+						<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
+					</button>
+					<button
+						onclick={() => next(deckId, 'user_next')}
+						aria-label={m.player_compact_next()}
+						disabled={!canNextFromQueue}
+					>
+						<Icon icon="next-fill" />
+					</button>
+					{#if activeQueue.length > 2}
+						<button
+							onclick={() => toggleShuffle(deckId)}
+							class:active={deck?.shuffle}
+							aria-label={m.player_tooltip_shuffle()}
+							{@attach tooltip({
+								content: m.player_tooltip_shuffle() + shortcutHint('toggleShuffle')
+							})}
+						>
+							<Icon icon="shuffle" />
+						</button>
+					{/if}
+					<SpeedControl {deckId} {provider} />
+					<VolumeControl {deckId} />
+				{:else if deck?.auto_radio}
+					<button
+						class="play"
+						class:active={deck?.is_playing}
+						onclick={() => togglePlayPause(deckId)}
+						aria-label={m.player_compact_play_pause()}
+						disabled={!canPlayFromQueue}
+					>
+						<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
+					</button>
+					<AutoRadioButton
+						live
+						drifted={!!deck?.auto_radio_drifted}
+						size={14}
+						count={modePresenceCount}
+						onclick={() => resyncAutoRadio(deckId)}
+					/>
+				{:else if !deck?.listening_to_channel_id}
+					<VolumeControl {deckId} />
 				{/if}
-				<SpeedControl {deckId} {provider} />
-				<VolumeControl {deckId} />
-			{:else if deck?.auto_radio}
-				<button
-					class="play"
-					class:active={deck?.is_playing}
-					onclick={() => togglePlayPause(deckId)}
-					aria-label={m.player_compact_play_pause()}
-					disabled={!canPlayFromQueue}
-				>
-					<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
-				</button>
-				<AutoRadioButton
-					live
-					drifted={!!deck?.auto_radio_drifted}
-					size={14}
-					count={modePresenceCount}
-					onclick={() => resyncAutoRadio(deckId)}
-				/>
-			{:else if !deck?.listening_to_channel_id}
-				<VolumeControl {deckId} />
-			{/if}
+			</div>
 			{#if showEdgeControls && (!deck?.listening_to_channel_id || isListeningGroupControlDeck)}
-				<PopoverMenu align="end" valign="top" closeOnClick={false} bind:this={deckMenu}>
+				<PopoverMenu
+					align="end"
+					valign="top"
+					closeOnClick={false}
+					btnClass="ghost"
+					bind:this={deckMenu}
+				>
 					{#snippet trigger()}
 						<Icon icon="options-horizontal" />
 					{/snippet}
-					<DeckMenu
-						{deckId}
-						compact
-						closeMenu={() => deckMenu?.close()}
-					/>
+					<DeckMenu {deckId} compact closeMenu={() => deckMenu?.close()} />
 				</PopoverMenu>
 			{/if}
 			{#if showEdgeControls && isListeningGroupControlDeck}
@@ -250,20 +256,23 @@
 		border-top: 1px solid var(--gray-6);
 		min-width: 0;
 		overflow: visible;
+		background-color: var(--gray-1);
 	}
 
 	.deck-compact-bar :global(.progress) {
-		flex: 1 0 100%;
-		width: 100%;
+		grid-area: progress;
 		min-width: 0;
-		padding-bottom: 0;
+		padding: 0;
 	}
 
+	/* Grid: channel+track with controls to the right, progress full width below */
 	.header-info {
-		display: flex;
-		flex-direction: row;
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		grid-template-areas:
+			'channel track controls'
+			'progress progress progress';
 		align-items: center;
-		flex-wrap: wrap;
 		gap: var(--space-1);
 		min-width: 0;
 		flex: 1 1 auto;
@@ -282,16 +291,15 @@
 	}
 
 	.channel-panel {
+		grid-area: channel;
 		display: flex;
 		align-items: center;
 		flex-wrap: nowrap;
 		gap: var(--space-1);
 		min-width: 0;
-		flex: 0 0 auto;
 		max-width: 100%;
 		overflow-x: auto;
 		scrollbar-width: none;
-		order: 1;
 		align-self: center;
 	}
 
@@ -309,26 +317,29 @@
 	}
 
 	.track-panel {
+		grid-area: track;
 		min-width: 0;
-		flex: 1 1 14rem;
-		width: auto;
-		max-width: none;
 		cursor: pointer;
-		order: 2;
 	}
 
 	.controls {
+		grid-area: controls;
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
 		flex-wrap: nowrap;
 		gap: var(--space-1);
-		flex: 1 0 100%;
-		width: 100%;
 		min-width: 0;
-		order: 3;
 		overflow-x: auto;
 		scrollbar-width: none;
+	}
+
+	.controls-center {
+		display: flex;
+		align-items: center;
+		flex-wrap: nowrap;
+		gap: var(--space-1);
+		min-width: 0;
 	}
 
 	.controls::-webkit-scrollbar {
@@ -341,8 +352,6 @@
 		min-width: 0;
 		max-width: none;
 	}
-
-	/* Force compact controls to be fully shrinkable despite component defaults */
 	.controls :global(.speed .speed-btn) {
 		min-width: 0;
 	}
@@ -382,23 +391,15 @@
 		max-width: 100%;
 	}
 
-	@media (max-width: 520px) {
-		.controls :global(.volume .range) {
-			display: none;
-		}
-	}
-
-	@media (max-width: 767px) {
+	@media (max-width: 768px) {
 		.header-info {
+			grid-template-areas:
+				'channel track track'
+				'controls controls controls'
+				'progress progress progress';
 			padding-inline: var(--space-1);
 			gap: var(--space-1);
 			align-items: center;
-		}
-
-		.channel-panel {
-			flex: 0 0 auto;
-			order: 1;
-			max-width: 100%;
 		}
 
 		:global(.channel-panel .channel-micro-card) {
@@ -414,46 +415,82 @@
 
 		.track-panel {
 			display: block;
-			flex: 1 1 14rem;
-			width: auto;
-			max-width: none;
 		}
 
+		/* Volume range hide + progress-below come from .deck-chrome in
+		   styles/deck.css — shared with the deck player's bottom chrome */
 		.controls {
-			gap: var(--space-1);
-			flex: 1 1 auto;
+			display: grid;
+			grid-template-columns: 1fr auto 1fr;
+			align-items: center;
 			width: 100%;
-			flex-wrap: nowrap;
+			overflow: visible;
 		}
 
-		.controls :global(.speed),
-		.controls :global(.volume) {
-			flex: 1 1 5rem;
-			max-width: none;
+		.controls-center {
+			grid-column: 2;
+			justify-content: center;
+		}
+
+		.controls :global(.popover-menu) {
+			grid-column: 3;
+			justify-self: end;
+			position: static;
+			margin-left: 0;
+		}
+
+		.controls-center :global(.speed),
+		.controls-center :global(.volume) {
+			flex: 0 0 auto;
 		}
 
 		.expand {
-			align-self: center;
+			display: none;
+		}
+	}
+
+	/* Below 520px: channel + track + play on one row, progress below.
+	   Times hidden. Hidden via CSS only — everything stays in the DOM. */
+	@media (max-width: 520px) {
+		.header-info {
+			grid-template-columns: auto minmax(0, 1fr) auto;
+			grid-template-areas:
+				'channel track controls'
+				'progress progress progress';
+		}
+
+		.deck-compact-bar :global(.progress time) {
+			display: none;
+		}
+
+		.track-panel :global(.popover-menu) {
+			display: none;
+		}
+
+		/* Extra specificity to beat .deck-chrome mobile rules in deck.css */
+		.header-info .controls {
+			display: flex;
+			width: auto;
+			justify-content: flex-end;
+		}
+
+		.header-info .controls-center {
+			grid-column: unset;
+			justify-content: flex-end;
+		}
+
+		.header-info .controls :global(.popover-menu) {
+			grid-column: unset;
+			justify-self: unset;
+		}
+
+		.controls-center > :global(*:not(.play)) {
+			display: none;
 		}
 	}
 
 	@media (min-width: 768px) {
-		.header-info {
-			align-items: center;
-			flex-wrap: nowrap;
-		}
-
-		.track-panel {
-			order: 3;
-			flex: 1 1 18rem;
-			width: auto;
-			max-width: none;
-		}
-
 		.controls {
-			order: 4;
-			flex: 0 1 auto;
-			width: auto;
 			overflow-x: visible;
 		}
 

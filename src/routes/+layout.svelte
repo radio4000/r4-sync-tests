@@ -570,6 +570,10 @@
 		.compact-decks :global(.deck-compact-bar) {
 			min-width: 0;
 		}
+
+		.compact-group-toggle {
+			display: none;
+		}
 	}
 
 	@media (min-width: 768px) {

@@ -1,0 +1,30 @@
+/* Deck chrome shared between the deck player's bottom chrome and the compact
+   deck bar. Both carry .deck-chrome — style both at once here; anything
+   specific to one deck stays in its component. */
+
+@media (max-width: 768px) {
+	/* Transport controls centered */
+	.deck-chrome .controls {
+		justify-content: center;
+	}
+
+	/* Speed and volume shrink to their buttons, volume not pushed right */
+	.deck-chrome .controls .speed,
+	.deck-chrome .controls .volume {
+		flex: 0 0 auto;
+	}
+
+	.deck-chrome .controls .volume {
+		margin-left: 0;
+	}
+
+	.deck-chrome .controls .volume .range {
+		display: none;
+	}
+
+	/* Progress bar below the controls (the compact bar does the same via its
+	   grid areas; order is inert there) */
+	.deck-chrome > .progress {
+		order: 2;
+	}
+}
