@@ -21,7 +21,7 @@ For any task or question:
 
 Verify with `bun run test` (one known failing test is expected), `bun run types`, `bun run lint`.
 
-Be concise. Short answers, no walls of text.
+Be concise. Short answers, no walls of text. No essays — a few sentences, then the decision or question. Start by restating the problem in 1-2 sentences so it's clear what you think we're solving. When asking the human something, make it a single clear question they can answer in one line.
 
 Name CSS classes by primitive/identity (`tabs`, `btn`, `chip`, `link`, etc.), not by location (`explore-section-menu`) — reusable vocabulary styled once in `src/styles/`.
 
