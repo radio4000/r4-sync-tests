@@ -1584,7 +1584,7 @@
 	}
 
 	/* ─── Responsive ─── */
-	@media (max-width: 860px) {
+	@media (max-width: 1024px) {
 		.stat-grid,
 		.proj-grid {
 			grid-template-columns: 1fr 1fr;

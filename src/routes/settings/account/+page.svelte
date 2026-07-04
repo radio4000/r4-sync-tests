@@ -177,7 +177,7 @@
 		gap: 0.5rem;
 		padding: 0.5rem;
 
-		@media (min-width: 480px) {
+		@media (min-width: 520px) {
 			flex-direction: row;
 			justify-content: space-between;
 			align-items: center;

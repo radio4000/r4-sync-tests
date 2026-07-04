@@ -426,7 +426,7 @@
 	}
 
 	/* Tightest phones: drop labels in the crowded user-nav */
-	@media (max-width: 360px) {
+	@media (max-width: 520px) {
 		.user-nav :global(.btn.nav-btn .btn-label) {
 			display: none;
 		}

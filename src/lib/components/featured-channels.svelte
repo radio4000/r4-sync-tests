@@ -113,7 +113,7 @@
 		flex-direction: column;
 		justify-content: flex-start;
 
-		@media (max-width: 600px) {
+		@media (max-width: 640px) {
 			:global(.card .description) {
 				display: none;
 			}

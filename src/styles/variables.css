@@ -53,6 +53,7 @@
 
 	/* media queries can't use variables, but still, nice to declare what we use */
 	--breakpoint-xs: 520px;
+	--breakpoint-s: 640px;
 	--breakpoint-sm: 768px;
 	--breakpoint-md: 1024px;
 	--breakpoint-lg: 1280px;

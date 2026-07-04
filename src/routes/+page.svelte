@@ -529,7 +529,7 @@
 		padding: var(--space-2) 0.5rem 0;
 	}
 
-	@media (min-width: 980px) {
+	@media (min-width: 1024px) {
 		.loggedout-top-row.modal-open {
 			grid-template-columns: minmax(24rem, 1.2fr) minmax(20rem, 1fr);
 			align-items: start;

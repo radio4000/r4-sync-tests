@@ -50,7 +50,7 @@
 		margin-block-start: 2rem;
 	}
 
-	@media (max-width: 600px) {
+	@media (max-width: 640px) {
 		.steps {
 			grid-template-columns: 1fr;
 		}

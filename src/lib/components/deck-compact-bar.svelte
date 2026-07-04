@@ -382,7 +382,7 @@
 		max-width: 100%;
 	}
 
-	@media (max-width: 399px) {
+	@media (max-width: 520px) {
 		.controls :global(.volume .range) {
 			display: none;
 		}
