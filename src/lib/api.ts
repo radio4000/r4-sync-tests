@@ -11,7 +11,7 @@ import {
 import {logger} from '$lib/logger'
 import {capture} from '$lib/analytics'
 import {sdk} from '@radio4000/sdk'
-import {shuffleArray, isDbId, uuid} from '$lib/utils'
+import {shuffleArray, isDbId, isMobileViewport, uuid} from '$lib/utils'
 import {
 	getActiveQueue,
 	queueInsertManyAfter,
@@ -510,10 +510,34 @@ export function toggleVideo(deckId: number) {
 	maybeBroadcastNotify()
 }
 
+/** Expand a deck fullscreen. Any other expanded deck returns to compact.
+ *  Listening decks expand as a group, like the other layout toggles. */
+export function expandDeck(deckId: number) {
+	const deck = getDeck(deckId)
+	if (!deck) return
+	for (const d of Object.values(appState.decks)) {
+		const inGroup =
+			d === deck || Boolean(deck.listening_to_channel_id && d.listening_to_channel_id)
+		if (inGroup) {
+			d.expanded = true
+			d.compact = false
+			d.hide_video_player = false
+		} else if (d.expanded) {
+			d.expanded = false
+			d.compact = true
+		}
+	}
+}
+
 export function toggleDeckCompact(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.compact
+	// Mobile has no in-strip state: leaving compact goes straight to fullscreen
+	if (!newValue && isMobileViewport()) {
+		expandDeck(deckId)
+		return
+	}
 	if (deck.listening_to_channel_id) {
 		for (const d of Object.values(appState.decks)) {
 			if (d.listening_to_channel_id) {
@@ -531,6 +555,12 @@ export function togglePlayerExpanded(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
 	const newValue = !deck.expanded
+	// Mobile has no in-strip state: expand fullscreen or collapse to compact
+	if (isMobileViewport()) {
+		if (newValue) expandDeck(deckId)
+		else toggleDeckCompact(deckId)
+		return
+	}
 	if (deck.listening_to_channel_id) {
 		for (const d of Object.values(appState.decks)) {
 			if (d.listening_to_channel_id) {

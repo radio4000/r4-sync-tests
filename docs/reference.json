@@ -280,8 +280,9 @@
 
 		{"name": "toggleTheme()", "desc": "Light/dark mode."},
 		{"name": "toggleQueuePanel(deckId)", "desc": "Toggle queue sidebar for a deck."},
-		{"name": "toggleDeckCompact(deckId)", "desc": "Compact/expand a deck."},
+		{"name": "toggleDeckCompact(deckId)", "desc": "Compact/expand a deck. On mobile, leaving compact goes fullscreen via expandDeck."},
 		{"name": "togglePlayerExpanded(deckId)", "desc": "Fullscreen a deck."},
+		{"name": "expandDeck(deckId)", "desc": "Expand a deck fullscreen; other expanded decks return to compact."},
 		{"name": "openSearch()", "desc": "Focus search input."},
 
 		{"name": "resetLocalData()", "desc": "Clear localStorage and IndexedDB."}

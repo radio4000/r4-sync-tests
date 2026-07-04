@@ -10,8 +10,10 @@
 		getMediaPlayer,
 		resyncAutoRadio,
 		toggleDeckCompact,
+		expandDeck,
 		toggleShuffle
 	} from '$lib/api'
+	import {isMobileViewport} from '$lib/utils'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {parseUrl} from 'media-now/parse-url'
@@ -102,6 +104,7 @@
 	onclick={(e) => {
 		if (e.target instanceof Element && e.target.closest('a, button, input, menu')) return
 		appState.active_deck_id = deckId
+		if (isMobileViewport()) expandDeck(deckId)
 	}}
 >
 	{#if appState.show_track_range_control !== false && displayTrack}
@@ -138,6 +141,7 @@
 			<div
 				class="track-panel"
 				onclick={(e) => {
+					if (isMobileViewport()) return
 					if (!trackHref) return
 					if (e.target instanceof Element && e.target.closest('button, a')) return
 					goto(trackHref)

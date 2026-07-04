@@ -1,6 +1,7 @@
 import type {AppState, Deck} from './types.ts'
 import {logger} from '$lib/logger'
 import {LOCAL_STORAGE_KEYS} from '$lib/storage-keys'
+import {isMobileViewport} from '$lib/utils'
 
 function resetTransientDeckState(deck: Deck): Deck {
 	deck.is_playing = false
@@ -234,6 +235,8 @@ export function addDeck(): Deck {
 	const deck = createDefaultDeck(id)
 	deck.volume = appState.default_new_deck_volume ?? 1
 	deck.muted = deck.volume === 0
+	// Mobile decks are either compact or expanded — never in the strip
+	if (isMobileViewport()) deck.compact = true
 	appState.decks[id] = deck
 	appState.next_deck_id = id + 1
 	return deck

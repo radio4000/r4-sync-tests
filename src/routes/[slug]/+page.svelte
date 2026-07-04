@@ -220,7 +220,7 @@
 			{#snippet trigger()}
 				<Icon icon="hash" />{selectedTags.length > 0 ? `(${selectedTags.length})` : ''}
 			{/snippet}
-			<menu class="tags-menu">
+			<menu class="nav-vertical tags-menu">
 				<button
 					type="button"
 					class:active={selectedTags.length === 0}

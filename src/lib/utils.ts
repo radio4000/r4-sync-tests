@@ -12,6 +12,11 @@ export function shuffleSeed(): string {
 	return crypto.randomUUID().replace(/-/g, '').slice(0, 12)
 }
 
+/** Matches the app's mobile CSS breakpoint (deck strip, layout header). */
+export function isMobileViewport(): boolean {
+	return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+}
+
 const RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** Returns true if the string is a valid UUID (i.e. a real DB-persisted record ID, not an ephemeral one). */

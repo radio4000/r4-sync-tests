@@ -426,8 +426,8 @@
 </section>
 
 <section>
-	<h2>Tags menu (<code>.tags-menu</code>)</h2>
-	<menu class="tags-menu">
+	<h2>Tags menu (<code>.nav-vertical.tags-menu</code>)</h2>
+	<menu class="nav-vertical tags-menu">
 		<button type="button">dub (12)</button>
 		<button type="button" class="active">reggae (8)</button>
 		<button type="button">electronic (5)</button>

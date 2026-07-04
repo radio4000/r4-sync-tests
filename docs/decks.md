@@ -26,8 +26,16 @@ Deck ID 1 (the default) is hidden until it has queued tracks or an active track.
 
 ## Mobile layout behavior
 
-- With multiple non-compact decks, the deck strip splits available height between them.
-- On small screens with multiple non-compact decks, the main page content area is capped so decks can use most of the viewport height.
+On mobile (≤768px) a deck has two states: compact (bottom bar) or expanded (fullscreen) — the mini-bar/now-playing pattern. The in-strip state isn't reachable through interactions:
+
+- Leaving compact (bar tap, expand button, `r` shortcut) goes through `expandDeck()` — fullscreen, and any other expanded deck returns to compact.
+- Tapping anywhere on the compact bar expands; interactive controls inside (play, menu, links) still do their own thing.
+- The expanded deck shows a mobile-only chevron-down button (top-left) that collapses back to compact.
+- New decks (`addDeck`) start compact on mobile.
+- Persisted strip decks (neither flag, e.g. state saved on desktop) normalize to compact once at load in `+layout.svelte`. Resizing mid-session isn't fought — a desktop-created strip deck stays in the strip until the next interaction or reload.
+
+Rendering details:
+
 - Compact decks still render their hidden `deck.svelte` instance (for audio continuity), but collapse to zero height in the mobile strip.
 - Visible compact controls live in the bottom compact section (`deck-compact-bar.svelte` in `+layout.svelte`).
 - On compact decks, mobile view prioritizes channel micro cards (horizontal scroll, truncated slugs) and hides track row to keep controls usable.

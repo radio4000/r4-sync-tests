@@ -417,6 +417,7 @@
 							<button
 								type="button"
 								class={[
+									'primary',
 									'mode-action',
 									'play',
 									{active: isChannelPlaying, drifted: activeAutoDrifted}

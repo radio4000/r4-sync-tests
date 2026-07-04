@@ -13,6 +13,7 @@
 	import AppBuildInfo from '$lib/components/app-build-info.svelte'
 	import AppUpdateBanner from '$lib/components/app-update-banner.svelte'
 	import {toggleDeckCompact} from '$lib/api'
+	import {isMobileViewport} from '$lib/utils'
 	import {onMount} from 'svelte'
 	import {SvelteMap} from 'svelte/reactivity'
 	import {beforeNavigate, afterNavigate, goto} from '$app/navigation'
@@ -122,6 +123,13 @@
 	onMount(async () => {
 		if (DISABLED_ROUTES.some((p) => page.route.id?.startsWith(p))) {
 			goto(DISABLED_ROUTE_FALLBACK, {replaceState: true})
+		}
+		// Mobile decks are either compact or expanded. Persisted desktop strip
+		// decks (neither flag) normalize to compact once, at load.
+		if (isMobileViewport()) {
+			for (const deck of Object.values(appState.decks)) {
+				if (!deck.compact && !deck.expanded) deck.compact = true
+			}
 		}
 		trackAppPresence()
 		try {
@@ -369,14 +377,9 @@
 		overflow: hidden;
 	}
 
-	/* Experimental: header collapses to a single centered trigger that floats
-	   over the content instead of reserving a sidebar/bar. */
 	.layout > :global(header) {
-		position: fixed;
+		position: sticky;
 		top: 0;
-		left: 50%;
-		transform: translateX(-50%);
-		z-index: 60;
 		flex-shrink: 0;
 	}
 
@@ -523,15 +526,19 @@
 		}
 
 		.layout > :global(header) {
-			position: fixed;
+			position: sticky;
 			top: 0;
-			left: 50%;
-			transform: translateX(-50%);
 			height: auto;
 			min-height: auto;
 			margin: 0;
-			width: auto;
-			z-index: 60;
+			width: 100%;
+			align-self: stretch;
+			order: 2;
+			z-index: 40;
+		}
+
+		.content-wrapper {
+			order: 1;
 		}
 
 		.content {

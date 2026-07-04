@@ -18,7 +18,7 @@
 	--media-button-icon-height: 18px;
 
 	/* typography */
-	--font-root: 17px;
+	--font-root: 16px;
 	--font-sans: 'Radio Canada', 'firava', system-ui, sans-serif;
 	--font-mono: ui-monospace, monospace;
 	--font-1: 0.6875rem;
@@ -57,6 +57,12 @@
 	--breakpoint-md: 1024px;
 	--breakpoint-lg: 1280px;
 	--breakpoint-xl: 1640px;
+}
+
+@media (min-width: 520px) {
+	:root {
+		--font-root: 17px;
+	}
 }
 
 @media (min-width: 1280px) {

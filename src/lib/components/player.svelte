@@ -479,6 +479,15 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<header class="header" onclick={() => (appState.active_deck_id = deckId)}>
 		<div class="header-top">
+			{#if deck?.expanded}
+				<button
+					class="minimize"
+					onclick={() => toggleDeckCompact(deckId)}
+					aria-label={m.player_minimize()}
+				>
+					<Icon icon="arrow-down" />
+				</button>
+			{/if}
 			{#if hasMultipleDecks}
 				<div
 					class="header-id"
@@ -735,6 +744,18 @@
 		justify-content: space-between;
 		padding: 0.5rem 0.5rem;
 		gap: 0.5rem;
+	}
+
+	/* Mobile-only "close the fullscreen sheet" affordance */
+	.minimize {
+		display: none;
+	}
+
+	@media (max-width: 768px) {
+		.minimize {
+			display: flex;
+			align-items: center;
+		}
 	}
 
 	.header-channel {
