@@ -6,13 +6,13 @@ This repo (`github.com/radio4000/r4-svelte`) is the SvelteKit frontend. It uses 
 
 For any task or question:
 
-1. Read docs first — scan `docs/reference.json` for relevant APIs or use `sg-ast outline`. Read any topic-specific doc inside `docs/`. Most answers are already there. Assess whether existing APIs cover the task or if new concepts are needed.
+1. Read docs first — scan `docs/reference.json` for relevant APIs or use `ast-grep outline` (aliased `sg`). Read any topic-specific doc inside `docs/`, and the nested AGENTS.md in the directory you're working in (styles, components, collections, player, routes/[slug]). Most answers are already there. Assess whether existing APIs cover the task or if new concepts are needed.
 2. Ask clarifying questions before exploring the entire code base, or when the task is ambiguous
 
 ```
 /src/routes           -- pages
 /src/lib/types.ts     -- type definitions
-/src/lib/api.ts       -- data operations
+/src/lib/api.ts       -- deck/player/UI orchestration (data layer is @radio4000/sdk + collections)
 /src/lib/utils.ts     -- utility functions
 /src/lib/collections  -- data and state
 /src/lib/components   -- components
@@ -20,7 +20,7 @@ For any task or question:
 
 ## Key docs
 
-- [reference](docs/reference.json) - scan for relevant functions, SDK methods, components, types. Maintained by hand — update it when you add or change APIs (`sg-ast outline` helps list what's where)
+- [reference](docs/reference.json) - scan for relevant functions, SDK methods, components, types. Maintained by hand — update it when you add or change APIs (`ast-grep outline` helps list what's where)
 - [universe](docs/universe.md) - domain model: channels, tracks, views, decks, broadcast, auto-radio
 - [state](docs/state.md) - how data flows (remote, local sync, app state)
 - [tone](docs/tone.md) - voice and tone for all copy (UI, docs, changelog)
