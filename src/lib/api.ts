@@ -902,6 +902,17 @@ export async function resyncAutoRadio(deckId: number) {
 	}
 }
 
+/** Exit auto-radio, keeping the queue and current track playing — the deck
+ *  becomes a normal deck so prev/next work again. */
+export function leaveAutoRadio(deckId: number) {
+	const deck = getDeck(deckId)
+	if (!deck?.auto_radio) return
+	clearAutoRadio(deck)
+	deck.auto_radio_rotation_start = undefined
+	capture('player:auto_radio_leave')
+	log.log('leave_auto_radio', {deckId})
+}
+
 // --- Channel entry points ("tap play") ---
 
 /**

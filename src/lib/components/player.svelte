@@ -14,6 +14,7 @@
 		getUserInitiatedPlay,
 		setUserInitiatedPlay,
 		resyncAutoRadio,
+		leaveAutoRadio,
 		recordSeekPosition,
 		toggleShuffle
 	} from '$lib/api'
@@ -670,7 +671,8 @@
 						drifted={!!deck?.auto_radio_drifted}
 						size={14}
 						count={headerPresenceCount}
-						onclick={() => resyncAutoRadio(deckId)}
+						onclick={() =>
+							deck?.auto_radio_drifted ? resyncAutoRadio(deckId) : leaveAutoRadio(deckId)}
 					/>
 					<VolumeControl {deckId} />
 				{/if}
@@ -921,7 +923,7 @@
 	}
 
 	.bottom-chrome {
-		border-top: 1px solid var(--gray-7);
+		border-top: 1px solid var(--gray-5);
 		margin-top: auto;
 		display: flex;
 		flex-direction: column;

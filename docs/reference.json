@@ -332,6 +332,10 @@
 			"desc": "Resync drifted deck to current auto-radio position."
 		},
 		{
+			"name": "leaveAutoRadio(deckId)",
+			"desc": "Exit auto-radio, keep queue and current track playing."
+		},
+		{
 			"name": "toggleChannelAutoRadio(slug, tracks?)",
 			"desc": "Toggle auto-radio for a channel slug (creates deck if needed)."
 		},

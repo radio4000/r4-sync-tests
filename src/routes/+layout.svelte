@@ -446,8 +446,8 @@
 		border-radius: 8px 8px 0 0;
 		overflow: hidden;
 		border-top: 1px solid var(--gray-4);
-		margin: 0 var(--space-1) var(--space-1);
 		/*
+		margin: 0 var(--space-1) var(--space-1);
 		padding: 0.4rem 0.5rem;
 		 */
 		position: sticky;

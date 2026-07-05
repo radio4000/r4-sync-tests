@@ -140,9 +140,10 @@
 		flex-direction: column;
 		flex-shrink: 0;
 		min-height: 0;
-		margin: var(--space-1);
 		overflow: clip;
-		border-radius: var(--border-radius);
+		/* 
+		margin: var(--space-1);
+		border-radius: var(--border-radius); */
 		border-left: 1px solid var(--gray-4);
 
 		&:empty {

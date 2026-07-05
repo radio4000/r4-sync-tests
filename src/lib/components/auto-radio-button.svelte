@@ -24,7 +24,10 @@
 	} = $props()
 
 	// Active = engaged and in sync. Drifted reads as a resync call-to-action, so it drops active.
-	const resolvedTitle = $derived(title ?? (drifted ? m.auto_radio_resync() : m.auto_radio_join()))
+	// Live + synced = a toggle: clicking leaves auto-radio.
+	const resolvedTitle = $derived(
+		title ?? (drifted ? m.auto_radio_resync() : live ? m.auto_radio_leave() : m.auto_radio_join())
+	)
 	const resolvedAriaLabel = $derived(ariaLabel ?? resolvedTitle)
 	// Only surface the badge when others are present (count includes you).
 	const showCount = $derived(count > 1)

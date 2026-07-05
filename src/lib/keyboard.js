@@ -14,6 +14,7 @@ import {
 } from '$lib/api'
 import {appState} from '$lib/app-state.svelte'
 import {channelsCollection} from '$lib/collections/channels'
+import {isMobileViewport} from '$lib/utils'
 import * as m from '$lib/paraglide/messages'
 
 /**
@@ -73,6 +74,19 @@ export const SHORTCUT_ACTIONS = {
 	},
 	clearQueue: {
 		run: () => clearQueue(appState.active_deck_id)
+	},
+	collapseExpandedDeck: {
+		default: 'Escape',
+		run: () => {
+			// Mobile-only: expanded deck is a fullscreen takeover there. On
+			// desktop it's a deliberate layout state — leave Escape alone.
+			if (!isMobileViewport()) return
+			// Native Escape consumers go first: fullscreen, dialogs, popovers.
+			if (document.fullscreenElement) return
+			if (document.querySelector('dialog[open], :popover-open')) return
+			const expanded = Object.entries(appState.decks).find(([, d]) => d.expanded)
+			if (expanded) toggleDeckCompact(Number(expanded[0]))
+		}
 	},
 	toggleTheme: {
 		default: 't',

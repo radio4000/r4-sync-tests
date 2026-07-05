@@ -1,14 +1,24 @@
 <script>
+	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {appState, removeDeck} from '$lib/app-state.svelte'
-	import {toggleVideo, toggleQueuePanel, clearUserInitiatedPlay} from '$lib/api'
+	import {toggleVideo, toggleQueuePanel, clearUserInitiatedPlay, leaveAutoRadio} from '$lib/api'
 	import {getBroadcastingChannelId, notifyBroadcastState, leaveBroadcast} from '$lib/broadcast.js'
 	import {isGroupControlDeck, sortedListeningDeckIds} from '$lib/deck'
 	import Icon from '$lib/components/icon.svelte'
 	import * as m from '$lib/paraglide/messages'
 
-	/** @type {{deckId: number, compact?: boolean, closeMenu?: () => void, deckEl?: HTMLElement | undefined}} */
-	let {deckId, compact = false, closeMenu, deckEl} = $props()
+	/** @type {{deckId: number, compact?: boolean, closeMenu?: () => void, deckEl?: HTMLElement | undefined, track?: import('$lib/types').Track, channel?: import('$lib/types').Channel, trackHref?: string, canEditTrack?: boolean}} */
+	let {
+		deckId,
+		compact = false,
+		closeMenu,
+		deckEl,
+		track,
+		channel,
+		trackHref,
+		canEditTrack = false
+	} = $props()
 
 	let deck = $derived(appState.decks[deckId])
 	let isListeningToBroadcast = $derived(Boolean(deck?.listening_to_channel_id))
@@ -60,9 +70,59 @@
 	function leaveBroadcastDecks() {
 		listeningDeckIds.forEach((id) => leaveBroadcast(id))
 	}
+
+	function shareTrack() {
+		if (!track || !channel) return
+		appState.modal_share = {track, channel}
+		closeMenu?.()
+	}
+
+	function addToRadio() {
+		if (!track) return
+		if (!appState.user) {
+			const addPath = resolve('/add') + (track.url ? `?url=${encodeURIComponent(track.url)}` : '')
+			const authPath = resolve('/auth') + `?redirect=${encodeURIComponent(addPath)}`
+			goto(authPath)
+			closeMenu?.()
+			return
+		}
+		appState.modal_track_add = {track}
+		closeMenu?.()
+	}
+
+	function editTrack() {
+		if (!track) return
+		appState.modal_track_edit = {track}
+		closeMenu?.()
+	}
 </script>
 
 <menu class="nav-vertical">
+	{#if compact && track}
+		{#if trackHref}
+			<a href={trackHref} onclick={() => closeMenu?.()}>
+				<Icon icon="circle-info" />
+				{m.track_go_to()}
+			</a>
+			<button type="button" onclick={shareTrack}>
+				<Icon icon="share" />
+				{m.share_native()}
+			</button>
+		{/if}
+		{#if !appState.embed_mode}
+			<button type="button" onclick={addToRadio}>
+				<Icon icon="add" />
+				{m.track_add_to_radio()}
+			</button>
+		{/if}
+		{#if canEditTrack}
+			<button type="button" onclick={editTrack}>
+				<Icon icon="edit" />
+				{m.common_edit()}
+			</button>
+		{/if}
+	{/if}
+
 	{#if !compact}
 		<button
 			onclick={() => toggleVideo(deckId)}
@@ -102,6 +162,18 @@
 			<Icon icon="settings" />
 			{m.settings_player()}
 		</a>
+	{/if}
+
+	{#if deck?.auto_radio}
+		<button
+			onclick={() => {
+				leaveAutoRadio(deckId)
+				closeMenu?.()
+			}}
+		>
+			<Icon icon="infinite" />
+			{m.auto_radio_leave()}
+		</button>
 	{/if}
 
 	{#if !isListeningToBroadcast}

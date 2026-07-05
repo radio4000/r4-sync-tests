@@ -24,6 +24,7 @@
 		showImage?: boolean
 		showSlug?: boolean
 		canEdit?: boolean
+		showMenu?: boolean
 		onTagClick?: (tag: string) => void
 		menuAlign?: 'left' | 'right' | 'end'
 		menuValign?: 'top' | 'bottom'
@@ -43,6 +44,7 @@
 		showImage = true,
 		showSlug = false,
 		canEdit = false,
+		showMenu = true,
 		onTagClick,
 		menuAlign,
 		menuValign,
@@ -205,93 +207,95 @@
 			{#if showSlug}<small>@{track.slug}</small>{/if}
 		</time>
 	</div>
-	<PopoverMenu
-		bind:this={menu}
-		btnClass="ghost trackcard-contextBtn"
-		align={menuAlign}
-		valign={menuValign ?? 'top'}
-	>
-		{#snippet trigger()}
-			<Icon icon="options-horizontal" />
-		{/snippet}
-		<menu class="nav-vertical">
-			<button
-				type="button"
-				role="menuitem"
-				{@attach tooltip({content: m.common_play()})}
-				onclick={() => {
-					if (onPlay) {
-						onPlay(track.id)
-					} else {
-						playTrack(deckId ?? appState.active_deck_id, track.id, null, 'user_click_track')
-					}
-					menu?.close()
-				}}><Icon icon="play-fill" />{m.common_play()}</button
-			>
-			{#if !appState.embed_mode}
+	{#if showMenu}
+		<PopoverMenu
+			bind:this={menu}
+			btnClass="ghost trackcard-contextBtn"
+			align={menuAlign}
+			valign={menuValign ?? 'top'}
+		>
+			{#snippet trigger()}
+				<Icon icon="options-horizontal" />
+			{/snippet}
+			<menu class="nav-vertical">
 				<button
 					type="button"
 					role="menuitem"
-					{@attach tooltip({content: m.track_play_next()})}
+					{@attach tooltip({content: m.common_play()})}
 					onclick={() => {
-						addToPlaylist(deckId ?? appState.active_deck_id, [track.id])
+						if (onPlay) {
+							onPlay(track.id)
+						} else {
+							playTrack(deckId ?? appState.active_deck_id, track.id, null, 'user_click_track')
+						}
 						menu?.close()
-					}}><Icon icon="next-fill" />{m.track_play_next()}</button
+					}}><Icon icon="play-fill" />{m.common_play()}</button
 				>
-			{/if}
-			<button
-				type="button"
-				role="menuitem"
-				{@attach tooltip({content: m.track_card_play_in_deck()})}
-				onclick={async () => {
-					await playTrackInNewDeck(track.id, track.slug ?? undefined)
-					menu?.close()
-				}}><Icon icon="sidebar-fill-right" />{m.track_card_play_in_deck()}</button
-			>
-			{#if !appState.embed_mode}
+				{#if !appState.embed_mode}
+					<button
+						type="button"
+						role="menuitem"
+						{@attach tooltip({content: m.track_play_next()})}
+						onclick={() => {
+							addToPlaylist(deckId ?? appState.active_deck_id, [track.id])
+							menu?.close()
+						}}><Icon icon="next-fill" />{m.track_play_next()}</button
+					>
+				{/if}
 				<button
 					type="button"
 					role="menuitem"
-					{@attach tooltip({content: m.track_add_to_radio()})}
-					onclick={addToRadio}><Icon icon="add" />{m.track_add_to_radio()}</button
-				>
-			{/if}
-			{#if isRealTrack}
-				<button
-					type="button"
-					role="menuitem"
-					{@attach tooltip({content: m.share_native()})}
-					onclick={shareTrack}><Icon icon="share" />{m.share_native()}</button
-				>
-			{/if}
-			{#if onLocate}
-				<button type="button" role="menuitem" onclick={onLocate}
-					><Icon icon="arrow-down" />{m.track_card_locate_in_list()}</button
-				>
-			{/if}
-			{#if isRealTrack && !appState.embed_mode}
-				<a href={permalink} role="menuitem"><Icon icon="circle-info" />{m.track_go_to()}</a>
-			{:else if track.url && !appState.embed_mode}
-				<a href={track.url} target="_blank" rel="noopener noreferrer" role="menuitem"
-					><Icon icon="circle-info" />{m.track_card_open_video()}</a
-				>
-			{/if}
-			{#if canEdit}
-				<button type="button" role="menuitem" onclick={editTrack}
-					><Icon icon="edit" />{m.common_edit()}</button
-				>
-				<button
-					type="button"
-					class="menu-delete"
-					role="menuitem"
-					onclick={() => {
+					{@attach tooltip({content: m.track_card_play_in_deck()})}
+					onclick={async () => {
+						await playTrackInNewDeck(track.id, track.slug ?? undefined)
 						menu?.close()
-						showDeleteDialog = true
-					}}><Icon icon="delete" />{m.common_delete()}</button
+					}}><Icon icon="sidebar-fill-right" />{m.track_card_play_in_deck()}</button
 				>
-			{/if}
-		</menu>
-	</PopoverMenu>
+				{#if !appState.embed_mode}
+					<button
+						type="button"
+						role="menuitem"
+						{@attach tooltip({content: m.track_add_to_radio()})}
+						onclick={addToRadio}><Icon icon="add" />{m.track_add_to_radio()}</button
+					>
+				{/if}
+				{#if isRealTrack}
+					<button
+						type="button"
+						role="menuitem"
+						{@attach tooltip({content: m.share_native()})}
+						onclick={shareTrack}><Icon icon="share" />{m.share_native()}</button
+					>
+				{/if}
+				{#if onLocate}
+					<button type="button" role="menuitem" onclick={onLocate}
+						><Icon icon="arrow-down" />{m.track_card_locate_in_list()}</button
+					>
+				{/if}
+				{#if isRealTrack && !appState.embed_mode}
+					<a href={permalink} role="menuitem"><Icon icon="circle-info" />{m.track_go_to()}</a>
+				{:else if track.url && !appState.embed_mode}
+					<a href={track.url} target="_blank" rel="noopener noreferrer" role="menuitem"
+						><Icon icon="circle-info" />{m.track_card_open_video()}</a
+					>
+				{/if}
+				{#if canEdit}
+					<button type="button" role="menuitem" onclick={editTrack}
+						><Icon icon="edit" />{m.common_edit()}</button
+					>
+					<button
+						type="button"
+						class="menu-delete"
+						role="menuitem"
+						onclick={() => {
+							menu?.close()
+							showDeleteDialog = true
+						}}><Icon icon="delete" />{m.common_delete()}</button
+					>
+				{/if}
+			</menu>
+		</PopoverMenu>
+	{/if}
 	{#if showDeleteDialog}
 		<Dialog bind:showModal={showDeleteDialog}>
 			{#snippet header()}
