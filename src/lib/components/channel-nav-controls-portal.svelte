@@ -19,8 +19,11 @@
 
 	// `controls` is a page-owned snippet rendered by the layout. Clear it before
 	// this page tears down, otherwise the layout renders it for one tick after the
-	// page's deriveds go inert (svelte derived_inert). afterNavigate re-asserts for
-	// same-route navigations (e.g. query changes) where this page stays mounted.
-	beforeNavigate(() => navCtx?.setControls(undefined))
+	// page's deriveds go inert (svelte derived_inert). Same-route navigations
+	// (query changes) keep the page mounted — clearing there would unmount the
+	// nav row for the duration of the navigation and collapse the sticky header.
+	beforeNavigate((nav) => {
+		if (nav.to?.route.id !== nav.from?.route.id) navCtx?.setControls(undefined)
+	})
 	afterNavigate(() => navCtx?.setControls(controls))
 </script>
