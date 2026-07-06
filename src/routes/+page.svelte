@@ -634,7 +634,7 @@
 
 	.dashboard-card--link {
 		text-decoration: none;
-		transition: all 0.1s;
+		transition: background var(--duration-1);
 		padding-inline: 1rem;
 
 		&:hover,

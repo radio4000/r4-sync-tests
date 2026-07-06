@@ -37,6 +37,7 @@
 		if (centered) {
 			el.style.top = ''
 			el.style.left = ''
+			el.style.transformOrigin = ''
 			return
 		}
 		const rect = buttonEl.getBoundingClientRect()
@@ -58,6 +59,8 @@
 			: Math.min(rect.bottom + 4, window.innerHeight - popoverRect.height - 8)
 		el.style.top = `${top}px`
 		el.style.left = `${Math.max(8, left)}px`
+		// Scale out of the trigger corner instead of the popover's center
+		el.style.transformOrigin = `${opensUp ? 'bottom' : 'top'} ${resolvedAlign === 'right' ? 'right' : 'left'}`
 	}
 
 	// Position popover below button and optionally close on action click
@@ -121,6 +124,7 @@
 	}
 
 	[popover] {
+		--duration: var(--duration-2);
 		position: fixed;
 		margin: 0;
 		padding: var(--space-1);
@@ -129,6 +133,25 @@
 		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		box-shadow: var(--shadow-modal);
+		opacity: 1;
+		scale: 1;
+		transition:
+			opacity var(--duration) var(--ease-out),
+			scale var(--duration) var(--ease-out),
+			display var(--duration) allow-discrete,
+			overlay var(--duration) allow-discrete;
+	}
+	/* exit — quicker than the entrance */
+	[popover]:not(:popover-open) {
+		--duration: var(--duration-1);
+		opacity: 0;
+		scale: 0.97;
+	}
+	@starting-style {
+		[popover]:popover-open {
+			opacity: 0;
+			scale: 0.97;
+		}
 	}
 
 	/* Centered sheet (opt-in via the `centered` prop). */

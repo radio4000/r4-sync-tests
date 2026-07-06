@@ -128,7 +128,7 @@
 	}
 
 	.deck:not(.expanded) {
-		transition: border-color var(--deck-transition-fast) var(--deck-transition-ease);
+		transition: border-color var(--duration-2) var(--ease-out);
 	}
 
 	.resize-handle {
