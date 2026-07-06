@@ -20,6 +20,9 @@
 		track: Track
 		index?: number
 		deckId?: number
+		/** Prebuilt trackId → deck info, hoisted out of the card to avoid iterating
+		 * appState.decks per row. Optional: cards without it fall back to per-card lookup. */
+		deckLookup?: Map<string, {deckId: number; isPlaying: boolean}>
 		selected?: boolean
 		onPlay?: (trackId: string) => void
 		showImage?: boolean
@@ -40,6 +43,7 @@
 		track,
 		index,
 		deckId,
+		deckLookup,
 		selected = false,
 		onPlay,
 		showImage = true,
@@ -58,7 +62,11 @@
 
 	const permalink = $derived(`/${track?.slug}/tracks/${track?.id}`)
 	const isRealTrack = $derived(isDbId(track?.id))
+	// When a deckLookup is provided (tracklist rows), it already encodes the same
+	// semantics the per-card branches below compute — see tracklist.svelte's builder.
+	const deckInfo = $derived(deckLookup?.get(track?.id))
 	const active = $derived.by(() => {
+		if (deckLookup) return Boolean(deckInfo)
 		if (deckId != null) {
 			const deck = appState.decks[deckId]
 			return deck?.playlist_track === track?.id
@@ -66,6 +74,7 @@
 		return Object.values(appState.decks).some((d) => d.playlist_track === track?.id)
 	})
 	const matchedDeckId = $derived.by(() => {
+		if (deckLookup) return deckInfo?.deckId ?? deckId ?? appState.active_deck_id
 		if (deckId != null) return deckId
 		for (const [id, deck] of Object.entries(appState.decks)) {
 			if (deck?.playlist_track === track?.id) return Number(id)
@@ -73,6 +82,7 @@
 		return appState.active_deck_id
 	})
 	const isTrackPlaying = $derived.by(() => {
+		if (deckLookup) return deckInfo?.isPlaying ?? false
 		const targetDeck = appState.decks[matchedDeckId]
 		return Boolean(targetDeck?.playlist_track === track?.id && targetDeck?.is_playing)
 	})

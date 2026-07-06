@@ -64,6 +64,28 @@
 		}
 	}
 
+	// Build the trackId → deck info map once here instead of iterating appState.decks
+	// inside every TrackCard. Rebuilds only when deck state changes (play/pause, track
+	// advance), not per row. Mirrors the per-card semantics in track-card.svelte:
+	// with deckId set, only that deck counts; otherwise the first deck holding a track wins.
+	/** @type {Map<string, {deckId: number, isPlaying: boolean}>} */
+	const deckLookup = $derived.by(() => {
+		/** @type {Map<string, {deckId: number, isPlaying: boolean}>} */
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const map = new Map()
+		if (deckId != null) {
+			const deck = appState.decks[deckId]
+			if (deck?.playlist_track)
+				map.set(deck.playlist_track, {deckId, isPlaying: Boolean(deck.is_playing)})
+			return map
+		}
+		for (const [id, deck] of Object.entries(appState.decks)) {
+			const pt = deck?.playlist_track
+			if (pt && !map.has(pt)) map.set(pt, {deckId: Number(id), isPlaying: Boolean(deck.is_playing)})
+		}
+		return map
+	})
+
 	const playFromList = (trackId) => {
 		const targetDeck = deckId ?? appState.active_deck_id
 		if (playContext && contextTrackIds.length) {
@@ -186,6 +208,7 @@
 		{track}
 		{index}
 		{deckId}
+		{deckLookup}
 		selected={selectedTrackId === track.id}
 		onPlay={playContext ? playFromList : undefined}
 		canEdit={canEditItem(track)}
@@ -259,7 +282,7 @@
 								{@const track = item.track}
 								{@const index = item.index}
 								<li
-									class={{'track-with-channel': showSlug}}
+									class={{'cv-row': true, 'track-with-channel': showSlug}}
 									role="option"
 									aria-selected="false"
 									id="track-{track.id}"
@@ -293,7 +316,7 @@
 		>
 			{#each tracks as track, index (track.id)}
 				<li
-					class={{'track-with-channel': showSlug}}
+					class={{'cv-row': true, 'track-with-channel': showSlug}}
 					role="option"
 					aria-selected="false"
 					id="track-{track.id}"
@@ -308,6 +331,14 @@
 {/if}
 
 <style>
+	/* Skip render/layout work for off-screen rows in the non-virtual lists (~1500 rows).
+	   `auto <height>` uses the remembered size once measured, so the scrollbar stays stable;
+	   the fallback matches a real row height. scrollIntoView/keyboard nav still reveal rows. */
+	.cv-row {
+		content-visibility: auto;
+		contain-intrinsic-size: auto 58px;
+	}
+
 	.track-with-channel {
 		display: flex;
 		flex-direction: row;
