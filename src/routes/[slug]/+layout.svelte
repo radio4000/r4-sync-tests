@@ -16,7 +16,12 @@
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {shufflePlayChannel, toggleChannelPlay} from '$lib/api'
 	import {shortcutHint} from '$lib/keyboard'
-	import {findAutoDecksForChannel, findChannelDeck, findListeningDeck} from '$lib/deck'
+	import {
+		findAutoDecksForChannel,
+		findChannelDeck,
+		findListeningDeck,
+		isListeningToChannel as isListeningToChannelDeck
+	} from '$lib/deck'
 	import ButtonFollow from '$lib/components/button-follow.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import ChannelCanvasBg from '$lib/components/channel-canvas-bg.svelte'
@@ -130,12 +135,7 @@
 	// --- Deriveds ---
 
 	let isChannelLive = $derived(Boolean(channelBroadcastQuery.data))
-	let isListeningToChannel = $derived(
-		Boolean(
-			channel?.id &&
-			Object.values(appState.decks).some((d) => d.listening_to_channel_id === channel.id)
-		)
-	)
+	let isListeningToChannel = $derived(isListeningToChannelDeck(appState.decks, channel?.id))
 	let canEdit = $derived(canEditChannel(channel?.id))
 	let anyChannelAutoDecks = $derived(findAutoDecksForChannel(appState.decks, channel?.slug))
 	let channelListeningDeck = $derived(
@@ -365,7 +365,9 @@
 
 				<div class="channel-controls">
 					<menu class="channel-actions" role="group" aria-label="Channel actions">
-						{#if canEdit || isChannelLive || isListeningToChannel}
+						<!-- "Start broadcast" hidden for now — restore by adding canEdit back:
+						{#if canEdit || isChannelLive || isListeningToChannel} -->
+						{#if isChannelLive || isListeningToChannel}
 							<button
 								type="button"
 								class={[
