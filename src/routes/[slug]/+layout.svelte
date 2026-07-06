@@ -377,15 +377,13 @@
 								]}
 								onclick={onLiveAction}
 								disabled={liveLoading}
-								{@attach tooltip({
-									content: canEdit
-										? isChannelLive
-											? m.broadcast_stop_button()
-											: m.broadcast_start_button()
-										: isListeningToChannel
-											? m.broadcasts_leave()
-											: m.broadcasts_join()
-								})}
+								aria-label={canEdit
+									? isChannelLive
+										? m.broadcast_stop_button()
+										: m.broadcast_start_button()
+									: isListeningToChannel
+										? m.broadcasts_leave()
+										: m.broadcasts_join()}
 							>
 								<Icon icon="signal" size={14} />
 								<span>

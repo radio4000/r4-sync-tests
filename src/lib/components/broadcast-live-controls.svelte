@@ -48,7 +48,6 @@
 				type="button"
 				class:active={isListening}
 				onclick={() => (isListening ? onLeave?.() : onJoin?.())}
-				title={isListening ? m.broadcasts_leave() : m.broadcasts_join()}
 				aria-label={isListening ? m.broadcasts_leave() : m.broadcasts_join()}
 			>
 				<Icon icon="signal" />
