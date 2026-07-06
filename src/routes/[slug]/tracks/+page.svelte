@@ -306,7 +306,7 @@
 				><Icon icon="play-fill" /></button
 			>
 			<button type="button" title={m.common_queue()} onclick={queueFilteredTracks}
-				><Icon icon="next-fill" /></button
+				><Icon icon="unordered-list" /></button
 			>
 			{#if channel && canShowFilteredAutoRadio}
 				<AutoRadioButton

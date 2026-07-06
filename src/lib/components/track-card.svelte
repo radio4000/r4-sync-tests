@@ -2,7 +2,7 @@
 	import type {Snippet} from 'svelte'
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
-	import {playTrack, addToPlaylist, playTrackInNewDeck, togglePlayPause} from '$lib/api'
+	import {playTrack, playNext, addToPlaylist, playTrackInNewDeck, togglePlayPause} from '$lib/api'
 	import {deleteTrack} from '$lib/collections/tracks'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {appState} from '$lib/app-state.svelte'
@@ -239,9 +239,18 @@
 						role="menuitem"
 						{@attach tooltip({content: m.track_play_next()})}
 						onclick={() => {
-							addToPlaylist(deckId ?? appState.active_deck_id, [track.id])
+							playNext(deckId ?? appState.active_deck_id, [track.id])
 							menu?.close()
 						}}><Icon icon="next-fill" />{m.track_play_next()}</button
+					>
+					<button
+						type="button"
+						role="menuitem"
+						{@attach tooltip({content: m.track_add_to_queue()})}
+						onclick={() => {
+							addToPlaylist(deckId ?? appState.active_deck_id, [track.id])
+							menu?.close()
+						}}><Icon icon="unordered-list" />{m.track_add_to_queue()}</button
 					>
 				{/if}
 				<button

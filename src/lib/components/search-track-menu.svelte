@@ -1,6 +1,13 @@
 <script>
 	import {goto} from '$app/navigation'
-	import {addToPlaylist, joinAutoRadio, loadDeckView, playTrack, setPlaylist} from '$lib/api'
+	import {
+		addToPlaylist,
+		joinAutoRadio,
+		loadDeckView,
+		playNext,
+		playTrack,
+		setPlaylist
+	} from '$lib/api'
 	import {appState} from '$lib/app-state.svelte'
 	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
 	import ButtonFeedback from '$lib/components/button-feedback.svelte'
@@ -46,6 +53,14 @@
 		await playTrack(appState.active_deck_id, ids[0], null, 'play_search')
 	}
 
+	function playNextSearchResults() {
+		if (!tracks.length) return
+		playNext(
+			appState.active_deck_id,
+			tracks.map((t) => t.id)
+		)
+	}
+
 	function queueSearchResults() {
 		if (!tracks.length) return
 		addToPlaylist(
@@ -66,10 +81,15 @@
 			{m.search_playing({count: tracks.length})}{/snippet}
 		<Icon icon="play-fill" />{m.search_play_all()}
 	</ButtonFeedback>
-	<ButtonFeedback onclick={queueSearchResults}>
+	<ButtonFeedback onclick={playNextSearchResults}>
 		{#snippet successChildren()}<Icon icon="next-fill" />
+			{m.search_queued_next({count: tracks.length})}{/snippet}
+		<Icon icon="next-fill" />{m.search_play_next()}
+	</ButtonFeedback>
+	<ButtonFeedback onclick={queueSearchResults}>
+		{#snippet successChildren()}<Icon icon="unordered-list" />
 			{m.search_queued({count: tracks.length})}{/snippet}
-		<Icon icon="next-fill" />{m.search_queue_all()}
+		<Icon icon="unordered-list" />{m.search_queue_all()}
 	</ButtonFeedback>
 	{#if canShowAutoRadio}
 		<AutoRadioButton
