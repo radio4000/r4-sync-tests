@@ -98,6 +98,13 @@ export function isListeningToChannel(decks: Record<number, Deck>, channelId?: st
 	return deckValues(decks).some((d) => d.listening_to_channel_id === channelId)
 }
 
+/** All deck IDs, sorted ascending. */
+export function sortedDeckIds(decks: Record<number, Deck>): number[] {
+	return Object.keys(decks)
+		.map(Number)
+		.sort((a, b) => a - b)
+}
+
 /** Deck IDs currently listening to a broadcast, sorted ascending. */
 export function sortedListeningDeckIds(decks: Record<number, Deck>): number[] {
 	return deckValues(decks)

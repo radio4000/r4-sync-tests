@@ -5,6 +5,9 @@ export interface Channel extends SDKChannel {
 	spam?: boolean
 }
 
+/** Minimal channel handle for play/track APIs — enough to identify (id) and route (slug). */
+export type ChannelRef = Pick<Channel, 'id' | 'slug'>
+
 export type Track = SDKTrack
 
 export interface TrackMetadataFields {

@@ -6,6 +6,7 @@
 
 	const EDITABLE_FIELDS = ['url', 'title', 'description', 'discogs_url']
 
+	/** @type {{track: import('$lib/types').TrackWithMeta, slug: any, isSelected: boolean, onSelect: (e: MouseEvent) => void, onEdit: (id: string, field: string, value: string) => void | Promise<void>, canEdit: boolean, focusedField?: string | null, onFocusChange: (trackId: string | null, field: string) => void, hiddenColumns?: string[], gridTemplate: string}} */
 	let {
 		track,
 		slug,

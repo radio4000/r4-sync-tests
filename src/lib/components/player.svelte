@@ -20,6 +20,7 @@
 		toggleShuffle
 	} from '$lib/api'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
+	import {sortedListeningDeckIds, sortedDeckIds, isGroupControlDeck} from '$lib/deck'
 	import {playbackState, toAutoTracks, AUTO_RADIO_SYNC_GRACE_MS} from '$lib/player/auto-radio'
 	import {getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast.js'
 	import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/broadcast-utils'
@@ -47,10 +48,8 @@
 		trackAutoRadioPresence,
 		untrackAutoRadioPresence,
 		trackBroadcastPresence,
-		untrackBroadcastPresence,
-		channelPresence
+		untrackBroadcastPresence
 	} from '$lib/presence.svelte'
-	import {viewLabel} from '$lib/views'
 	/** @typedef {import('$lib/types').Track} Track */
 	/** @typedef {import('$lib/types').Channel} Channel */
 
@@ -62,17 +61,10 @@
 	let deck = $derived(appState.decks[deckId])
 	let isActiveDeck = $derived(appState.active_deck_id === deckId)
 	let hasMultipleDecks = $derived(Object.keys(appState.decks).length > 1)
-	let listeningDeckIds = $derived(
-		Object.keys(appState.decks)
-			.map(Number)
-			.sort((a, b) => a - b)
-			.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
-	)
-	let isListeningGroupControlDeck = $derived(
-		!deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
-	)
+	let listeningDeckIds = $derived(sortedListeningDeckIds(appState.decks))
+	let isListeningGroupControlDeck = $derived(isGroupControlDeck(deck, deckId, listeningDeckIds))
 	let hasListeningMultiDeck = $derived(listeningDeckIds.length > 1)
-	let deckIds = $derived(Object.keys(appState.decks).map(Number))
+	let deckIds = $derived(sortedDeckIds(appState.decks))
 	let accentColor = $derived(deckAccent(deckIds, deckId))
 
 	// Both media player elements
@@ -152,21 +144,7 @@
 		}))
 	})
 
-	const autoUri = $derived(
-		deck?.auto_radio && deck.playlist_slug
-			? viewLabel(deck.view ?? {sources: [{channels: [deck.playlist_slug]}]}) ||
-					`@${deck.playlist_slug}`
-			: undefined
-	)
-	const headerPresenceCount = $derived(
-		deck?.listening_to_channel_id && listenSlug
-			? (channelPresence[listenSlug]?.broadcast ?? 0)
-			: deck?.broadcasting_channel_id && broadcastSlug
-				? (channelPresence[broadcastSlug]?.broadcast ?? 0)
-				: autoUri && deck?.playlist_slug
-					? (channelPresence[deck.playlist_slug]?.byUri?.[autoUri] ?? 0)
-					: 0
-	)
+	const headerPresenceCount = $derived(display.presenceCount)
 
 	// Track previous track ID to detect changes for autoplay
 	let prevTrackId = $state(/** @type {string|undefined} */ (undefined))

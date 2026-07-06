@@ -102,12 +102,36 @@ export function deriveChannelActivityState(params) {
 }
 
 /**
+ * @typedef {object} MediaItem
+ * @prop {string} url
+ * @prop {number} [width]
+ * @prop {number} [height]
+ * @prop {string} [slug]
+ * @prop {string} [id]
+ * @prop {string} [name]
+ * @prop {string} [title]
+ * @prop {string} [description]
+ * @prop {string} [channel_slug]
+ * @prop {{slug?: string}} [channel]
+ * @prop {boolean} [isFavorite]
+ * @prop {boolean} [isLive]
+ * @prop {boolean} [isPlaying]
+ * @prop {string[]} [tags]
+ * @prop {string[]} [mentions]
+ * @prop {string[]} [activeTags]
+ * @prop {string[]} [activeMentions]
+ * @prop {boolean} [isActive]
+ * @prop {boolean} [hasActiveTagMatch]
+ */
+
+/**
  * Build consistent channel-card media item payload for 2D/3D UIs.
  * When `base` is omitted, derives image URL from `channel.image` via `channelAvatarUrl`
  * with a placeholder fallback.
  * @param {any} channel
  * @param {ReturnType<typeof deriveChannelActivityState>} state
  * @param {{url: string, width?: number, height?: number}} [base]
+ * @returns {MediaItem}
  */
 export function toChannelCardMedia(channel, state, base) {
 	const url =

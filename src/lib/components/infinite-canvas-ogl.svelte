@@ -7,26 +7,7 @@
 	import Icon from '$lib/components/icon.svelte'
 	import Dialog from '$lib/components/dialog.svelte'
 
-	/**
-	 * @typedef {object} MediaItem
-	 * @prop {string} url
-	 * @prop {number} [width]
-	 * @prop {number} [height]
-	 * @prop {string} [slug]
-	 * @prop {string} [id]
-	 * @prop {string} [title]
-	 * @prop {string} [description]
-	 * @prop {string} [channel_slug]
-	 * @prop {{slug?: string}} [channel]
-	 * @prop {boolean} [isFavorite]
-	 * @prop {boolean} [isLive]
-	 * @prop {boolean} [isPlaying]
-	 * @prop {string[]} [tags]
-	 * @prop {string[]} [mentions]
-	 * @prop {string[]} [activeTags]
-	 * @prop {string[]} [activeMentions]
-	 * @prop {boolean} [isActive]
-	 */
+	/** @typedef {import('$lib/components/channel-ui-state.ts').MediaItem} MediaItem */
 
 	/** @type {{media?: MediaItem[], activeId?: string, activeIds?: string[], selectedId?: string | null, hoveredId?: string | null, focusSlug?: string | null, focusKey?: string | null, cardDepthScale?: number, cardSizeScale?: number, backgroundColor?: string|null, onclick?: (item: MediaItem) => void, ondoubleclick?: (item: MediaItem) => void, onnavigate?: (href: string, item: MediaItem, kind: 'channel'|'tag'|'mention'|'tracks'|'rotate'|'favorite', token?: string | null) => void | Promise<void>}} */
 	let {

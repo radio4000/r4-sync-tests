@@ -142,6 +142,10 @@
 			"desc": "Check if any deck is listening to a given channel ID."
 		},
 		{
+			"name": "sortedDeckIds(decks)",
+			"desc": "All deck IDs, sorted ascending."
+		},
+		{
 			"name": "sortedListeningDeckIds(decks)",
 			"desc": "Deck IDs currently listening to a broadcast, sorted ascending."
 		},
@@ -762,7 +766,7 @@
 		{"name": "DeckDisplay", "desc": "Reactive track/channel display state for a deck."},
 		{
 			"name": "createDeckDisplay(deckId)",
-			"desc": "Build DeckDisplay with track/broadcast/header fallbacks. Includes autoRadioAvailable (channel has auto-radio coverage) gating the join button in deck transports."
+			"desc": "Build DeckDisplay with track/broadcast/header fallbacks. Includes autoRadioAvailable (channel has auto-radio coverage) gating the join button in deck transports, and presenceCount (listener count for the deck's current listen/broadcast/auto-radio mode)."
 		}
 	],
 

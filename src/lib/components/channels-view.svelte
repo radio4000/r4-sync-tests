@@ -3,6 +3,7 @@
 	import {page} from '$app/state'
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
 	import {toChannelCardMedia} from '$lib/components/channel-ui-state.js'
+	import {shuffleArray} from '$lib/utils'
 	import {
 		handleCanvasClick as onCanvasClick,
 		handleCanvasDoubleClick
@@ -12,7 +13,7 @@
 
 	const channelActivity = $derived(getChannelActivity())
 
-	/** @type {{channels?: any[], order?: string, direction?: 'asc' | 'desc', display?: 'grid' | 'list' | 'map' | 'infinite', header?: import('svelte').Snippet, showToolbar?: boolean, syncToUrl?: boolean}} */
+	/** @type {{channels?: import('$lib/types').Channel[], order?: string, direction?: 'asc' | 'desc', display?: 'grid' | 'list' | 'map' | 'infinite', header?: import('svelte').Snippet, showToolbar?: boolean, syncToUrl?: boolean}} */
 	let {
 		channels = [],
 		order = $bindable('updated'),
@@ -36,7 +37,7 @@
 
 	let sortedChannels = $derived(
 		order === 'shuffle'
-			? channels.toSorted(() => Math.random() - 0.5)
+			? shuffleArray(channels)
 			: channels.toSorted((a, b) => {
 					const by = sortKey[order] ?? sortKey.updated
 					const av = by(a)

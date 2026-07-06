@@ -4,6 +4,7 @@
 	import {onMount} from 'svelte'
 	import {MediaQuery} from 'svelte/reactivity'
 	import {appState} from '$lib/app-state.svelte'
+	import {isBroadcasting as isBroadcastingDeck, sortedDeckIds} from '$lib/deck'
 	import AddTrackDialog from '$lib/components/track-add-dialog.svelte'
 	import EditTrackDialog from '$lib/components/track-edit-dialog.svelte'
 	import ShareDialog from '$lib/components/share-dialog.svelte'
@@ -22,11 +23,8 @@
 
 	const isSignedIn = $derived(!!appState.user)
 	const userChannel = $derived(appState.channel)
-	const isBroadcasting = $derived(
-		userChannel &&
-			Object.values(appState.decks).some((d) => d.broadcasting_channel_id === userChannel.id)
-	)
-	const deckIds = $derived(Object.keys(appState.decks).map(Number))
+	const isBroadcasting = $derived(isBroadcastingDeck(appState.decks, userChannel?.id))
+	const deckIds = $derived(sortedDeckIds(appState.decks))
 	const activeDeckColor = $derived(deckAccent(deckIds, appState.active_deck_id))
 
 	const DESKTOP_MIN = 1

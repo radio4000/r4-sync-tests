@@ -11,6 +11,7 @@
 	import {getAutoDecksForView} from '$lib/views.svelte'
 	import * as m from '$lib/paraglide/messages'
 
+	/** @type {{tracks: import('$lib/types').Track[], title?: string, view?: import('$lib/views').View, basePath?: string}} */
 	let {tracks, title = '', view = undefined, basePath = '/search'} = $props()
 
 	const autoRadioTracks = $derived(toAutoTracks(tracks))

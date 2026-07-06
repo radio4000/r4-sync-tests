@@ -16,6 +16,7 @@ import {broadcastsCollection} from '$lib/collections/broadcasts'
 import {channelsCollection} from '$lib/collections/channels'
 import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 import {isDbId} from '$lib/utils'
+import {sortedDeckIds, sortedListeningDeckIds} from '$lib/deck'
 import {
 	calculateSeekTime,
 	DRIFT_TOLERANCE_SECONDS,
@@ -151,7 +152,7 @@ export async function joinBroadcast(deckId, channelId) {
 		}
 
 		// Tear down all existing decks before applying broadcast state
-		for (const id of getSortedDeckIds()) {
+		for (const id of sortedDeckIds(appState.decks)) {
 			stopBroadcastSync(id)
 			clearUserInitiatedPlay(id)
 			removeDeck(id)
@@ -169,7 +170,7 @@ export async function joinBroadcast(deckId, channelId) {
 		}
 
 		// Set active deck to the first listener deck
-		const listenerIds = getSortedDeckIds().filter(
+		const listenerIds = sortedDeckIds(appState.decks).filter(
 			(id) => appState.decks[id]?.listening_to_channel_id === channelId
 		)
 		if (listenerIds.length) {
@@ -217,7 +218,7 @@ export async function resyncBroadcastDeck(deckId) {
 	}
 	if (!Array.isArray(decks) || !decks.length) return
 
-	const localManagedIds = getSortedDeckIds().filter(
+	const localManagedIds = sortedDeckIds(appState.decks).filter(
 		(id) => appState.decks[id]?.listening_to_channel_id === channelId
 	)
 	const localIndex = Math.max(0, localManagedIds.indexOf(deckId))
@@ -480,14 +481,8 @@ async function playBroadcastTrack(deckId, broadcast) {
 	return true
 }
 
-function getSortedDeckIds() {
-	return Object.keys(appState.decks)
-		.map(Number)
-		.sort((a, b) => a - b)
-}
-
 function getBroadcasterDeckIds() {
-	return getSortedDeckIds().filter((id) => !appState.decks[id]?.listening_to_channel_id)
+	return sortedDeckIds(appState.decks).filter((id) => !appState.decks[id]?.listening_to_channel_id)
 }
 
 function startBroadcastLivenessMonitor(channelId) {
@@ -735,7 +730,7 @@ async function applyBroadcastState(channelId, decks) {
 	if (!Array.isArray(decks) || !decks.length) return
 
 	const incomingTrackIds = new Set(decks.map((d) => d?.track_id).filter(Boolean))
-	let managedIds = getSortedDeckIds().filter(
+	let managedIds = sortedDeckIds(appState.decks).filter(
 		(id) => appState.decks[id]?.listening_to_channel_id === channelId
 	)
 
@@ -744,7 +739,7 @@ async function applyBroadcastState(channelId, decks) {
 		const deck = addDeck()
 		deck.listening_to_channel_id = channelId
 		deck.hide_queue_panel = true
-		managedIds = getSortedDeckIds().filter(
+		managedIds = sortedDeckIds(appState.decks).filter(
 			(id) => appState.decks[id]?.listening_to_channel_id === channelId
 		)
 	}
@@ -761,7 +756,7 @@ async function applyBroadcastState(channelId, decks) {
 			clearUserInitiatedPlay(removeId)
 			removeDeck(removeId)
 		}
-		managedIds = getSortedDeckIds().filter(
+		managedIds = sortedDeckIds(appState.decks).filter(
 			(id) => appState.decks[id]?.listening_to_channel_id === channelId
 		)
 		removed = true
@@ -860,9 +855,7 @@ async function syncDeckToBroadcastState(deckId, channelId, state) {
 
 /** Validate that listening_to_channel_id points to an active broadcast (checks all decks) */
 export async function validateListeningState() {
-	const listeningDeckIds = Object.keys(appState.decks)
-		.map(Number)
-		.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
+	const listeningDeckIds = sortedListeningDeckIds(appState.decks)
 	for (const id of listeningDeckIds) {
 		const deck = appState.decks[id]
 		if (!deck?.listening_to_channel_id) continue

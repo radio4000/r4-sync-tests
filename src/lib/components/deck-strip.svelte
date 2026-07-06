@@ -1,7 +1,7 @@
 <script>
 	import {page} from '$app/state'
 	import {appState, deckAccent} from '$lib/app-state.svelte'
-	import {showPlayerParam} from '$lib/deck'
+	import {showPlayerParam, sortedDeckIds, sortedListeningDeckIds} from '$lib/deck'
 	import {captureEventsCollection} from '$lib/collections/capture-events'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {eq, inArray} from '@tanstack/db'
@@ -13,14 +13,8 @@
 	import PresenceCount from '$lib/components/presence-count.svelte'
 	import * as m from '$lib/paraglide/messages'
 
-	let deckIds = $derived(
-		Object.keys(appState.decks)
-			.map(Number)
-			.sort((a, b) => a - b)
-	)
-	let listeningDeckIds = $derived(
-		deckIds.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
-	)
+	let deckIds = $derived(sortedDeckIds(appState.decks))
+	let listeningDeckIds = $derived(sortedListeningDeckIds(appState.decks))
 	let videoMixListening = $derived(
 		listeningDeckIds.some((id) =>
 			Boolean(appState.decks[id]?.video_mix && !appState.decks[id]?.compact)

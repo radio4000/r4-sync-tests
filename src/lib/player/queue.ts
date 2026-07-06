@@ -2,6 +2,7 @@
  * Pure queue operations. No state mutation.
  * All functions return new arrays/values without side effects.
  */
+import type {Deck} from '$lib/types'
 
 /** Returns the next track ID in queue, or null if at end */
 export function queueNext(queue: string[], currentId: string): string | null {
@@ -30,9 +31,7 @@ export function queueInsertManyAfter(
 
 /** Get the active queue array for a deck (respects shuffle) */
 export function getActiveQueue(
-	deck:
-		| {shuffle?: boolean; playlist_tracks?: string[]; playlist_tracks_shuffled?: string[]}
-		| undefined
+	deck: Pick<Deck, 'shuffle' | 'playlist_tracks' | 'playlist_tracks_shuffled'> | undefined
 ): string[] {
 	if (!deck) return []
 	return deck.shuffle ? deck.playlist_tracks_shuffled || [] : deck.playlist_tracks || []

@@ -20,7 +20,7 @@
 	import * as m from '$lib/paraglide/messages'
 	const channelActivity = $derived(getChannelActivity())
 
-	/** @type {{channels?: any[], loading?: boolean, latitude?: number|null, longitude?: number|null, zoom?: number|null, syncUrl?: boolean, openSlug?: string|null, openRequestKey?: string|null, linkToMap?: boolean | 'global', showControls?: boolean, globeMode?: boolean, showGraticules?: boolean, showDayNight?: boolean, tileStyle?: 'carto' | 'topo' | 'satellite'}} */
+	/** @type {{channels?: import('$lib/types').Channel[], loading?: boolean, latitude?: number|null, longitude?: number|null, zoom?: number|null, syncUrl?: boolean, openSlug?: string|null, openRequestKey?: string|null, linkToMap?: boolean | 'global', showControls?: boolean, globeMode?: boolean, showGraticules?: boolean, showDayNight?: boolean, tileStyle?: 'carto' | 'topo' | 'satellite'}} */
 	let {
 		channels = [],
 		loading = false,

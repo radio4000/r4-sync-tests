@@ -1,6 +1,7 @@
 <script>
 	import {appState} from '$lib/app-state.svelte'
 	import {playChannel, togglePlayPause} from '$lib/api'
+	import {isChannelPlaying} from '$lib/deck'
 	import {pickFeatured, dailySeed} from '$lib/collections/featured'
 	import {shuffleSeed} from '$lib/utils'
 	import ChannelCard from './channel-card.svelte'
@@ -16,10 +17,7 @@
 
 	const channels = $derived(pickFeatured(pool, {count: pickCount, seed}))
 	const first = $derived(channels[0] ?? null)
-	const isPlaying = $derived(
-		!!first &&
-			Object.values(appState.decks).some((d) => d.playlist_slug === first.slug && d.is_playing)
-	)
+	const isPlaying = $derived(isChannelPlaying(appState.decks, first?.slug))
 
 	function togglePlay() {
 		if (!first) return

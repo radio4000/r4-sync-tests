@@ -1,7 +1,7 @@
 <script>
 	import {appState} from '$lib/app-state.svelte'
 	import {startChannelBroadcast, stopBroadcast} from '$lib/broadcast'
-	import {findLoadedDeck} from '$lib/deck'
+	import {findLoadedDeck, isBroadcasting as isBroadcastingDeck} from '$lib/deck'
 	import {channelPresence, watchPresence, unwatchPresence} from '$lib/presence.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import PresenceCount from '$lib/components/presence-count.svelte'
@@ -11,9 +11,7 @@
 	/** @type {{channel: import('$lib/types').Channel, class?: string}} */
 	let {channel, class: className = ''} = $props()
 
-	const isBroadcasting = $derived(
-		Object.values(appState.decks).some((d) => d.broadcasting_channel_id === channel.id)
-	)
+	const isBroadcasting = $derived(isBroadcastingDeck(appState.decks, channel.id))
 	const loadedDeckId = $derived(
 		findLoadedDeck(appState.decks, channel.slug)?.id ?? appState.active_deck_id
 	)

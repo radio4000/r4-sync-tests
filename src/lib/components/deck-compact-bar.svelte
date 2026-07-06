@@ -31,8 +31,6 @@
 	import VolumeControl from '$lib/components/volume-control.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
-	import {channelPresence} from '$lib/presence.svelte'
-	import {viewLabel} from '$lib/views'
 	import {shortcutHint} from '$lib/keyboard'
 
 	/** @type {{deckId: number, showEdgeControls?: boolean}} */
@@ -50,23 +48,7 @@
 	const displayChannel = $derived(display.displayChannel)
 	const headerChannel = $derived(display.headerChannel)
 	const secondaryChannel = $derived(display.secondaryHeaderChannel)
-	const listenSlug = $derived(display.listenSlug)
-	const broadcastSlug = $derived(display.broadcastSlug)
-	const autoUri = $derived(
-		deck?.auto_radio && deck.playlist_slug
-			? viewLabel(deck.view ?? {sources: [{channels: [deck.playlist_slug]}]}) ||
-					`@${deck.playlist_slug}`
-			: undefined
-	)
-	const modePresenceCount = $derived(
-		deck?.listening_to_channel_id && listenSlug
-			? (channelPresence[listenSlug]?.broadcast ?? 0)
-			: deck?.broadcasting_channel_id && broadcastSlug
-				? (channelPresence[broadcastSlug]?.broadcast ?? 0)
-				: autoUri && deck?.playlist_slug
-					? (channelPresence[deck.playlist_slug]?.byUri?.[autoUri] ?? 0)
-					: 0
-	)
+	const modePresenceCount = $derived(display.presenceCount)
 	let canEditTrackChannel = $derived(
 		Boolean(displayChannel?.id && canEditChannel(displayChannel.id))
 	)

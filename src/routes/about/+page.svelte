@@ -2,7 +2,7 @@
 	import {resolve} from '$app/paths'
 	import {appName, appShortName} from '$lib/config'
 	import {getFeaturedPool} from '$lib/collections/featured'
-	import {featuredScore} from '$lib/utils'
+	import {featuredScore, trimWithEllipsis} from '$lib/utils'
 	import CoverFlip from '$lib/components/cover-flip.svelte'
 	import ChannelCard from '$lib/components/channel-card.svelte'
 	import * as m from '$lib/paraglide/messages'
@@ -96,11 +96,7 @@
 				<p class="flip-label">
 					<a href={resolve(`/${channel.slug}`)}>{channel.name}</a>
 					{#if channel.description}
-						<span class="flip-desc"
-							>— {channel.description.length > 140
-								? channel.description.slice(0, 140) + '…'
-								: channel.description}</span
-						>
+						<span class="flip-desc">— {trimWithEllipsis(channel.description, 140)}</span>
 					{/if}
 				</p>
 			{/snippet}
