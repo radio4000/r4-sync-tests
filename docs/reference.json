@@ -96,6 +96,13 @@
 		}
 	],
 
+	"src/lib/types.ts": [
+		{
+			"name": "ChannelRef",
+			"desc": "Pick<Channel, 'id' | 'slug'> — minimal channel handle for play/track APIs."
+		}
+	],
+
 	"src/lib/deck.ts": [
 		{
 			"name": "deckTitle(deck, title)",
@@ -622,6 +629,10 @@
 		{"name": "seededRandom(seed)", "desc": "Deterministic PRNG from string seed."},
 		{"name": "channelAvatarUrl(id, size?, format?)", "desc": "Cloudinary URL for channel avatar."},
 		{"name": "trackImageUrl(mediaId, size?)", "desc": "YouTube thumbnail URL for a track."},
+		{
+			"name": "paginationFromUrl(url, defaultPer?)",
+			"desc": "Parse page/per search params, clamped to positive ints."
+		},
 		{
 			"name": "countStrings(strings)",
 			"desc": "Count occurrences → {value, count}[], sorted by frequency then alpha."

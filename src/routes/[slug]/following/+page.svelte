@@ -43,9 +43,7 @@
 			appState.user && appState.channel?.id && channel?.id && appState.channel.id !== channel.id
 		)
 	)
-	let commonFollowingCount = $derived(
-		following.filter((/** @type {any} */ c) => c.id && commonIds.has(c.id)).length
-	)
+	let commonFollowingCount = $derived(following.filter((c) => c.id && commonIds.has(c.id)).length)
 	let showInCommon = $derived(isOtherChannel && commonFollowingCount > 0)
 
 	function followingBasePath() {

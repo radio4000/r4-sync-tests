@@ -20,7 +20,7 @@
 		handleCanvasDoubleClick
 	} from '$lib/components/channels-view-shared.js'
 	import {gte, inArray, not, isNull} from '@tanstack/db'
-	import {shuffleSeed} from '$lib/utils'
+	import {paginationFromUrl, shuffleSeed} from '$lib/utils'
 	import {pickFeatured, dailySeed} from '$lib/collections/featured'
 	import ChannelCard from './channel-card.svelte'
 	import Dialog from './dialog.svelte'
@@ -92,8 +92,9 @@
 	let paginatedLimit = $state(CHANNELS_PAGE_SIZE)
 	let extraPages = $state(0)
 
-	const currentPage = $derived(Math.max(1, parseInt(page.url.searchParams.get('page') ?? '1') || 1))
-	const pageSize = $derived(Math.max(1, parseInt(page.url.searchParams.get('per') ?? '12') || 12))
+	const pagination = $derived(paginationFromUrl(page.url, 12))
+	const currentPage = $derived(pagination.page)
+	const pageSize = $derived(pagination.per)
 	const filter = $derived(
 		filterProp && filterProp in filterLabelMap
 			? filterProp

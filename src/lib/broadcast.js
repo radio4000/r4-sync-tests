@@ -16,7 +16,7 @@ import {broadcastsCollection} from '$lib/collections/broadcasts'
 import {channelsCollection} from '$lib/collections/channels'
 import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 import {isDbId} from '$lib/utils'
-import {sortedDeckIds, sortedListeningDeckIds} from '$lib/deck'
+import {sortedDeckIds, sortedListeningDeckIds, isBroadcasting} from '$lib/deck'
 import {
 	calculateSeekTime,
 	DRIFT_TOLERANCE_SECONDS,
@@ -95,7 +95,7 @@ const seekJobSeqByDeck = new Map()
 export function isUserBroadcasting(channelId) {
 	if (!channelId) return false
 	if (broadcastsCollection.state.get(channelId)) return true
-	return Object.values(appState.decks).some((deck) => deck.broadcasting_channel_id === channelId)
+	return isBroadcasting(appState.decks, channelId)
 }
 
 /** @param {string} channelId */
@@ -170,9 +170,7 @@ export async function joinBroadcast(deckId, channelId) {
 		}
 
 		// Set active deck to the first listener deck
-		const listenerIds = sortedDeckIds(appState.decks).filter(
-			(id) => appState.decks[id]?.listening_to_channel_id === channelId
-		)
+		const listenerIds = managedListenerIds(channelId)
 		if (listenerIds.length) {
 			appState.active_deck_id = listenerIds[0]
 		}
@@ -218,9 +216,7 @@ export async function resyncBroadcastDeck(deckId) {
 	}
 	if (!Array.isArray(decks) || !decks.length) return
 
-	const localManagedIds = sortedDeckIds(appState.decks).filter(
-		(id) => appState.decks[id]?.listening_to_channel_id === channelId
-	)
+	const localManagedIds = managedListenerIds(channelId)
 	const localIndex = Math.max(0, localManagedIds.indexOf(deckId))
 	const matchedState =
 		(deck.playlist_track && decks.find((state) => state?.track_id === deck.playlist_track)) ??
@@ -324,7 +320,7 @@ export async function stopBroadcast(channelId) {
  * channel (from `tid` when given) if nothing is playing — then mark the source deck
  * as broadcasting. The single "go live" path shared by every broadcast button.
  * Stopping is just `stopBroadcast(channel.id)` (it already clears deck flags).
- * @param {{id: string, slug: string}} channel
+ * @param {import('$lib/types').ChannelRef} channel
  * @param {{deckId?: number, tid?: string}} [opts]
  * @returns {Promise<{ok: boolean, reason?: 'no-channel' | 'no-track'}>}
  */
@@ -483,6 +479,13 @@ async function playBroadcastTrack(deckId, broadcast) {
 
 function getBroadcasterDeckIds() {
 	return sortedDeckIds(appState.decks).filter((id) => !appState.decks[id]?.listening_to_channel_id)
+}
+
+/** Deck IDs of the local decks managed by (listening to) a broadcast channel, sorted. */
+function managedListenerIds(channelId) {
+	return sortedDeckIds(appState.decks).filter(
+		(id) => appState.decks[id]?.listening_to_channel_id === channelId
+	)
 }
 
 function startBroadcastLivenessMonitor(channelId) {
@@ -730,18 +733,14 @@ async function applyBroadcastState(channelId, decks) {
 	if (!Array.isArray(decks) || !decks.length) return
 
 	const incomingTrackIds = new Set(decks.map((d) => d?.track_id).filter(Boolean))
-	let managedIds = sortedDeckIds(appState.decks).filter(
-		(id) => appState.decks[id]?.listening_to_channel_id === channelId
-	)
+	let managedIds = managedListenerIds(channelId)
 
 	// Add managed decks if needed for this specific broadcast channel.
 	while (managedIds.length < decks.length) {
 		const deck = addDeck()
 		deck.listening_to_channel_id = channelId
 		deck.hide_queue_panel = true
-		managedIds = sortedDeckIds(appState.decks).filter(
-			(id) => appState.decks[id]?.listening_to_channel_id === channelId
-		)
+		managedIds = managedListenerIds(channelId)
 	}
 
 	// Remove excess managed decks only (never touch unrelated local decks).
@@ -756,9 +755,7 @@ async function applyBroadcastState(channelId, decks) {
 			clearUserInitiatedPlay(removeId)
 			removeDeck(removeId)
 		}
-		managedIds = sortedDeckIds(appState.decks).filter(
-			(id) => appState.decks[id]?.listening_to_channel_id === channelId
-		)
+		managedIds = managedListenerIds(channelId)
 		removed = true
 	}
 

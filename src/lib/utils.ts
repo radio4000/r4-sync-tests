@@ -185,6 +185,16 @@ export function trackImageUrl(
 	return `https://i.ytimg.com/vi/${mediaId}/${size}.jpg`
 }
 
+/** Parse 1-based `page`/`per` pagination search params, clamping to positive ints. */
+export function paginationFromUrl(url: URL, defaultPer = 50): {page: number; per: number} {
+	const positive = (value: string | null, fallback: number) =>
+		Math.max(1, parseInt(value ?? '', 10) || fallback)
+	return {
+		page: positive(url.searchParams.get('page'), 1),
+		per: positive(url.searchParams.get('per'), defaultPer)
+	}
+}
+
 /**
  * Count string occurrences and sort by count (desc), then alphabetically.
  * @example

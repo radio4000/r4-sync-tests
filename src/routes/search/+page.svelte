@@ -16,7 +16,13 @@
 	import Seo from '$lib/components/seo.svelte'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {getFeaturedSuggestions} from '$lib/featured-suggestions.svelte'
-	import {featuredScore, seededRandom, shuffleArray, shuffleSeed} from '$lib/utils'
+	import {
+		featuredScore,
+		paginationFromUrl,
+		seededRandom,
+		shuffleArray,
+		shuffleSeed
+	} from '$lib/utils'
 	import {resolve} from '$app/paths'
 	import {trap} from '$lib/focus'
 	import {fromAction} from 'svelte/attachments'
@@ -34,8 +40,9 @@
 		goto(viewToUrl('/search', v), {replaceState: true})
 	}
 
-	const currentPage = $derived(Math.max(1, parseInt(page.url.searchParams.get('page') ?? '1') || 1))
-	const pageSize = $derived(Math.max(1, parseInt(page.url.searchParams.get('per') ?? '50') || 50))
+	const pagination = $derived(paginationFromUrl(page.url))
+	const currentPage = $derived(pagination.page)
+	const pageSize = $derived(pagination.per)
 	const featuredSuggestionsSeed = shuffleSeed()
 
 	// Track results (View pipeline)

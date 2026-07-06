@@ -15,7 +15,7 @@ import {shuffleArray, isDbId, isMobileViewport, uuid} from '$lib/utils'
 import {getActiveQueue, queueInsertManyAfter, queueNext, queuePrev} from '$lib/player/queue'
 import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 
-import type {Channel, Deck, Track, PlayEndReason, PlayStartReason} from '$lib/types'
+import type {Channel, ChannelRef, Deck, Track, PlayEndReason, PlayStartReason} from '$lib/types'
 import {
 	weeklyShuffle,
 	playbackState,
@@ -24,7 +24,12 @@ import {
 	epochFromTracks,
 	type AutoTrack
 } from '$lib/player/auto-radio'
-import {findAutoDecksForChannel, findChannelDeck, pickAutoResyncDeck} from '$lib/deck'
+import {
+	findAutoDecksForChannel,
+	findChannelDeck,
+	pickAutoResyncDeck,
+	sortedListeningDeckIds
+} from '$lib/deck'
 import {processViewTracks} from '$lib/views.svelte'
 import {serializeView, viewLabel, normalizeView, type View} from '$lib/views'
 
@@ -63,8 +68,10 @@ function clearAutoRadio(deck: Deck) {
  *  broadcast — the group of decks tuned to the same channel act as one unit for layout toggles. */
 function applyToListeningGroup(deck: Deck, fn: (d: Deck) => void) {
 	if (deck.listening_to_channel_id) {
-		for (const d of Object.values(appState.decks)) {
-			if (d.listening_to_channel_id) fn(d)
+		// Only one broadcast is listened to at a time, so all listening decks form one group.
+		for (const id of sortedListeningDeckIds(appState.decks)) {
+			const d = appState.decks[id]
+			if (d) fn(d)
 		}
 	} else {
 		fn(deck)
@@ -325,11 +332,7 @@ export async function playTrack(
 }
 
 /** Play a channel's tracks latest-first (or from trackId if given), replacing the deck's queue. */
-export async function playChannel(
-	deckId: number,
-	{id, slug}: {id: string; slug: string},
-	trackId?: string
-) {
+export async function playChannel(deckId: number, {id, slug}: ChannelRef, trackId?: string) {
 	log.log('play_channel', {deckId, id, slug})
 	leaveBroadcast(deckId)
 	const d = getDeck(deckId)
@@ -360,7 +363,7 @@ export async function playTrackInNewDeck(trackId: string, slug?: string) {
 }
 
 /** Play channel starting from random track with shuffle enabled */
-export async function shufflePlayChannel(deckId: number, {id, slug}: {id: string; slug: string}) {
+export async function shufflePlayChannel(deckId: number, {id, slug}: ChannelRef) {
 	log.log('shuffle_play_channel', {deckId, id, slug})
 	leaveBroadcast(deckId)
 	const d = getDeck(deckId)
@@ -508,8 +511,9 @@ export function toggleVideo(deckId: number) {
 export function expandDeck(deckId: number) {
 	const deck = getDeck(deckId)
 	if (!deck) return
+	const groupIds = deck.listening_to_channel_id ? sortedListeningDeckIds(appState.decks) : [deck.id]
 	for (const d of Object.values(appState.decks)) {
-		const inGroup = d === deck || Boolean(deck.listening_to_channel_id && d.listening_to_channel_id)
+		const inGroup = groupIds.includes(d.id)
 		if (inGroup) {
 			d.expanded = true
 			d.compact = false
@@ -938,7 +942,7 @@ export async function rejoinAutoRadio(deckId: number) {
  * Always targets the active deck — auto-radio is keyed by the active deck
  * (see {@link toggleChannelAutoRadio}), so there is no deck to thread through.
  */
-export async function playChannelAuto(channel: {id: string; slug: string}) {
+export async function playChannelAuto(channel: ChannelRef) {
 	const tracks = await loadChannelTracks(channel.slug)
 	if (hasAutoRadioCoverage(tracks)) {
 		await toggleChannelAutoRadio(channel.slug, tracks)
@@ -956,7 +960,7 @@ export async function playChannelAuto(channel: {id: string; slug: string}) {
  * smartly via {@link playChannelAuto} (auto-radio if the channel has coverage, else
  * latest-first).
  */
-export async function toggleChannelPlay(channel: {id: string; slug: string}, trackId?: string) {
+export async function toggleChannelPlay(channel: ChannelRef, trackId?: string) {
 	const deck = findChannelDeck(appState.decks, appState.active_deck_id, channel.slug)
 	if (deck) {
 		// Focus the resolved deck so global controls (spacebar, player surface) follow

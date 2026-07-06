@@ -12,7 +12,7 @@ import {getErrorMessage} from './utils'
 
 const log = logger.ns('tracks').seal()
 import {searchTracks} from '$lib/search-fts'
-import type {Track, TrackWithMeta} from '$lib/types'
+import type {ChannelRef, Track, TrackWithMeta} from '$lib/types'
 
 /** Parse provider/media_id from a track's URL, filling in any missing fields. */
 export function normalizeTrackMedia<
@@ -323,7 +323,7 @@ export function getTrackWithMeta(track: Track): TrackWithMeta {
 
 /** Add a track to a channel; returns the new track's id once persisted. */
 export function addTrack(
-	channel: {id: string; slug: string},
+	channel: ChannelRef,
 	input: {url: string; title: string; description?: string; discogs_url?: string}
 ) {
 	const parsed = parseUrl(input.url)
@@ -355,11 +355,7 @@ export function addTrack(
 }
 
 /** Update a track's fields, re-deriving provider/media_id if the url changed. */
-export function updateTrack(
-	channel: {id: string; slug: string},
-	id: string,
-	changes: Record<string, unknown>
-) {
+export function updateTrack(channel: ChannelRef, id: string, changes: Record<string, unknown>) {
 	const parsed = typeof changes.url === 'string' ? parseUrl(changes.url) : null
 	return tracksCollection
 		.update(id, {metadata: {slug: channel.slug}}, (draft) => {
@@ -372,7 +368,7 @@ export function updateTrack(
 		.isPersisted.promise.then(() => {})
 }
 
-export function deleteTrack(channel: {id: string; slug: string}, id: string) {
+export function deleteTrack(channel: ChannelRef, id: string) {
 	return tracksCollection
 		.delete(id, {metadata: {slug: channel.slug}})
 		.isPersisted.promise.then(() => {})

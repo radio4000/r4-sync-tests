@@ -58,12 +58,8 @@
 	// Tags active in any deck's playlist
 	const deckPlaylistTags = $derived([
 		...new Set(
-			Object.values(appState.decks).flatMap(
-				(d) =>
-					d.playlist_title
-						?.split(' ')
-						.filter((t) => t.startsWith('#'))
-						.map((t) => t.slice(1)) ?? []
+			Object.values(appState.decks).flatMap((d) =>
+				extractHashtags(d.playlist_title ?? '').map((t) => t.slice(1))
 			)
 		)
 	])
