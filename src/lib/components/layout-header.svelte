@@ -31,8 +31,8 @@
 	const DESKTOP_MAX = 10000
 	const DESKTOP_DEFAULT = 188
 	const MOBILE_MIN = 52
-	const MOBILE_MAX = 92
-	const MOBILE_DEFAULT = 90
+	const MOBILE_MAX = 120
+	const MOBILE_DEFAULT = 100
 	const STORAGE_KEY_LABELS_VISIBLE = 'r5:layout-header-labels-visible'
 
 	const mobileViewport = new MediaQuery(`(max-width: ${MOBILE_BREAKPOINT}px)`)
@@ -405,11 +405,8 @@
 		}
 
 		.user-nav {
-			margin: 0;
 			flex: 1;
 			justify-content: center;
-			overflow-x: auto;
-			scrollbar-width: none;
 		}
 
 		/* Active menu item keeps same style on mobile */
