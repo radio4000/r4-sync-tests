@@ -336,6 +336,10 @@
 			"desc": "Exit auto-radio, keep queue and current track playing."
 		},
 		{
+			"name": "rejoinAutoRadio(deckId)",
+			"desc": "Join auto-radio for the deck's current channel — the way back after leaveAutoRadio. Reuses the deck's view if same channel."
+		},
+		{
 			"name": "toggleChannelAutoRadio(slug, tracks?)",
 			"desc": "Toggle auto-radio for a channel slug (creates deck if needed)."
 		},
@@ -391,6 +395,10 @@
 		{
 			"name": "AUTO_RADIO_DURATION_COVERAGE_THRESHOLD",
 			"desc": "Min fraction of tracks with duration (0.5)."
+		},
+		{
+			"name": "AUTO_RADIO_SYNC_GRACE_MS",
+			"desc": "Drift detection stays quiet this long after join/resync while the seek lands (5s)."
 		},
 		{
 			"name": "playbackState(tracks, totalDuration, rotationStartUnix, nowMs)",
@@ -754,7 +762,7 @@
 		{"name": "DeckDisplay", "desc": "Reactive track/channel display state for a deck."},
 		{
 			"name": "createDeckDisplay(deckId)",
-			"desc": "Build DeckDisplay with track/broadcast/header fallbacks."
+			"desc": "Build DeckDisplay with track/broadcast/header fallbacks. Includes autoRadioAvailable (channel has auto-radio coverage) gating the join button in deck transports."
 		}
 	],
 

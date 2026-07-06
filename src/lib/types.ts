@@ -39,6 +39,9 @@ export interface Deck {
 	auto_radio_drifted?: boolean
 	view?: import('$lib/views').View
 	auto_radio_rotation_start?: number
+	/** Epoch ms of the last join/resync — drift detection stays quiet for a grace
+	 *  window after it while the seek lands. */
+	auto_radio_synced_at?: number
 	listening_drifted?: boolean
 	play_id?: string
 	track_played_at?: string | null

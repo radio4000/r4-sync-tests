@@ -67,6 +67,11 @@ export function toAutoTracks(tracks: Track[]): AutoTrack[] {
 /** Default minimum share of tracks that need duration metadata to enable auto-radio UI actions. */
 export const AUTO_RADIO_DURATION_COVERAGE_THRESHOLD = 0.5
 
+/** How long after a join/resync drift detection stays quiet. Seeks land asynchronously
+ *  (iframe postMessage; SoundCloud drops seeks while buffering and is retried after 350ms),
+ *  so evaluating drift before the seek settles flags a false positive. */
+export const AUTO_RADIO_SYNC_GRACE_MS = 5000
+
 /**
  * Whether a track list has enough duration coverage for auto-radio actions.
  * Returns false for empty lists.

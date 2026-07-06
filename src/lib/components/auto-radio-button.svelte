@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte'
 	import PresenceCount from '$lib/components/presence-count.svelte'
+	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import * as m from '$lib/paraglide/messages'
 
 	let {
@@ -36,9 +37,9 @@
 <button
 	type="button"
 	class={['auto-live-btn', {active: live && !drifted}, className]}
-	title={resolvedTitle}
 	aria-label={resolvedAriaLabel}
 	{...rest}
+	{@attach tooltip({content: resolvedTitle})}
 >
 	<Icon icon="infinite" {size} />
 	{#if showCount}

@@ -15,11 +15,12 @@
 		setUserInitiatedPlay,
 		resyncAutoRadio,
 		leaveAutoRadio,
+		rejoinAutoRadio,
 		recordSeekPosition,
 		toggleShuffle
 	} from '$lib/api'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
-	import {playbackState, toAutoTracks} from '$lib/player/auto-radio'
+	import {playbackState, toAutoTracks, AUTO_RADIO_SYNC_GRACE_MS} from '$lib/player/auto-radio'
 	import {getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast.js'
 	import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/broadcast-utils'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
@@ -417,9 +418,10 @@
 	$effect(() => {
 		if (!deck?.auto_radio || deck.auto_radio_rotation_start == null) return
 		const t = mediaCurrentTime
-		// Skip while the initial seek is still landing. joinAutoRadio/resyncAutoRadio
-		// set auto_radio_drifted=false immediately; this guard prevents a false-positive
-		// drifted flip before the media element has moved off 0.
+		// Skip while the join/resync seek is still landing. joinAutoRadio/resyncAutoRadio
+		// set auto_radio_drifted=false immediately, but the seek settles asynchronously —
+		// evaluating in between flags a false positive on the very next timeupdate.
+		if (Date.now() - (deck.auto_radio_synced_at ?? 0) < AUTO_RADIO_SYNC_GRACE_MS) return
 		if (t < DRIFT_TOLERANCE_SECONDS) return
 		const snap = playbackState(
 			syncAutoTracks,
@@ -661,6 +663,9 @@
 						>
 							<Icon icon="shuffle" />
 						</button>
+					{/if}
+					{#if display.autoRadioAvailable}
+						<AutoRadioButton size={14} onclick={() => rejoinAutoRadio(deckId)} />
 					{/if}
 					<SpeedControl {deckId} {provider} />
 					<VolumeControl {deckId} />

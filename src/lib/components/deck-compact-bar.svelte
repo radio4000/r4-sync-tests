@@ -10,6 +10,7 @@
 		getMediaPlayer,
 		resyncAutoRadio,
 		leaveAutoRadio,
+		rejoinAutoRadio,
 		toggleDeckCompact,
 		expandDeck,
 		toggleShuffle
@@ -197,6 +198,9 @@
 					>
 						<Icon icon="shuffle" />
 					</button>
+				{/if}
+				{#if display.autoRadioAvailable}
+					<AutoRadioButton size={14} onclick={() => rejoinAutoRadio(deckId)} />
 				{/if}
 				<SpeedControl {deckId} {provider} />
 				<VolumeControl {deckId} />
@@ -427,14 +431,10 @@
 		}
 	}
 
-	/* Mini player: channel + track + play on one row, progress below, times
-	   hidden. Hidden via CSS only — everything stays in the DOM. Above
+	/* Mini player: channel + track + play on one row, progress below.
+	   Hidden via CSS only — everything stays in the DOM. Above
 	   1024px: the full desktop bar. */
 	@media (max-width: 1024px) {
-		.deck-compact-bar :global(.progress time) {
-			display: none;
-		}
-
 		.deck-transport > :global(*:not(.play)) {
 			display: none;
 		}

@@ -814,6 +814,7 @@ export async function joinAutoRadio(deckId: number, tracks: Track[], view?: View
 		appState.decks[deckId].auto_radio = true
 		appState.decks[deckId].auto_radio_drifted = false
 		appState.decks[deckId].auto_radio_rotation_start = rotationStartUnix
+		appState.decks[deckId].auto_radio_synced_at = Date.now()
 		if (view) appState.decks[deckId].view = view
 	}
 
@@ -890,6 +891,7 @@ export async function resyncAutoRadio(deckId: number) {
 		d.auto_radio = true
 		d.auto_radio_drifted = false
 		d.auto_radio_rotation_start = rotationStartUnix
+		d.auto_radio_synced_at = Date.now()
 		if (label) d.playlist_title = label
 	}
 
@@ -909,8 +911,23 @@ export function leaveAutoRadio(deckId: number) {
 	if (!deck?.auto_radio) return
 	clearAutoRadio(deck)
 	deck.auto_radio_rotation_start = undefined
+	deck.auto_radio_synced_at = undefined
 	capture('player:auto_radio_leave')
 	log.log('leave_auto_radio', {deckId})
+}
+
+/** Join auto-radio for the channel the deck is currently playing — the way back
+ *  after {@link leaveAutoRadio}. Reuses the deck's view when it targets the same
+ *  channel (e.g. a tag-filtered rotation), else joins the full channel. */
+export async function rejoinAutoRadio(deckId: number) {
+	const deck = getDeck(deckId)
+	const slug = deck?.playlist_slug
+	if (!deck || !slug || deck.auto_radio || deck.listening_to_channel_id) return
+	const view =
+		deck.view?.sources[0]?.channels?.[0] === slug ? deck.view : {sources: [{channels: [slug]}]}
+	const filtered = processViewTracks(await loadChannelTracks(slug), view)
+	if (!hasAutoRadioCoverage(filtered)) return
+	await joinAutoRadio(deckId, filtered, view)
 }
 
 // --- Channel entry points ("tap play") ---

@@ -12,6 +12,7 @@ import {channelsCollection} from '$lib/collections/channels'
 import {broadcastsCollection} from '$lib/collections/broadcasts'
 import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 import {unpackEphemeralTrack} from '$lib/broadcast-utils'
+import {hasAutoRadioCoverage} from '$lib/player/auto-radio'
 import type {Channel, Track, BroadcastDeckState} from '$lib/types'
 
 export interface DeckDisplay {
@@ -27,6 +28,7 @@ export interface DeckDisplay {
 	readonly secondaryHeaderChannel: Channel | undefined
 	readonly listenSlug: string | undefined
 	readonly broadcastSlug: string | undefined
+	readonly autoRadioAvailable: boolean
 }
 
 export function createDeckDisplay(deckId: number): DeckDisplay {
@@ -87,6 +89,15 @@ export function createDeckDisplay(deckId: number): DeckDisplay {
 		deck?.broadcasting_channel_id
 			? (broadcastChannelQuery.data?.[0]?.slug as string | undefined)
 			: undefined
+	)
+
+	// Whether the deck's current channel has enough duration data for auto-radio.
+	// Gates the join button in the deck transports (compact bar + player).
+	const channelTracksQuery = useLiveQuery((q) =>
+		q.from({t: tracksCollection}).where(({t}) => eq(t.slug, deck?.playlist_slug ?? ''))
+	)
+	const autoRadioAvailable = $derived(
+		Boolean(deck?.playlist_slug) && hasAutoRadioCoverage((channelTracksQuery.data ?? []) as Track[])
 	)
 
 	let lastTrack = $state<Track | undefined>(undefined)
@@ -154,6 +165,9 @@ export function createDeckDisplay(deckId: number): DeckDisplay {
 		},
 		get broadcastSlug() {
 			return broadcastSlug
+		},
+		get autoRadioAvailable() {
+			return autoRadioAvailable
 		}
 	}
 }
