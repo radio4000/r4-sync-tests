@@ -25,6 +25,8 @@ export type ViewStrategy = 'channel' | 'channel-filtered' | 'tags-only' | 'searc
 
 type ProcessViewTracksOptions = {
 	shuffleRand?: () => number
+	/** Set when the caller already passes input sorted by created_at desc, so the default sort can be skipped. */
+	inputOrder?: 'created-desc'
 }
 
 /** Decide which fetch strategy to use based on the first source of a View. */
@@ -68,9 +70,12 @@ export function processViewTracks(
 	if (q?.search) {
 		data = fuzzySearch(q.search, data, ['title', 'description'])
 	}
+	// Default order is created_at desc; skip the re-sort when the caller says input already is.
+	const isDefaultSort = !view.order && (!view.direction || view.direction === 'desc')
+	const skipSort = isDefaultSort && !q?.search && options.inputOrder === 'created-desc'
 	if (view.order === 'shuffle') {
 		data = shuffleArray(data, options.shuffleRand ?? Math.random)
-	} else {
+	} else if (!skipSort) {
 		const sortField =
 			view.order === 'name' ? 'title' : view.order === 'updated' ? 'updated_at' : 'created_at'
 		const dir = view.direction === 'asc' ? 1 : -1

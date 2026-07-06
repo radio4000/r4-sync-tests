@@ -4,6 +4,7 @@
 	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
 	import {appState, canEditChannel} from '$lib/app-state.svelte'
 	import {getMatchingTracksQuery} from '../matching-tracks-query.svelte.ts'
+	import {getTagFilter} from '../tag-filter.svelte'
 	import Tracklist from '$lib/components/tracklist.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
 	import Subpage from '$lib/components/subpage.svelte'
@@ -46,7 +47,9 @@
 	const tracksQuery = getTracksQueryCtx()
 
 	let searchInput = $state(page.url.searchParams.get('q') ?? '')
-	let selectedTags = $derived(page.url.searchParams.get('tags')?.split(',').filter(Boolean) ?? [])
+	const tagFilter = getTagFilter()
+	let selectedTags = $derived(tagFilter.selectedTags)
+	const {toggleTag} = tagFilter
 	let searchValue = $derived(page.url.searchParams.get('q') ?? '')
 	let urlOrder = $derived(readViewOrder(page.url.searchParams.get('order')))
 	let urlDirection = $derived(readViewDirection(page.url.searchParams.get('direction')))
@@ -159,7 +162,10 @@
 				order: isSorting ? order : undefined,
 				direction: isSorting ? direction : undefined
 			},
-			order === 'shuffle' ? {shuffleRand: seededRandom(randomSeed || 'default-seed')} : undefined
+			order === 'shuffle'
+				? {shuffleRand: seededRandom(randomSeed || 'default-seed')}
+				: // allTracks arrives created_at desc from the live query, so the default sort is a no-op
+					{inputOrder: 'created-desc'}
 		)
 	})
 	let baseVisibleTracks = $derived(isFiltering ? filteredTracks : allTracks)
@@ -217,20 +223,6 @@
 			document.getElementById(elementId)?.scrollIntoView({block: 'center'})
 		})
 	})
-
-	function toggleTag(tag: string) {
-		const normalized = tag.toLowerCase().trim()
-		const next = selectedTags.some((t) => t.toLowerCase() === normalized)
-			? selectedTags.filter((t) => t.toLowerCase() !== normalized)
-			: [...selectedTags, normalized]
-		const url = new URL(page.url)
-		if (next.length) {
-			url.searchParams.set('tags', next.join(','))
-		} else {
-			url.searchParams.delete('tags')
-		}
-		goto(url, {replaceState: true})
-	}
 
 	function clearMatchingFilter() {
 		const url = new URL(page.url)

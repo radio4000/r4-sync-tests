@@ -19,7 +19,8 @@
 	import SearchInput from '$lib/components/search-input.svelte'
 	import FilterChips from '$lib/components/filter-chips.svelte'
 	import {relativeDate} from '$lib/dates'
-	import {extractHashtags, channelAvatarUrl} from '$lib/utils'
+	import {extractHashtags, channelAvatarUrl, getChannelTags} from '$lib/utils'
+	import {getTagFilter} from './tag-filter.svelte'
 	import {addToPlaylist, joinAutoRadio, playTrack, setPlaylist, togglePlayPause} from '$lib/api'
 	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
 	import {getAutoDecksForView} from '$lib/views.svelte'
@@ -45,16 +46,18 @@
 			.slice(0, FEATURED_LIMIT) // strip #
 	)
 
-	// Per-tag sections — store full matching list, slice only for display
-	let tagSections = $derived(
-		featuredTags.map((tag) => {
-			const tracks = allTracks.filter((t) => t.tags?.includes(tag))
-			return {tag, tracks}
-		})
-	)
+	// One pass over all tracks → tag→count map, instead of an O(n) filter per tag.
+	let tagCounts = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local lookup rebuilt by $derived, not reactive state
+		const map = new Map<string, number>()
+		for (const {value, count} of getChannelTags(allTracks)) map.set(value, count)
+		return map
+	})
 
-	// Only featured tags that actually have tracks
-	let availableTagSections = $derived(tagSections.filter((s) => s.tracks.length > 0))
+	// Only featured tags that actually have tracks, with their counts.
+	let availableTagSections = $derived(
+		featuredTags.map((tag) => ({tag, count: tagCounts.get(tag) ?? 0})).filter((s) => s.count > 0)
+	)
 
 	// Tags active in any deck's playlist
 	const deckPlaylistTags = $derived([
@@ -65,12 +68,12 @@
 		)
 	])
 
-	// Per-tag sections for deck tags NOT already in featuredTags (avoids duplicate tabs)
+	// Deck tags NOT already in featuredTags (avoids duplicate tabs), with their counts.
 	let deckOnlyTagSections = $derived(
 		deckPlaylistTags
 			.filter((tag) => !featuredTags.includes(tag))
-			.map((tag) => ({tag, tracks: allTracks.filter((t) => t.tags?.includes(tag))}))
-			.filter((s) => s.tracks.length > 0)
+			.map((tag) => ({tag, count: tagCounts.get(tag) ?? 0}))
+			.filter((s) => s.count > 0)
 	)
 
 	let searchInput = $state('')
@@ -82,27 +85,9 @@
 
 	// Tag multi-selection — empty means "Latest". URL-backed (?tags=) so the
 	// selection shows the same everywhere: chips row, description tags, tracks page.
-	let selectedTags = $derived(page.url.searchParams.get('tags')?.split(',').filter(Boolean) ?? [])
-
-	function toggleTag(tag: string) {
-		const normalized = tag.toLowerCase().trim()
-		const next = selectedTags.some((t) => t.toLowerCase() === normalized)
-			? selectedTags.filter((t) => t.toLowerCase() !== normalized)
-			: [...selectedTags, normalized]
-		const url = new URL(page.url)
-		if (next.length) {
-			url.searchParams.set('tags', next.join(','))
-		} else {
-			url.searchParams.delete('tags')
-		}
-		goto(url, {replaceState: true, noScroll: true, keepFocus: true})
-	}
-
-	function clearTags() {
-		const url = new URL(page.url)
-		url.searchParams.delete('tags')
-		goto(url, {replaceState: true, noScroll: true, keepFocus: true})
-	}
+	const tagFilter = getTagFilter()
+	let selectedTags = $derived(tagFilter.selectedTags)
+	const {toggleTag, clearTags} = tagFilter
 
 	// Tracks for the current selection
 	let tagFilteredTracks = $derived(
@@ -228,24 +213,24 @@
 					{m.channel_section_latest()}
 					<span class="tag-count">({Math.min(allTracks.length, SECTION_TRACK_LIMIT)})</span>
 				</button>
-				{#each deckOnlyTagSections as { tag, tracks } (tag)}
+				{#each deckOnlyTagSections as { tag, count } (tag)}
 					<button
 						type="button"
 						data-deck-active
 						class:active={selectedTags.includes(tag)}
 						onclick={() => toggleTag(tag)}
 					>
-						#{tag} <span class="tag-count">({tracks.length})</span>
+						#{tag} <span class="tag-count">({count})</span>
 					</button>
 				{/each}
-				{#each availableTagSections as { tag, tracks } (tag)}
+				{#each availableTagSections as { tag, count } (tag)}
 					<button
 						type="button"
 						data-deck-active={deckPlaylistTags.includes(tag) || undefined}
 						class:active={selectedTags.includes(tag)}
 						onclick={() => toggleTag(tag)}
 					>
-						#{tag} <span class="tag-count">({tracks.length})</span>
+						#{tag} <span class="tag-count">({count})</span>
 					</button>
 				{/each}
 			</menu>

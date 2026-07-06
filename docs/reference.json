@@ -508,8 +508,8 @@
 			"desc": "Return auto-radio decks whose stored view matches the given view identity."
 		},
 		{
-			"name": "processViewTracks(tracks, view)",
-			"desc": "Post-process tracks: tag post-filter, fuzzy search, sort/shuffle."
+			"name": "processViewTracks(tracks, view, options?)",
+			"desc": "Post-process tracks: tag post-filter, fuzzy search, sort/shuffle. options.inputOrder='created-desc' skips the default re-sort when input is already created_at desc."
 		},
 		{
 			"name": "queryView(getView)",
@@ -879,6 +879,10 @@
 		{
 			"name": "getMatchingTracksQuery(currentSlug)",
 			"desc": "Tracks of the channel named by the ?matching= URL param — the \"compare against @other-channel\" feature on tracks/tags pages."
+		},
+		{
+			"name": "getTagFilter()",
+			"desc": "URL-backed tag selection (?tags=a,b) shared by the channel page and its tracks subpage. Returns {selectedTags, toggleTag, clearTags}."
 		}
 	],
 
