@@ -74,7 +74,7 @@ const broadcastChannels = new Map()
  */
 const broadcastStateChannels = new Map()
 /** Broadcaster cleanup monitors keyed by channelId
- * @type {Map<string, {intervalId: ReturnType<typeof setInterval>, idleSinceMs: number | null, stopping: boolean}>}
+ * @type {Map<string, {intervalId: ReturnType<typeof setInterval>, idleSinceMs: number | null, lastTickMs: number, stopping: boolean}>}
  */
 const broadcastLivenessMonitors = new Map()
 
@@ -496,6 +496,7 @@ function startBroadcastLivenessMonitor(channelId) {
 	const monitor = {
 		intervalId,
 		idleSinceMs: null,
+		lastTickMs: Date.now(),
 		stopping: false
 	}
 	broadcastLivenessMonitors.set(channelId, monitor)
@@ -511,6 +512,18 @@ function stopBroadcastLivenessMonitor(channelId) {
 async function evaluateBroadcastLiveness(channelId) {
 	const monitor = broadcastLivenessMonitors.get(channelId)
 	if (!monitor || monitor.stopping) return
+
+	// A large gap since the previous tick means the tab was backgrounded/suspended —
+	// treat it as a resume, not accumulated idle time, so a briefly-backgrounded tab
+	// doesn't auto-stop the broadcast before playback has a chance to catch up.
+	const now = Date.now()
+	const tickGapMs = now - monitor.lastTickMs
+	monitor.lastTickMs = now
+	if (tickGapMs > BROADCAST_LIVENESS_INTERVAL_MS * 3) {
+		monitor.idleSinceMs = null
+		log.log(`liveness_resume_gap @${label(channelId)} ${tickGapMs}ms`)
+		return
+	}
 
 	const deckIds = getBroadcasterDeckIds()
 	if (!deckIds.length) {
@@ -538,7 +551,6 @@ async function evaluateBroadcastLiveness(channelId) {
 		return
 	}
 
-	const now = Date.now()
 	if (monitor.idleSinceMs == null) {
 		monitor.idleSinceMs = now
 		return
@@ -869,4 +881,24 @@ export async function validateListeningState() {
 			closeListeningDecksForChannel(deck.listening_to_channel_id)
 		}
 	}
+}
+
+// Resume broadcast/listen state on tab foreground. Backgrounded mobile tabs stall
+// setInterval and can drop the realtime websocket with no resync — on return, push a
+// fresh state if broadcasting, and force a state resync if listening (reusing the
+// same request_state round-trip a fresh listener uses on subscribe).
+if (typeof document !== 'undefined') {
+	const resumeBroadcastState = () => {
+		if (document.visibilityState !== 'visible') return
+		for (const channelId of broadcastStateChannels.keys()) {
+			log.log(`resume_broadcaster @${label(channelId)}`)
+			broadcastStateUpdate(channelId)
+		}
+		for (const [channelId, channel] of broadcastStateListeners) {
+			log.log(`resume_listener @${label(channelId)}`)
+			channel.send({type: 'broadcast', event: 'request_state', payload: {channel_id: channelId}})
+		}
+	}
+	document.addEventListener('visibilitychange', resumeBroadcastState)
+	window.addEventListener('pageshow', resumeBroadcastState)
 }

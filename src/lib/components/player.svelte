@@ -8,6 +8,7 @@
 	import {
 		next,
 		play,
+		pause,
 		previous,
 		togglePlayPause,
 		toggleDeckCompact,
@@ -19,6 +20,7 @@
 		recordSeekPosition,
 		toggleShuffle
 	} from '$lib/api'
+	import {requestPlaybackWakeLock, releasePlaybackWakeLock} from '$lib/wake-lock'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {sortedListeningDeckIds, sortedDeckIds, isGroupControlDeck} from '$lib/deck'
 	import {playbackState, toAutoTracks, AUTO_RADIO_SYNC_GRACE_MS} from '$lib/player/auto-radio'
@@ -350,6 +352,8 @@
 
 		if (!t) {
 			navigator.mediaSession.metadata = null
+			navigator.mediaSession.setActionHandler('play', null)
+			navigator.mediaSession.setActionHandler('pause', null)
 			navigator.mediaSession.setActionHandler('previoustrack', null)
 			navigator.mediaSession.setActionHandler('nexttrack', null)
 			return
@@ -378,6 +382,12 @@
 		const timer = setTimeout(applyMetadata, 800)
 
 		// Always register handlers — passing null removes the button on Android
+		navigator.mediaSession.setActionHandler('play', () => {
+			if (mediaElement) play(deckId, mediaElement)
+		})
+		navigator.mediaSession.setActionHandler('pause', () => {
+			if (mediaElement) pause(mediaElement)
+		})
 		navigator.mediaSession.setActionHandler('previoustrack', () => {
 			if (canPrevFromQueue) previous(deckId, 'user_prev')
 		})
@@ -387,9 +397,20 @@
 
 		return () => {
 			clearTimeout(timer)
+			navigator.mediaSession.setActionHandler('play', null)
+			navigator.mediaSession.setActionHandler('pause', null)
 			navigator.mediaSession.setActionHandler('previoustrack', null)
 			navigator.mediaSession.setActionHandler('nexttrack', null)
 		}
+	})
+
+	// Wake lock — keep the screen on while this deck is playing. Ref-counted across
+	// decks in the module itself, so multiple simultaneously-playing decks don't
+	// release each other's lock.
+	$effect(() => {
+		if (!deck?.is_playing) return
+		requestPlaybackWakeLock(deckId)
+		return () => releasePlaybackWakeLock(deckId)
 	})
 
 	// Auto-radio drift — re-evaluates on every timeupdate (~250ms while playing)

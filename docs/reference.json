@@ -567,6 +567,17 @@
 		{"name": "validateListeningState()", "desc": "Verify listening state."}
 	],
 
+	"src/lib/wake-lock.js": [
+		{
+			"name": "requestPlaybackWakeLock(deckId)",
+			"desc": "Hold the screen wake lock while deckId is playing (ref-counted across decks)."
+		},
+		{
+			"name": "releasePlaybackWakeLock(deckId)",
+			"desc": "Release deckId's hold on the wake lock."
+		}
+	],
+
 	"src/lib/metadata/discogs.js": [
 		{"name": "fetchDiscogs(url)", "desc": "Fetch Discogs release/master data from URL."},
 		{
