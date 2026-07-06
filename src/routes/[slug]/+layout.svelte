@@ -431,27 +431,28 @@
 						</div>
 					</menu>
 				</div>
+
+				{#if !isTrackDetail && page.route.id !== '/[slug]/image'}
+					<div class="channel-tabs">
+						<SectionMenu
+							items={channelSectionMenuItems({
+								slug,
+								trackCount: channelTrackCount,
+								routeId: page.route.id
+							})}
+							label="Channel navigation"
+							scroll
+						/>
+					</div>
+				{/if}
 			</header>
 		{/if}
 
-		{#if !isTrackDetail}
+		{#if !isTrackDetail && channelNavControls}
 			<menu class="channel-nav">
-				{#if page.route.id !== '/[slug]/image'}
-					<SectionMenu
-						items={channelSectionMenuItems({
-							slug,
-							trackCount: channelTrackCount,
-							routeId: page.route.id
-						})}
-						label="Channel navigation"
-						scroll
-					/>
-				{/if}
-				{#if channelNavControls}
-					<menu class="channel-nav-controls">
-						{@render channelNavControls()}
-					</menu>
-				{/if}
+				<menu class="channel-nav-controls">
+					{@render channelNavControls()}
+				</menu>
 			</menu>
 		{/if}
 	</div>
@@ -484,7 +485,8 @@
 		display: grid;
 		grid-template-areas:
 			'main secondary'
-			'controls controls';
+			'controls controls'
+			'tabs tabs';
 		grid-template-columns: 1fr auto;
 		gap: var(--space-1);
 		padding: 2rem var(--space-3) 1rem;
@@ -502,9 +504,17 @@
 
 	@container (min-width: 640px) {
 		header {
-			grid-template-areas: 'main controls secondary';
+			grid-template-areas:
+				'main controls secondary'
+				'tabs tabs tabs';
 			grid-template-columns: auto 1fr auto;
 		}
+	}
+
+	.channel-tabs {
+		grid-area: tabs;
+		min-width: 0;
+		margin-top: var(--space-2);
 	}
 
 	.channel-main {
