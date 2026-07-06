@@ -5,6 +5,7 @@
 	import {toggleVideo, toggleQueuePanel, clearUserInitiatedPlay, leaveAutoRadio} from '$lib/api'
 	import {getBroadcastingChannelId, notifyBroadcastState, leaveBroadcast} from '$lib/broadcast.js'
 	import {isGroupControlDeck, sortedListeningDeckIds} from '$lib/deck'
+	import {trackAddSearchParams} from '$lib/track-add'
 	import Icon from '$lib/components/icon.svelte'
 	import * as m from '$lib/paraglide/messages'
 
@@ -80,7 +81,8 @@
 	function addToRadio() {
 		if (!track) return
 		if (!appState.user) {
-			const addPath = resolve('/add') + (track.url ? `?url=${encodeURIComponent(track.url)}` : '')
+			const query = trackAddSearchParams(track).toString()
+			const addPath = resolve('/add') + (query ? `?${query}` : '')
 			const authPath = resolve('/auth') + `?redirect=${encodeURIComponent(addPath)}`
 			goto(authPath)
 			closeMenu?.()

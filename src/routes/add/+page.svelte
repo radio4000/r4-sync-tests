@@ -8,6 +8,9 @@
 	import * as m from '$lib/paraglide/messages'
 
 	const rawUrl = $derived(page?.url?.searchParams?.get('url') || '')
+	const explicitDiscogsUrl = $derived(page?.url?.searchParams?.get('discogs_url') || '')
+	const initialTitle = $derived(page?.url?.searchParams?.get('title') || '')
+	const initialDescription = $derived(page?.url?.searchParams?.get('description') || '')
 	const isDiscogsUrl = $derived.by(() => {
 		try {
 			return new URL(rawUrl).hostname.includes('discogs.com')
@@ -16,7 +19,7 @@
 		}
 	})
 	const initialUrl = $derived(isDiscogsUrl ? '' : rawUrl)
-	const initialDiscogsUrl = $derived(isDiscogsUrl ? rawUrl : '')
+	const initialDiscogsUrl = $derived(explicitDiscogsUrl || (isDiscogsUrl ? rawUrl : ''))
 	const channel = $derived(appState.channel)
 	const isSignedIn = $derived(!!appState.user)
 	const canAddTrack = $derived(isSignedIn && channel)
@@ -43,6 +46,8 @@
 			mode="create"
 			{channel}
 			url={initialUrl}
+			title={initialTitle}
+			description={initialDescription}
 			discogs_url={initialDiscogsUrl}
 			onsubmit={handleSubmit}
 		/>

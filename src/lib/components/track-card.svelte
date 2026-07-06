@@ -6,6 +6,7 @@
 	import {deleteTrack} from '$lib/collections/tracks'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {appState} from '$lib/app-state.svelte'
+	import {trackAddSearchParams} from '$lib/track-add'
 	import type {Track, Channel} from '$lib/types'
 	import Icon from './icon.svelte'
 	import PopoverMenu from './popover-menu.svelte'
@@ -103,7 +104,8 @@
 
 	const addToRadio = () => {
 		if (!appState.user) {
-			const addPath = resolve('/add') + (track.url ? `?url=${encodeURIComponent(track.url)}` : '')
+			const query = trackAddSearchParams(track).toString()
+			const addPath = resolve('/add') + (query ? `?${query}` : '')
 			const authPath = resolve('/auth') + `?redirect=${encodeURIComponent(addPath)}`
 			goto(authPath)
 			return

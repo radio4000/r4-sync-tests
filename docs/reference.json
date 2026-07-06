@@ -659,6 +659,17 @@
 		}
 	],
 
+	"src/lib/track-add.ts": [
+		{
+			"name": "trackAddData(track)",
+			"desc": "Prefill data for adding an existing track to the user's radio."
+		},
+		{
+			"name": "trackAddSearchParams(track)",
+			"desc": "URLSearchParams for /add prefill links, skipping empty fields."
+		}
+	],
+
 	"src/lib/logger.js": [
 		{
 			"name": "logger",

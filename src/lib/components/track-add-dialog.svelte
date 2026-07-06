@@ -7,6 +7,7 @@
 	import TrackForm from '$lib/components/track-form.svelte'
 	import TrackCard from '$lib/components/track-card.svelte'
 	import {tracksCollection} from '$lib/collections/tracks'
+	import {trackAddData} from '$lib/track-add'
 	import {tooltip} from './tooltip-attachment.svelte.js'
 	import * as m from '$lib/paraglide/messages'
 	import type {Track} from '$lib/types'
@@ -34,18 +35,7 @@
 		}
 		const track = data.track
 		if (track) {
-			trackData = {
-				url: track.url,
-				title: track.title || '',
-				description: track.description
-					? track.slug
-						? `${track.description} via @${track.slug}`
-						: track.description
-					: track.slug
-						? `via @${track.slug}`
-						: '',
-				discogs_url: track.discogs_url || ''
-			}
+			trackData = trackAddData(track)
 		} else {
 			trackData = {url: data?.url || '', title: '', description: '', discogs_url: ''}
 		}
