@@ -10,8 +10,11 @@
 	--media-radius: var(--border-radius);
 	--track-artwork-size: 2.5rem;
 	--shadow-modal: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
-	--deck-transition-fast: 150ms;
-	--deck-transition-ease: cubic-bezier(0.2, 0, 0, 1);
+	/* motion: --duration-1 for micro feedback (presses, hovers, exits),
+	   --duration-2 for overlays and larger moves (menus, dialogs) */
+	--duration-1: 100ms;
+	--duration-2: 150ms;
+	--ease-out: cubic-bezier(0.2, 0, 0, 1);
 
 	/* media-chrome icon size */
 	--media-button-icon-width: 18px;
