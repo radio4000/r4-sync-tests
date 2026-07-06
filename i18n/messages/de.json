@@ -741,6 +741,7 @@
 	"tracks_auto_radio_selection": "Für diese Auswahl Auto-Radio starten",
 	"tracks_empty_filter": "Keine Tracks passen zu deinem Filter",
 	"tracks_filter_placeholder": "Tracks filtern…",
+	"tracks_play_filtered": "{count} Tracks abspielen",
 	"tracks_selected_count": "{count} ausgewählt",
 	"tracks_total_count": "{count} Tracks",
 	"views_add_new": "Neue Ansicht hinzufügen",

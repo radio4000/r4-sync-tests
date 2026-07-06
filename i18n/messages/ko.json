@@ -674,6 +674,7 @@
 	"tracks_auto_radio_selection": "이 선택으로 오토 라디오 시작",
 	"tracks_empty_filter": "필터에 맞는 트랙이 없습니다",
 	"tracks_filter_placeholder": "트랙 필터링…",
+	"tracks_play_filtered": "{count}개 트랙 재생",
 	"tracks_selected_count": "{count}개 선택됨",
 	"tracks_total_count": "{count}개 트랙",
 	"views_add_new": "새 보기 추가",

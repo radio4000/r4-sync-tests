@@ -741,6 +741,7 @@
 	"tracks_auto_radio_selection": "Aŭto-radio por ĉi tiu elekto",
 	"tracks_empty_filter": "Neniuj trakoj kongruas kun via filtrilo",
 	"tracks_filter_placeholder": "Filtri trakojn…",
+	"tracks_play_filtered": "Ludi {count} trakojn",
 	"tracks_selected_count": "{count} elektitaj",
 	"tracks_total_count": "{count} trakoj",
 	"views_add_new": "Aldoni novan vidon",

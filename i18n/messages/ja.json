@@ -741,6 +741,7 @@
 	"tracks_auto_radio_selection": "この選択で auto-radio",
 	"tracks_empty_filter": "条件に一致するトラックがありません",
 	"tracks_filter_placeholder": "トラックを絞り込み…",
+	"tracks_play_filtered": "{count} 件のトラックを再生",
 	"tracks_selected_count": "{count} 件を選択中",
 	"tracks_total_count": "{count} 件のトラック",
 	"views_add_new": "新しいビューを追加",

@@ -674,6 +674,7 @@
 	"tracks_auto_radio_selection": "এই নির্বাচনকে অটো রেডিও করুন",
 	"tracks_empty_filter": "আপনার ফিল্টারের সাথে কোনো ট্র্যাক মেলেনি",
 	"tracks_filter_placeholder": "ট্র্যাক ফিল্টার করুন…",
+	"tracks_play_filtered": "{count}টি ট্র্যাক চালান",
 	"tracks_selected_count": "{count}টি নির্বাচিত",
 	"tracks_total_count": "{count}টি ট্র্যাক",
 	"views_add_new": "নতুন ভিউ যোগ করুন",

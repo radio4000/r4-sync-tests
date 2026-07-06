@@ -674,6 +674,7 @@
 	"tracks_auto_radio_selection": "اس انتخاب کو آٹو ریڈیو بنائیں",
 	"tracks_empty_filter": "آپ کے فلٹر سے کوئی ٹریک مطابقت نہیں رکھتا",
 	"tracks_filter_placeholder": "ٹریکس فلٹر کریں…",
+	"tracks_play_filtered": "{count} ٹریکس چلائیں",
 	"tracks_selected_count": "{count} منتخب",
 	"tracks_total_count": "{count} ٹریکس",
 	"views_add_new": "نیا ویو شامل کریں",

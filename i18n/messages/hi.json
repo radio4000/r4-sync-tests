@@ -674,6 +674,7 @@
 	"tracks_auto_radio_selection": "इस चयन के लिए ऑटो रेडियो",
 	"tracks_empty_filter": "आपके फ़िल्टर से मेल खाता कोई ट्रैक नहीं है",
 	"tracks_filter_placeholder": "ट्रैक्स फ़िल्टर करें…",
+	"tracks_play_filtered": "{count} ट्रैक्स चलाएं",
 	"tracks_selected_count": "{count} चुने गए",
 	"tracks_total_count": "{count} ट्रैक्स",
 	"views_add_new": "नया व्यू जोड़ें",

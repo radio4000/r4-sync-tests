@@ -741,6 +741,7 @@
 	"tracks_auto_radio_selection": "Bu secim icin auto-radio",
 	"tracks_empty_filter": "Filtresine uyan parca yok",
 	"tracks_filter_placeholder": "Parçaları filtrele…",
+	"tracks_play_filtered": "Oynat {count} parça",
 	"tracks_selected_count": "{count} secili",
 	"tracks_total_count": "{count} parca",
 	"views_add_new": "Yeni görünüm ekle",

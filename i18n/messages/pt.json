@@ -741,6 +741,7 @@
 	"tracks_auto_radio_selection": "Auto-rádio desta seleção",
 	"tracks_empty_filter": "Nenhuma faixa corresponde ao teu filtro",
 	"tracks_filter_placeholder": "Filtrar faixas…",
+	"tracks_play_filtered": "Reproduzir {count} faixas",
 	"tracks_selected_count": "{count} selecionadas",
 	"tracks_total_count": "{count} faixas",
 	"views_add_new": "Adicionar nova visão",

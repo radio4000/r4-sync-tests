@@ -674,6 +674,7 @@
 	"tracks_auto_radio_selection": "对此选择启用自动电台",
 	"tracks_empty_filter": "没有曲目符合你的筛选条件",
 	"tracks_filter_placeholder": "筛选曲目…",
+	"tracks_play_filtered": "播放 {count} 首曲目",
 	"tracks_selected_count": "已选 {count} 项",
 	"tracks_total_count": "{count} 首曲目",
 	"views_add_new": "添加新视图",

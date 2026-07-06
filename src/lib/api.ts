@@ -39,6 +39,17 @@ function getDeck(deckId: number): Deck | undefined {
 	return appState.decks[deckId]
 }
 
+/** Return the active deck, creating a compact one when all decks are closed. */
+export function ensureActiveDeck(): Deck {
+	let deck = getDeck(appState.active_deck_id)
+	if (!deck) {
+		deck = addDeck()
+		deck.compact = true
+		appState.active_deck_id = deck.id
+	}
+	return deck
+}
+
 function isNormalPlayStart(startReason: PlayStartReason): boolean {
 	return (
 		startReason === 'user_click_track' ||

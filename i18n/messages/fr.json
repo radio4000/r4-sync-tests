@@ -741,6 +741,7 @@
 	"tracks_auto_radio_selection": "Auto-radio pour cette sélection",
 	"tracks_empty_filter": "Aucun track ne correspond à ton filtre",
 	"tracks_filter_placeholder": "Filtrer les tracks…",
+	"tracks_play_filtered": "Lire {count} tracks",
 	"tracks_selected_count": "{count} sélectionnés",
 	"tracks_total_count": "{count} pistes",
 	"views_add_new": "Ajouter une vue",

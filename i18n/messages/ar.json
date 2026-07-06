@@ -674,6 +674,7 @@
 	"tracks_auto_radio_selection": "راديو تلقائي لهذا التحديد",
 	"tracks_empty_filter": "لا توجد مسارات تطابق التصفية",
 	"tracks_filter_placeholder": "صفِّ المسارات…",
+	"tracks_play_filtered": "تشغيل {count} مسارات",
 	"tracks_selected_count": "{count} محدد",
 	"tracks_total_count": "{count} مسارات",
 	"views_add_new": "إضافة عرض جديد",

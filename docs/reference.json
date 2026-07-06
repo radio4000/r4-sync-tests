@@ -303,6 +303,10 @@
 			"desc": "Primary tap-play for a channel, keyed by channel not deck. Focuses/resyncs an existing deck holding the channel, else starts fresh via playChannelAuto."
 		},
 
+		{
+			"name": "ensureActiveDeck()",
+			"desc": "Return the active deck, creating a compact one when all decks are closed."
+		},
 		{"name": "setPlaylist(deckId, trackIds, options?)", "desc": "Set queue to track IDs."},
 		{
 			"name": "loadDeckView(deckId, view, trackIds?)",

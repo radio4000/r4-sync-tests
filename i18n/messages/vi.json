@@ -741,6 +741,7 @@
 	"tracks_auto_radio_selection": "Auto radio cho lựa chọn này",
 	"tracks_empty_filter": "Không có track nào khớp bộ lọc của bạn",
 	"tracks_filter_placeholder": "Lọc track…",
+	"tracks_play_filtered": "Phát {count} track",
 	"tracks_selected_count": "Đã chọn {count}",
 	"tracks_total_count": "{count} track",
 	"views_add_new": "Thêm chế độ xem mới",

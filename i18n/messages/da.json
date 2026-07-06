@@ -741,6 +741,7 @@
 	"tracks_auto_radio_selection": "Auto-radio på denne markering",
 	"tracks_empty_filter": "Ingen tracks matcher dit filter",
 	"tracks_filter_placeholder": "Filtrer tracks...",
+	"tracks_play_filtered": "Afspil {count} tracks",
 	"tracks_selected_count": "{count} valgt",
 	"tracks_total_count": "{count} tracks",
 	"views_add_new": "Tilføj ny visning",

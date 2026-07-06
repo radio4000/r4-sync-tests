@@ -13,7 +13,7 @@
 	import Dialog from '$lib/components/dialog.svelte'
 	import SortControls from '$lib/components/sort-controls.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
-	import {addToPlaylist, joinAutoRadio, loadDeckView, playTrack} from '$lib/api'
+	import {addToPlaylist, ensureActiveDeck, joinAutoRadio, loadDeckView, playTrack} from '$lib/api'
 	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
 	import {
 		canonicalTrackKey,
@@ -239,13 +239,16 @@
 
 	function playFilteredTracks() {
 		if (!hasActionableSelection) return
+		const deckId = ensureActiveDeck().id
 		const ids = visibleTracks.map((t) => t.id)
-		loadDeckView(appState.active_deck_id, filteredAutoView, ids, {title: filteredPlaylistTitle})
-		playTrack(appState.active_deck_id, ids[0], null, 'play_search')
+		loadDeckView(deckId, filteredAutoView, ids, {title: filteredPlaylistTitle})
+		playTrack(deckId, ids[0], null, 'play_search')
 	}
 
 	function queueFilteredTracks() {
 		if (!hasActionableSelection) return
+		// With no deck open there is no queue to append to — start playing instead
+		if (!appState.decks[appState.active_deck_id]) return playFilteredTracks()
 		addToPlaylist(
 			appState.active_deck_id,
 			visibleTracks.map((t) => t.id)
@@ -272,6 +275,26 @@
 		reshuffleKey += 1
 	}
 </script>
+
+{#snippet filterActions(closeDialog = false)}
+	<menu class="row filter-actions">
+		<button
+			type="button"
+			class="primary"
+			onclick={() => {
+				playFilteredTracks()
+				if (closeDialog) showFiltersModal = false
+			}}
+		>
+			<Icon icon="play-fill" />
+			{m.tracks_play_filtered({count: visibleTracks.length})}
+		</button>
+		<button type="button" class="ghost" onclick={queueFilteredTracks}>
+			<Icon icon="unordered-list" />
+			{m.track_add_to_queue()}
+		</button>
+	</menu>
+{/snippet}
 
 <ChannelNavControlsPortal controls={navControls} />
 
@@ -336,10 +359,15 @@
 			</header>
 		{/snippet}
 		<section class="filters-dialog">
-			<p class="filters-stats">
-				<strong>{visibleTracks.length}</strong> / {allTracks.length}
-				{m.nav_tracks()}
-			</p>
+			<div class="filters-stats-row">
+				<p class="filters-stats">
+					<strong>{visibleTracks.length}</strong> / {allTracks.length}
+					{m.nav_tracks()}
+				</p>
+				{#if hasActionableSelection}
+					{@render filterActions(true)}
+				{/if}
+			</div>
 			{#if activeFilterCount > 0}
 				<menu class="row filter-tags">
 					{#if searchValue}
@@ -422,19 +450,26 @@
 		{/snippet}
 		<section class="tracks-page">
 			<header>
-				{#if isFiltering && (selectedTags.length > 0 || matchingSlug)}
-					<menu class="row filter-tags">
-						{#if matchingSlug}
-							<button type="button" class="chip" onclick={clearMatchingFilter}
-								>@{matchingSlug} ×</button
-							>
+				{#if hasActionableSelection || (isFiltering && (selectedTags.length > 0 || matchingSlug))}
+					<div class="row filter-row">
+						{#if isFiltering && (selectedTags.length > 0 || matchingSlug)}
+							<menu class="row filter-tags">
+								{#if matchingSlug}
+									<button type="button" class="chip" onclick={clearMatchingFilter}
+										>@{matchingSlug} ×</button
+									>
+								{/if}
+								{#each selectedTags as tag (tag)}
+									<button type="button" class="chip" onclick={() => toggleTag(tag)}>
+										{tag} ×
+									</button>
+								{/each}
+							</menu>
 						{/if}
-						{#each selectedTags as tag (tag)}
-							<button type="button" class="chip" onclick={() => toggleTag(tag)}>
-								{tag} ×
-							</button>
-						{/each}
-					</menu>
+						{#if hasActionableSelection}
+							{@render filterActions()}
+						{/if}
+					</div>
 				{/if}
 			</header>
 
@@ -464,10 +499,10 @@
 
 <style>
 	header {
-		padding: 0.5rem;
+		padding-inline: 0.5rem;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-1);
+		gap: 0.5rem;
 	}
 
 	.tracks-page {
@@ -488,6 +523,18 @@
 
 	.filters-stats {
 		margin: 0;
+	}
+
+	.filters-stats-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+	}
+
+	.filter-actions {
+		align-items: center;
 	}
 
 	.filters-dialog-panel {
@@ -538,6 +585,26 @@
 	.filter-tags {
 		flex-wrap: wrap;
 		gap: var(--space-1);
+	}
+
+	.filter-row {
+		align-items: center;
+		margin-bottom: var(--space-2);
+	}
+
+	/* Connect the chips to the hashtag filter toggle in the nav row above */
+	header .filter-tags::before {
+		content: '└';
+		align-self: center;
+		margin-left: 0.5rem;
+		color: var(--gray-9);
+	}
+
+	/* ...and the actions to the chips they act on */
+	.filter-tags + .filter-actions::before {
+		content: '→';
+		align-self: center;
+		color: var(--gray-9);
 	}
 
 	.modal-header {

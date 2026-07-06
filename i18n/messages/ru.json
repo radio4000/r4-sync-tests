@@ -674,6 +674,7 @@
 	"tracks_auto_radio_selection": "Авто-радио по этой выборке",
 	"tracks_empty_filter": "Ни один трек не подходит под ваш фильтр",
 	"tracks_filter_placeholder": "Фильтровать треки…",
+	"tracks_play_filtered": "Играть {count} треков",
 	"tracks_selected_count": "Выбрано {count}",
 	"tracks_total_count": "{count} треков",
 	"views_add_new": "Добавить новый вид",
