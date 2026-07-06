@@ -719,6 +719,10 @@
 		{"name": "date-formal.svelte", "desc": "Localized formal date-time display."},
 		{"name": "Icon", "desc": "Iconify icon wrapper."},
 		{"name": "LinkEntities", "desc": "Parses #tags @mentions into search links."},
+		{
+			"name": "FilterChips",
+			"desc": "Removable chips for the active ?tags= filter selection (+ optional search/matching chips)."
+		},
 
 		{"name": "ButtonPlay", "desc": "Channel play button."},
 		{"name": "ButtonFollow", "desc": "Follow/unfollow button."},

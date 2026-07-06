@@ -12,6 +12,7 @@
 	import Icon from '$lib/components/icon.svelte'
 	import Dialog from '$lib/components/dialog.svelte'
 	import SortControls from '$lib/components/sort-controls.svelte'
+	import FilterChips from '$lib/components/filter-chips.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import {addToPlaylist, ensureActiveDeck, joinAutoRadio, loadDeckView, playTrack} from '$lib/api'
 	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
@@ -369,23 +370,13 @@
 				{/if}
 			</div>
 			{#if activeFilterCount > 0}
-				<menu class="row filter-tags">
-					{#if searchValue}
-						<li><span class="chip">"{searchValue}"</span></li>
-					{/if}
-					{#if matchingSlug}
-						<li>
-							<button type="button" class="chip" onclick={clearMatchingFilter}
-								>@{matchingSlug} ×</button
-							>
-						</li>
-					{/if}
-					{#each selectedTags as tag (tag)}
-						<li>
-							<button type="button" class="chip" onclick={() => toggleTag(tag)}>{tag} ×</button>
-						</li>
-					{/each}
-				</menu>
+				<FilterChips
+					search={searchValue}
+					matching={matchingSlug}
+					tags={selectedTags}
+					onRemoveTag={toggleTag}
+					onClearMatching={clearMatchingFilter}
+				/>
 			{/if}
 			<section class="filters-dialog-panel">
 				<h3>{m.views_tags_label()}</h3>
@@ -453,18 +444,12 @@
 				{#if hasActionableSelection || (isFiltering && (selectedTags.length > 0 || matchingSlug))}
 					<div class="row filter-row">
 						{#if isFiltering && (selectedTags.length > 0 || matchingSlug)}
-							<menu class="row filter-tags">
-								{#if matchingSlug}
-									<button type="button" class="chip" onclick={clearMatchingFilter}
-										>@{matchingSlug} ×</button
-									>
-								{/if}
-								{#each selectedTags as tag (tag)}
-									<button type="button" class="chip" onclick={() => toggleTag(tag)}>
-										{tag} ×
-									</button>
-								{/each}
-							</menu>
+							<FilterChips
+								matching={matchingSlug}
+								tags={selectedTags}
+								onRemoveTag={toggleTag}
+								onClearMatching={clearMatchingFilter}
+							/>
 						{/if}
 						{#if hasActionableSelection}
 							{@render filterActions()}
@@ -582,18 +567,13 @@
 		font-size: 0.85em;
 	}
 
-	.filter-tags {
-		flex-wrap: wrap;
-		gap: var(--space-1);
-	}
-
 	.filter-row {
 		align-items: center;
 		margin-bottom: var(--space-2);
 	}
 
 	/* Connect the chips to the hashtag filter toggle in the nav row above */
-	header .filter-tags::before {
+	header :global(.filter-chips)::before {
 		content: '└';
 		align-self: center;
 		margin-left: 0.5rem;
@@ -601,7 +581,7 @@
 	}
 
 	/* ...and the actions to the chips they act on */
-	.filter-tags + .filter-actions::before {
+	:global(.filter-chips) + .filter-actions::before {
 		content: '→';
 		align-self: center;
 		color: var(--gray-9);
