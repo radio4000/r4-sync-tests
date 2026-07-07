@@ -2,7 +2,17 @@
 
 ## July 2026
 
-- #Channels Track page title shows the track's name — or "Track" when it has none — instead of the placeholder "title"
+- #Channels Larger channel header with clearer navigation
+- #Channels Tag filtering on the channel home and tracks page — shareable via `?tags=`, removable filter chips, prominent play/queue when active
+- #Channels Track page title shows the track's name — or "Track" when it has none
+- #Player Auto-radio button cycles in place: join, resync when drifted, leave when synced
+- #Player Mobile Media Session play/pause, screen wake lock, and broadcast resync when returning to the tab
+- #Deck Mobile decks are two-state — a compact bar, or tap to expand to fullscreen
+- #Queue Track menu splits into play-next and add-to-queue; play-next also in search
+- #Tracks Adding a track keeps your URL through the sign-in redirect
+- #UI Buttons get press feedback and clearer active-state contrast; dialogs and popovers animate in and out, and the compact deck slides in like a sheet
+- #Perf Faster tracklist rendering — content-visibility on rows and a single deck lookup (~15x layout)
+- #Perf Smaller bundle — dropped unused dependencies and dead code
 
 ## June 2026
 
