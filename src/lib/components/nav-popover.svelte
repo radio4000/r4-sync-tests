@@ -213,7 +213,14 @@
 							{#each recentChannels as channel (channel.id)}
 								{@render channelRow(channel, `${uid}-recent-${channel.id}`)}
 							{/each}
-							<a class="list-link" href={followingHref}>
+							<a
+								class="list-link"
+								href={followingHref}
+								role="option"
+								tabindex="-1"
+								aria-selected="false"
+								id={`${uid}-following-all`}
+							>
 								<Icon icon={conceptIcons.following} size={15} />
 								<span>All following</span>
 							</a>
@@ -329,6 +336,24 @@
 		height: 1.25rem;
 	}
 
+	.broadcast-nav :global(.broadcast-action) {
+		background: var(--accent-3);
+		border: 1px solid var(--accent-7);
+		color: var(--accent-11);
+		font-weight: 600;
+	}
+
+	.broadcast-nav :global(.broadcast-action:hover) {
+		background: var(--accent-4);
+		border-color: var(--accent-8);
+	}
+
+	.broadcast-nav :global(.broadcast-action.broadcasting) {
+		background: var(--accent-9);
+		border-color: var(--accent-10);
+		color: var(--accent-1);
+	}
+
 	.tags {
 		padding-inline: var(--space-1);
 	}
@@ -363,7 +388,8 @@
 		font-size: var(--font-2);
 	}
 
-	.channel-row {
+	.channel-row,
+	.list-link {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
@@ -374,9 +400,16 @@
 	}
 
 	.channel-row:hover,
-	.channel-row:global([aria-selected='true']) {
+	.channel-row:global([aria-selected='true']),
+	.list-link:hover {
 		background: var(--gray-6);
 		text-decoration: none;
+	}
+
+	.list-link {
+		margin-top: var(--space-1);
+		font-size: var(--font-2);
+		color: var(--accent-10);
 	}
 
 	.channel-row :global(img),
