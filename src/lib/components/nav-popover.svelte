@@ -11,7 +11,6 @@
 	import Icon from '$lib/components/icon.svelte'
 	import IconR4 from '$lib/components/icon-r4.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
-	import BroadcastToggle from '$lib/components/broadcast-toggle.svelte'
 	import Tag from '$lib/components/tag.svelte'
 	import {listboxNav} from '$lib/components/listbox-nav.svelte.js'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
@@ -22,14 +21,15 @@
 
 	const uid = $props.id()
 
-	const isSignedIn = $derived(!!appState.user)
 	const userChannel = $derived(appState.channel)
 	const ownChannels = $derived(userChannel ? [userChannel] : [])
 
 	const followed = getFollowedChannels()
 	const recentChannels = $derived(followed.followedChannels.slice(0, 3))
 	const followingHref = $derived(
-		userChannel ? resolve('/[slug]/following', {slug: userChannel.slug}) : resolve('/channels/favorites')
+		userChannel
+			? resolve('/[slug]/following', {slug: userChannel.slug})
+			: resolve('/channels/favorites')
 	)
 
 	const suggestions = getFeaturedSuggestions()
@@ -80,10 +80,6 @@
 		}
 	})
 
-	function openAddTrack() {
-		appState.modal_track_add = {}
-	}
-
 	function handleSearchKeydown(/** @type {KeyboardEvent} */ e) {
 		if (e.key === 'ArrowDown') {
 			const target = query.trim() ? resultsListboxEl : noQueryListboxEl
@@ -99,14 +95,24 @@
 	}
 </script>
 
-<PopoverMenu align="left" valign="bottom" btnClass="nav-brand-trigger" bind:this={menuEl}>
+<PopoverMenu align="left" valign="bottom" btnClass="brand-btn" bind:this={menuEl}>
 	{#snippet trigger()}
 		<IconR4 size={18} />
-		<Icon icon="arrow-down" size={13} />
 	{/snippet}
 
 	<div class="nav-palette">
 		<div class="palette-scroll">
+			<!-- stopPropagation so the input's clear button doesn't close the popover -->
+			<div class="palette-search" role="search" onclick={(e) => e.stopPropagation()}>
+				<SearchInput
+					bind:value={query}
+					debounce={200}
+					placeholder={m.search_jump_placeholder()}
+					onkeydown={handleSearchKeydown}
+					autofocus
+				/>
+			</div>
+
 			<div class="palette-tiles">
 				<a class="tile" href={resolve('/')}>
 					<Icon icon={conceptIcons.home} />
@@ -120,39 +126,6 @@
 					<Icon icon={conceptIcons.map} />
 					<span>{m.nav_map()}</span>
 				</a>
-				{#if userChannel}
-					<button type="button" class="tile" onclick={openAddTrack}>
-						<Icon icon="add" />
-						<span>{m.track_add_title()}</span>
-					</button>
-				{:else if isSignedIn}
-					<a class="tile" href={resolve('/create-channel')}>
-						<Icon icon="user" />
-						<span>{m.home_create_channel()}</span>
-					</a>
-				{:else}
-					<a class="tile" href={resolve('/auth')}>
-						<Icon icon="user" />
-						<span>{m.nav_sign_in()}</span>
-					</a>
-				{/if}
-			</div>
-
-			{#if userChannel}
-				<nav class="nav-vertical broadcast-nav">
-					<BroadcastToggle channel={userChannel} class="broadcast-action" />
-				</nav>
-			{/if}
-
-			<!-- stopPropagation so the input's clear button doesn't close the popover -->
-			<div class="palette-search" role="search" onclick={(e) => e.stopPropagation()}>
-				<SearchInput
-					bind:value={query}
-					debounce={200}
-					placeholder={m.search_jump_placeholder()}
-					onkeydown={handleSearchKeydown}
-					autofocus
-				/>
 			</div>
 
 			{#if !query.trim() && tags.length}
@@ -240,17 +213,9 @@
 
 		<footer class="palette-footer">
 			<nav class="nav-vertical">
-				<a href={resolve('/broadcast')}>
-					<Icon icon="signal" size={16} />
-					<span>Broadcasts</span>
-				</a>
 				<a href={resolve('/settings')}>
 					<Icon icon="settings" size={16} />
 					<span>{m.nav_settings()}</span>
-				</a>
-				<a href={resolve('/menu')}>
-					<Icon icon="menu" size={16} />
-					<span>{m.nav_menu()}</span>
 				</a>
 			</nav>
 		</footer>
@@ -275,24 +240,23 @@
 {/snippet}
 
 <style>
-	:global(.nav-brand-trigger) {
-		border-color: var(--gray-5);
-		padding: var(--space-2) var(--space-3);
+	:global(.home-link) {
+		display: flex;
+		place-items: center;
 	}
-
-	:global(.nav-brand-trigger:hover) {
+	:global(.brand-btn:hover) {
 		background: var(--color-interface-elevated);
 	}
 
-	:global(.nav-brand-trigger:hover svg) {
+	:global(.brand-btn:hover svg) {
 		color: var(--gray-12);
 	}
 
 	.nav-palette {
 		display: flex;
 		flex-direction: column;
-		width: min(22rem, calc(100vw - 2rem));
-		max-height: min(34rem, calc(100vh - 5rem));
+		width: min(22rem, calc(100vw - 1.5rem));
+		max-height: min(38rem, calc(100vh - 5rem));
 		overflow: hidden;
 	}
 
@@ -307,7 +271,7 @@
 
 	.palette-tiles {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(3, 1fr);
 		gap: var(--space-1);
 	}
 
@@ -326,7 +290,7 @@
 	}
 
 	.tile:hover {
-		background: var(--gray-8);
+		background: var(--gray-5);
 		border-color: var(--accent-6);
 		text-decoration: none;
 	}
@@ -334,24 +298,6 @@
 	.tile :global(svg) {
 		width: 1.25rem;
 		height: 1.25rem;
-	}
-
-	.broadcast-nav :global(.broadcast-action) {
-		background: var(--accent-3);
-		border: 1px solid var(--accent-7);
-		color: var(--accent-11);
-		font-weight: 600;
-	}
-
-	.broadcast-nav :global(.broadcast-action:hover) {
-		background: var(--accent-4);
-		border-color: var(--accent-8);
-	}
-
-	.broadcast-nav :global(.broadcast-action.broadcasting) {
-		background: var(--accent-9);
-		border-color: var(--accent-10);
-		color: var(--accent-1);
 	}
 
 	.tags {
@@ -402,7 +348,7 @@
 	.channel-row:hover,
 	.channel-row:global([aria-selected='true']),
 	.list-link:hover {
-		background: var(--gray-6);
+		background: var(--gray-5);
 		text-decoration: none;
 	}
 

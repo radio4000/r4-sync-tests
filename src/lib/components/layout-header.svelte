@@ -336,7 +336,7 @@
 		min-width: min(100%, calc(var(--app-header-size) - 0.5rem));
 	}
 
-	header.labels-right :global(.nav-brand-trigger) {
+	header.labels-right :global(.brand-btn) {
 		justify-content: flex-start;
 		min-width: min(100%, calc(var(--app-header-size) - 0.5rem));
 	}
