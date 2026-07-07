@@ -209,7 +209,9 @@
 			{#if isRealTrack}
 				<span class="mobile">&rarr;</span>
 			{:else if track.url && !appState.embed_mode}
-				<a class="mobile" href={track.url} target="_blank" rel="noopener noreferrer">&rarr;</a>
+				<a class="mobile" href={track.url} target="_blank" rel="noopener noreferrer nofollow ugc"
+					>&rarr;</a
+				>
 			{/if}
 			{#if track.slug && track.discogs_url && !appState.embed_mode}
 				<a href="{permalink}/discogs" class="btn ghost discogs" title={m.track_meta_discogs()}
@@ -296,7 +298,7 @@
 				{#if isRealTrack && !appState.embed_mode}
 					<a href={permalink} role="menuitem"><Icon icon="circle-info" />{m.track_go_to()}</a>
 				{:else if track.url && !appState.embed_mode}
-					<a href={track.url} target="_blank" rel="noopener noreferrer" role="menuitem"
+					<a href={track.url} target="_blank" rel="noopener noreferrer nofollow ugc" role="menuitem"
 						><Icon icon="circle-info" />{m.track_card_open_video()}</a
 					>
 				{/if}

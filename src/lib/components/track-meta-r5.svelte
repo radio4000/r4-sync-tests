@@ -131,7 +131,7 @@
 	{#if data.url}
 		<dt><Icon icon="document-download" size={14} /> {m.track_meta_source()}</dt>
 		<dd>
-			<a {...{href: data.url, target: '_blank', rel: 'noopener noreferrer'}}>
+			<a {...{href: data.url, target: '_blank', rel: 'noopener noreferrer nofollow ugc'}}>
 				{sourceProvider || 'unknown'}
 			</a>
 		</dd>

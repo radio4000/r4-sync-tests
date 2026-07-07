@@ -284,7 +284,8 @@
 		<div class="channel-meta">
 			{#if channel.url}
 				<small class="url"
-					><a href={channel.url} target="_blank" rel="noopener">{channel.url}</a></small
+					><a href={channel.url} target="_blank" rel="noopener nofollow ugc">{channel.url}</a
+					></small
 				>
 			{/if}
 			{#if channel.description}
