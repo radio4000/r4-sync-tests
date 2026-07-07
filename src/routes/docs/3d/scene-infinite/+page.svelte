@@ -6,7 +6,7 @@
 	import {shufflePlayChannel} from '$lib/api'
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
 	const channelActivity = $derived(getChannelActivity())
-	import {toChannelCardMedia} from '$lib/components/channel-ui-state.js'
+	import {toChannelCardMedia} from '$lib/components/channel-ui-state.ts'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {channelAvatarUrl} from '$lib/utils.ts'
 

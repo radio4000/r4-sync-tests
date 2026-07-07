@@ -1,3 +1,9 @@
+<!--
+The one MapLibre wrapper (init/resize/theme/URL sync); map-picker and map-channels
+compose it via props. Non-reactive map logic lives in map-markers.js, map-tile-styles.js,
+map-overlays.js, map-color.js - extend those rather than inlining here.
+map-broadcast-layer.js is an independent WebGL layer, coupled only via map-color.js.
+-->
 <script>
 	import 'maplibre-gl/dist/maplibre-gl.css'
 	import maplibregl from 'maplibre-gl'

@@ -25,34 +25,20 @@
 		shuffleSeed
 	} from '$lib/utils'
 	import {processViewTracks, getAutoDecksForView} from '$lib/views.svelte'
-	import type {View} from '$lib/views'
+	import {channelViewFromUrl, type View} from '$lib/views'
 	import * as m from '$lib/paraglide/messages'
-
-	const viewOrderValues = ['shuffle', 'updated', 'created', 'name', 'tracks'] as const
-	const viewDirectionValues = ['asc', 'desc'] as const
-
-	function readViewOrder(value: string | null): View['order'] {
-		return viewOrderValues.includes((value ?? '') as (typeof viewOrderValues)[number])
-			? (value as View['order'])
-			: 'created'
-	}
-
-	function readViewDirection(value: string | null): View['direction'] {
-		return viewDirectionValues.includes((value ?? '') as (typeof viewDirectionValues)[number])
-			? (value as View['direction'])
-			: 'desc'
-	}
 
 	const channelCtx = getChannelCtx()
 	const tracksQuery = getTracksQueryCtx()
 
 	let searchInput = $state(page.url.searchParams.get('q') ?? '')
-	const tagFilter = getTagFilter()
-	let selectedTags = $derived(tagFilter.selectedTags)
-	const {toggleTag} = tagFilter
-	let searchValue = $derived(page.url.searchParams.get('q') ?? '')
-	let urlOrder = $derived(readViewOrder(page.url.searchParams.get('order')))
-	let urlDirection = $derived(readViewDirection(page.url.searchParams.get('direction')))
+	const {toggleTag} = getTagFilter()
+	// Single source of truth for the URL-backed filter (?tags=, ?q=, order/direction).
+	let urlView = $derived(channelViewFromUrl(page.url, page.params.slug))
+	let selectedTags = $derived(urlView.sources[0]?.tags ?? [])
+	let searchValue = $derived(urlView.sources[0]?.search ?? '')
+	let urlOrder = $derived(urlView.order ?? 'created')
+	let urlDirection = $derived(urlView.direction ?? 'desc')
 	let urlSeed = $derived((page.url.searchParams.get('seed') ?? '').trim())
 	let order = $state<View['order']>('created')
 	let direction = $state<View['direction']>('desc')
@@ -152,13 +138,7 @@
 		return processViewTracks(
 			allTracks,
 			{
-				sources: [
-					{
-						tags: selectedTags.length ? selectedTags : undefined,
-						tagsMode: 'all',
-						search: searchValue || undefined
-					}
-				],
+				sources: urlView.sources,
 				order: isSorting ? order : undefined,
 				direction: isSorting ? direction : undefined
 			},
@@ -181,15 +161,9 @@
 	let hasActionableSelection = $derived(isFiltering && visibleTracks.length > 0)
 	let filteredAutoRadioTracks = $derived(toAutoTracks(visibleTracks))
 	let canShowFilteredAutoRadio = $derived(hasAutoRadioCoverage(visibleTracks))
-	let filteredAutoView: View = $derived.by(() => ({
-		sources: [
-			{
-				channels: slug ? [slug] : undefined,
-				tags: selectedTags.length ? selectedTags : undefined,
-				search: searchValue.trim() || undefined
-			}
-		]
-	}))
+	// Same sources as the filter above, so the deck's saved view (and its
+	// tagsMode=all) matches exactly what this page showed.
+	let filteredAutoView: View = $derived.by(() => ({sources: urlView.sources}))
 	let filteredAutoDecks = $derived.by(() =>
 		getAutoDecksForView(Object.values(appState.decks), filteredAutoView)
 	)

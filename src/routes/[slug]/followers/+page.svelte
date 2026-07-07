@@ -32,7 +32,7 @@
 	}
 </script>
 
-<ChannelNavControlsPortal controls={navControls} />
+<ChannelNavControlsPortal controls={showInCommon || followers.length ? navControls : undefined} />
 
 {#snippet navControls()}
 	{#if showInCommon}

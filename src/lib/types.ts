@@ -96,6 +96,8 @@ export interface AppState {
 	modal_track_edit?: {track: Track} | null
 	modal_share?: {track?: Track; channel: Channel} | null
 	modal_shortcuts?: boolean
+	/** One-shot signal: set true to open the nav palette (nav-popover), reset on open */
+	modal_nav?: boolean
 	show_welcome_hint?: boolean
 	show_onboarding_hint?: boolean
 	analytics_opt_in?: boolean

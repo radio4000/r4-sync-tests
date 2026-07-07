@@ -2,14 +2,14 @@
 
 ## Terms
 
-| Term                      | What                                                                                                                                                                                                                                                |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Deck` (type)             | State object: playback + queue + layout config. Lives in `appState.decks[id]`.                                                                                                                                                                      |
-| `deck.ts`                 | Pure helpers to query decks: find by channel/slug, check playing/broadcasting/listening state.                                                                                                                                                      |
-| `deck.svelte`             | Component that renders a `Deck`. Wraps `player.svelte` + `queue-panel.svelte`.                                                                                                                                                                      |
-| `deck-compact-bar.svelte` | Compact renderer for a `Deck` (like `deck.svelte`, but a thin bar). Does not own a media element — controls the hidden `deck.svelte`'s via `getMediaPlayer(deckId)`, and reads progress from mirrored `deck.media_current_time` / `media_duration`. |
-| `player.svelte`           | Media UI inside `deck.svelte`: header, video embed, transport controls. Renders one media element at a time (`<youtube-video>`, `<soundcloud-player>`, or `<audio>`).                                                                               |
-| `queue-panel.svelte`      | Queue/history sidebar, injected into `player.svelte` as a children snippet.                                                                                                                                                                         |
+| Term                      | What                                                                                                                                                                                                       |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Deck` (type)             | State object: playback + queue + layout config. Lives in `appState.decks[id]`.                                                                                                                             |
+| `deck.ts`                 | Pure helpers to query decks: find by channel/slug, check playing/broadcasting/listening state.                                                                                                             |
+| `deck.svelte`             | Renders a `Deck`. Wraps `player.svelte` + `queue-panel.svelte`.                                                                                                                                            |
+| `deck-compact-bar.svelte` | Thin-bar renderer for a `Deck`. No media element of its own — controls the hidden `deck.svelte` via `getMediaPlayer(deckId)`, reading progress from mirrored `deck.media_current_time` / `media_duration`. |
+| `player.svelte`           | Media UI inside `deck.svelte`: header, video embed, transport controls. Renders one media element at a time (`<youtube-video>`, `<soundcloud-player>`, or `<audio>`).                                      |
+| `queue-panel.svelte`      | Queue/history sidebar, injected into `player.svelte` as a children snippet.                                                                                                                                |
 
 `deck-strip.svelte` loops all decks, splitting them into local and broadcast-listening groups. `+layout.svelte` separately loops compact deck IDs into `deck-compact-bar.svelte` at the layout bottom.
 

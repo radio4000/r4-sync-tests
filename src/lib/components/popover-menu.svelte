@@ -31,6 +31,10 @@
 		popoverEl?.hidePopover()
 	}
 
+	export function open() {
+		popoverEl?.showPopover()
+	}
+
 	function positionPopover(el) {
 		if (!buttonEl) return
 		// Centered mode: let CSS handle placement (see [popover].centered).

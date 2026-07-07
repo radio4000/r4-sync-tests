@@ -1,46 +1,39 @@
 import {extractHashtags, extractMentions, channelAvatarUrl} from '$lib/utils.ts'
+import type {Channel, Deck} from '$lib/types'
 
 /** Prefix a bare tag with `#` (view tags come without it). */
-function prefixTag(value) {
+function prefixTag(value: unknown): string {
 	const tag = String(value || '')
 	return tag.startsWith('#') ? tag : `#${tag}`
 }
 
-/**
- * @param {{
- *   decks: Record<string, any>,
- *   tracksState?: Map<string, any>,
- *   channelsState: Map<string, any>,
- *   followsState?: Map<string, any> | null,
- *   broadcastRows?: any[] | null
- * }} params
- */
-export function deriveChannelActivityState(params) {
+/** Minimal structural inputs — only the fields the derivation reads. */
+export interface ChannelActivityParams {
+	decks: Record<number, Partial<Deck>>
+	tracksState?: Map<string, {slug?: string | null}>
+	channelsState: Map<string, {id?: string; slug?: string | null}>
+	followsState?: Map<string, {id?: string} | string> | null
+	broadcastRows?: Array<{channel_id?: string | null}> | null
+}
+
+export function deriveChannelActivityState(params: ChannelActivityParams) {
 	const {decks, tracksState, channelsState, followsState = null, broadcastRows = []} = params
-	const channelsBySlug = new Map()
-	const channelsById = new Map()
+	const channelsBySlug = new Map<string, {id?: string; slug?: string | null}>()
+	const channelsById = new Map<string, {id?: string; slug?: string | null}>()
 	for (const ch of channelsState.values()) {
 		const slug = String(ch?.slug || '').toLowerCase()
 		if (slug) channelsBySlug.set(slug, ch)
 		if (ch?.id) channelsById.set(ch.id, ch)
 	}
 
-	/** @type {Set<string>} */
-	const activeChannelIds = new Set()
-	/** @type {Set<string>} */
-	const activeChannelSlugs = new Set()
-	/** @type {Set<string>} */
-	const activeTags = new Set()
-	/** @type {Set<string>} */
-	const explicitActiveMentions = new Set()
-	/** @type {Set<string>} */
-	const playingChannelSlugs = new Set()
-	/** @type {Set<string>} */
-	const inDeckChannelSlugs = new Set()
-	/** @type {Set<string>} */
-	const favoriteChannelIds = new Set()
-	/** @type {Set<string>} */
-	const broadcastingChannelIds = new Set()
+	const activeChannelIds = new Set<string>()
+	const activeChannelSlugs = new Set<string>()
+	const activeTags = new Set<string>()
+	const explicitActiveMentions = new Set<string>()
+	const playingChannelSlugs = new Set<string>()
+	const inDeckChannelSlugs = new Set<string>()
+	const favoriteChannelIds = new Set<string>()
+	const broadcastingChannelIds = new Set<string>()
 
 	for (const follow of followsState?.values?.() ?? []) {
 		const id = typeof follow === 'string' ? follow : follow?.id
@@ -58,9 +51,11 @@ export function deriveChannelActivityState(params) {
 		for (const mention of extractMentions(String(deck?.playlist_title || ''))) {
 			if (mention.startsWith('@') && mention.length > 1) explicitActiveMentions.add(mention)
 		}
-		for (const tag of Array.isArray(deck?.view?.tags) ? deck.view.tags : []) {
-			const prefixed = prefixTag(tag)
-			if (prefixed) activeTags.add(prefixed)
+		for (const source of deck?.view?.sources ?? []) {
+			for (const tag of source.tags ?? []) {
+				const prefixed = prefixTag(tag)
+				if (prefixed) activeTags.add(prefixed)
+			}
 		}
 
 		const listeningId = deck?.listening_to_channel_id
@@ -101,39 +96,41 @@ export function deriveChannelActivityState(params) {
 	}
 }
 
-/**
- * @typedef {object} MediaItem
- * @prop {string} url
- * @prop {number} [width]
- * @prop {number} [height]
- * @prop {string} [slug]
- * @prop {string} [id]
- * @prop {string} [name]
- * @prop {string} [title]
- * @prop {string} [description]
- * @prop {string} [channel_slug]
- * @prop {{slug?: string}} [channel]
- * @prop {boolean} [isFavorite]
- * @prop {boolean} [isLive]
- * @prop {boolean} [isPlaying]
- * @prop {string[]} [tags]
- * @prop {string[]} [mentions]
- * @prop {string[]} [activeTags]
- * @prop {string[]} [activeMentions]
- * @prop {boolean} [isActive]
- * @prop {boolean} [hasActiveTagMatch]
- */
+export type ChannelActivityState = ReturnType<typeof deriveChannelActivityState>
+
+/** Channel-card payload shared by the 2D grid and 3D canvas renderers. */
+export interface MediaItem {
+	url: string
+	width?: number
+	height?: number
+	slug?: string
+	id?: string
+	name?: string
+	title?: string
+	description?: string
+	channel_slug?: string
+	channel?: {slug?: string | null}
+	isFavorite?: boolean
+	isLive?: boolean
+	isPlaying?: boolean
+	tags?: string[]
+	mentions?: string[]
+	activeTags?: string[]
+	activeMentions?: string[]
+	isActive?: boolean
+	hasActiveTagMatch?: boolean
+}
 
 /**
  * Build consistent channel-card media item payload for 2D/3D UIs.
  * When `base` is omitted, derives image URL from `channel.image` via `channelAvatarUrl`
  * with a placeholder fallback.
- * @param {any} channel
- * @param {ReturnType<typeof deriveChannelActivityState>} state
- * @param {{url: string, width?: number, height?: number}} [base]
- * @returns {MediaItem}
  */
-export function toChannelCardMedia(channel, state, base) {
+export function toChannelCardMedia(
+	channel: Channel,
+	state: ChannelActivityState,
+	base?: {url: string; width?: number; height?: number}
+): MediaItem {
 	const url =
 		base?.url ??
 		(channel.image

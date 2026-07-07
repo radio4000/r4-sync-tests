@@ -92,7 +92,9 @@
 	})
 </script>
 
-<ChannelNavControlsPortal controls={navControls} />
+<ChannelNavControlsPortal
+	controls={!loading && (following.length || hasFeatured) ? navControls : undefined}
+/>
 
 {#snippet navControls()}
 	<select

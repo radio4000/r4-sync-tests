@@ -107,6 +107,12 @@ export const SHORTCUT_ACTIONS = {
 		label: () => m.shortcuts_action_gotoDocs(),
 		run: () => gotoIfAllowed('/docs')
 	},
+	openNavPalette: {
+		default: '$mod+k',
+		run: () => {
+			appState.modal_nav = true
+		}
+	},
 	showShortcutsHelp: {
 		default: 'Shift+Slash',
 		label: () => m.shortcuts_action_showShortcutsHelp(),

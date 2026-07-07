@@ -14,7 +14,7 @@
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
 	import {channelAvatarUrl} from '$lib/utils'
 	import {isBroadcasting} from '$lib/deck'
-	import {toChannelCardMedia} from '$lib/components/channel-ui-state.js'
+	import {toChannelCardMedia} from '$lib/components/channel-ui-state.ts'
 	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
 	import ChannelScene from '$lib/components/channel-scene-ogl.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'

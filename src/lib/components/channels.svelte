@@ -12,7 +12,7 @@
 	import {fetchChannelCount, CHANNELS_PAGE_SIZE} from '$lib/collections/channels'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
-	import {toChannelCardMedia} from '$lib/components/channel-ui-state.js'
+	import {toChannelCardMedia} from '$lib/components/channel-ui-state.ts'
 	import {
 		viewIconMap,
 		viewLabelMap,

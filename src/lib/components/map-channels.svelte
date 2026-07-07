@@ -2,7 +2,7 @@
 	import {goto} from '$app/navigation'
 	import maplibregl from 'maplibre-gl'
 	/** @import { GeoJSONSource } from 'maplibre-gl' */
-	import {mount, onDestroy, unmount, untrack} from 'svelte'
+	import {mount, onDestroy, unmount} from 'svelte'
 	import MapComponent from './map.svelte'
 	import ChannelCard from './channel-card.svelte'
 	import Icon from './icon.svelte'
@@ -75,8 +75,8 @@
 		}
 		return [...byId.values()]
 	})
-	// GeoJSON derived from channel data — only recomputes when mapChannels changes,
-	// not on mapReady toggles (tile style changes etc.)
+	// GeoJSON derived from channel data, activity and palette — the map-ready
+	// effect below writes it into the source whenever any of those change.
 	const cachedGeoJSON = $derived.by(() => {
 		if (loading) return null
 		return buildChannelsGeoJSON(
@@ -101,25 +101,30 @@
 		broadcastingStroke: resolveCssColor('--accent-11')
 	}))
 
+	/** @returns {any} */
+	function broadcastRingLayer() {
+		return {
+			id: 'channels-broadcast-ring',
+			type: 'circle',
+			source: 'channels-source',
+			filter: ['==', ['get', 'isBroadcasting'], true],
+			paint: {
+				'circle-radius': ['+', ['get', 'radius'], 8],
+				'circle-color': 'rgba(0, 0, 0, 0)',
+				'circle-stroke-color': ['get', 'broadcastRingColor'],
+				'circle-stroke-width': ['case', ['==', ['get', 'isFavorite'], true], 3.5, 2.5],
+				'circle-opacity': 0.9,
+				'circle-blur': 0.1
+			}
+		}
+	}
+
 	/** @param {maplibregl.Map} m @param {any} fc */
 	function setupLayers(m, fc) {
 		if (!m || !fc) return
 		if (!m.getSource('channels-source')) {
 			m.addSource('channels-source', {type: 'geojson', data: fc})
-			m.addLayer({
-				id: 'channels-broadcast-ring',
-				type: 'circle',
-				source: 'channels-source',
-				filter: ['==', ['get', 'isBroadcasting'], true],
-				paint: {
-					'circle-radius': ['+', ['get', 'radius'], 8],
-					'circle-color': 'rgba(0, 0, 0, 0)',
-					'circle-stroke-color': ['get', 'broadcastRingColor'],
-					'circle-stroke-width': ['case', ['==', ['get', 'isFavorite'], true], 3.5, 2.5],
-					'circle-opacity': 0.9,
-					'circle-blur': 0.1
-				}
-			})
+			m.addLayer(broadcastRingLayer())
 			// Soft dark shadow beneath each marker — the "dark" half of the
 			// light+dark contrast combo, so markers read on pale tiles too.
 			m.addLayer({
@@ -168,22 +173,7 @@
 		} else {
 			const source = /** @type {GeoJSONSource | undefined} */ (m.getSource('channels-source'))
 			source?.setData(fc)
-			if (!m.getLayer('channels-broadcast-ring')) {
-				m.addLayer({
-					id: 'channels-broadcast-ring',
-					type: 'circle',
-					source: 'channels-source',
-					filter: ['==', ['get', 'isBroadcasting'], true],
-					paint: {
-						'circle-radius': ['+', ['get', 'radius'], 8],
-						'circle-color': 'rgba(0, 0, 0, 0)',
-						'circle-stroke-color': ['get', 'broadcastRingColor'],
-						'circle-stroke-width': ['case', ['==', ['get', 'isFavorite'], true], 3.5, 2.5],
-						'circle-opacity': 0.9,
-						'circle-blur': 0.1
-					}
-				})
-			}
+			if (!m.getLayer('channels-broadcast-ring')) m.addLayer(broadcastRingLayer())
 		}
 	}
 
@@ -326,21 +316,6 @@
 		maybeAutoOpenSlug(openSlug, openRequestKey)
 	}
 
-	function refreshMarkerStyles() {
-		if (!map || !mapReady) return
-		const source = /** @type {GeoJSONSource | undefined} */ (map.getSource('channels-source'))
-		if (!source) return
-		source.setData(
-			untrack(() =>
-				buildChannelsGeoJSON(
-					mapChannels,
-					{favoriteIds, broadcastingIds, playingSlugs, inDeckSlugs},
-					palette
-				)
-			)
-		)
-	}
-
 	function clearAutoOpenRetry() {
 		if (autoOpenRetryTimer) {
 			clearTimeout(autoOpenRetryTimer)
@@ -401,15 +376,6 @@
 				if (channel) openPopupForChannel(channel, [channel.longitude, channel.latitude])
 			})
 		}
-	})
-
-	$effect(() => {
-		void favoriteIds
-		void broadcastingIds
-		void playingSlugs
-		void inDeckSlugs
-		void palette
-		refreshMarkerStyles()
 	})
 
 	$effect(() => {

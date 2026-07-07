@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {deriveChannelActivityState} from './channel-ui-state.js'
+import {deriveChannelActivityState} from './channel-ui-state.ts'
 
 describe('deriveChannelActivityState', () => {
 	it('derives consistent active/favorite/live/tag state', () => {
@@ -11,7 +11,7 @@ describe('deriveChannelActivityState', () => {
 					playlist_track: 't1',
 					is_playing: true
 				},
-				2: {view: {tags: ['dub']}, listening_to_channel_id: 'c2'}
+				2: {view: {sources: [{tags: ['dub']}]}, listening_to_channel_id: 'c2'}
 			},
 			tracksState: new Map([['t1', {id: 't1', slug: 'alpha', tags: ['techno']}]]),
 			channelsState: new Map([

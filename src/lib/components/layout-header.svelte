@@ -12,7 +12,7 @@
 	import BroadcastToggle from '$lib/components/broadcast-toggle.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import Icon from '$lib/components/icon.svelte'
-	import IconR4 from '$lib/components/icon-r4.svelte'
+	import NavPopover from '$lib/components/nav-popover.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import InternetIndicator from '$lib/components/internet-indicator.svelte'
 	import * as m from '$lib/paraglide/messages'
@@ -66,7 +66,9 @@
 		localStorage.setItem(STORAGE_KEY_LABELS_VISIBLE, labelsVisible ? '1' : '0')
 	}
 
-	function toggleLabels() {
+	function toggleLabels(event) {
+		// Only on the header background — not links/buttons (fast double-taps)
+		if (event.target.closest('a, button, input, [popover]')) return
 		labelsVisible = !labelsVisible
 		applyModeFromSize()
 		persistLabelsVisible()
@@ -93,17 +95,14 @@
 	ondblclick={toggleLabels}
 >
 	<nav class="nav-secondary">
-		<a
-			href={resolve('/')}
-			class="btn home-link nav-btn"
-			class:active={page.route.id === '/'}
-			aria-label={appName}
+		<div
+			class="home-link"
 			style:color={activeDeckColor}
+			aria-label={appName}
 			{@attach tooltip({content: appName})}
 		>
-			<IconR4 />
-			<span class="btn-label">Home</span>
-		</a>
+			<NavPopover />
+		</div>
 		<a
 			href={resolve('/explore')}
 			class="btn nav-btn"
@@ -334,7 +333,12 @@
 	header.labels-right :global(.btn.nav-btn) {
 		flex-direction: row;
 		justify-content: flex-start;
-		min-width: min(100%, calc(var(--app-header-size) - 0.55rem));
+		min-width: min(100%, calc(var(--app-header-size) - 0.5rem));
+	}
+
+	header.labels-right :global(.nav-brand-trigger) {
+		justify-content: flex-start;
+		min-width: min(100%, calc(var(--app-header-size) - 0.5rem));
 	}
 
 	header.labels-right nav :global(.btn.nav-btn .btn-label) {

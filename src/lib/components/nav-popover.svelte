@@ -1,20 +1,8 @@
 <script>
 	/**
-	 * NavPopover — a single brand+chevron trigger that opens a command-palette
-	 * style panel gathering the global actions (Home, Explore, Map, Add/Create/Sign
-	 * in, Broadcast), a jump-to-channel search, and channel shortlists. Channel
-	 * lists and search results are keyboard-navigable via the ARIA listbox
-	 * pattern (see listbox-nav.svelte.js) — arrow keys from the search input
-	 * move into the results, Enter jumps to the first result.
-	 *
-	 * Exploratory, currently unmounted — the default responsive header
-	 * (sidebar/bottom bar in layout-header.svelte) is back as the main nav.
-	 * To try this again, render <NavPopover /> anywhere in the header.
-	 * See docs discussion on "simpler Radio4000".
-	 *
-	 * TODO: "Recently visited" has no data source yet — we seed it from followed
-	 * channels (recent-activity order). A real recents list needs a
-	 * `channel:visited` capture event (see src/lib/collections/capture-events.ts).
+	 * NavPopover — brand trigger opening a command-palette style panel:
+	 * global actions, jump-to-channel search, channel shortlists (keyboard
+	 * navigable via listbox-nav). Also opens via cmd/ctrl+K → appState.modal_nav.
 	 */
 	import {resolve} from '$app/paths'
 	import {appState} from '$lib/app-state.svelte'
@@ -39,7 +27,10 @@
 	const ownChannels = $derived(userChannel ? [userChannel] : [])
 
 	const followed = getFollowedChannels()
-	const recentChannels = $derived(followed.followedChannels.slice(0, 6))
+	const recentChannels = $derived(followed.followedChannels.slice(0, 3))
+	const followingHref = $derived(
+		userChannel ? resolve('/[slug]/following', {slug: userChannel.slug}) : resolve('/channels/favorites')
+	)
 
 	const suggestions = getFeaturedSuggestions()
 	const featuredChannels = $derived(suggestions.pool.slice(0, 6))
@@ -54,8 +45,16 @@
 
 	let noQueryListboxEl = $state()
 	let resultsListboxEl = $state()
+	let menuEl = $state()
 
-	// Debounced channel jump-search (slug + FTS + local fuzzy)
+	$effect(() => {
+		if (appState.modal_nav) {
+			menuEl?.open()
+			appState.modal_nav = false
+		}
+	})
+
+	// Channel jump-search (slug + FTS + local fuzzy)
 	$effect(() => {
 		const q = query.trim()
 		if (!q) {
@@ -140,8 +139,8 @@
 			</div>
 
 			{#if userChannel}
-				<nav class="nav-vertical">
-					<BroadcastToggle channel={userChannel} />
+				<nav class="nav-vertical broadcast-nav">
+					<BroadcastToggle channel={userChannel} class="broadcast-action" />
 				</nav>
 			{/if}
 
@@ -214,6 +213,10 @@
 							{#each recentChannels as channel (channel.id)}
 								{@render channelRow(channel, `${uid}-recent-${channel.id}`)}
 							{/each}
+							<a class="list-link" href={followingHref}>
+								<Icon icon={conceptIcons.following} size={15} />
+								<span>All following</span>
+							</a>
 						</section>
 					{/if}
 					{#if showFeatured}
@@ -230,6 +233,10 @@
 
 		<footer class="palette-footer">
 			<nav class="nav-vertical">
+				<a href={resolve('/broadcast')}>
+					<Icon icon="signal" size={16} />
+					<span>Broadcasts</span>
+				</a>
 				<a href={resolve('/settings')}>
 					<Icon icon="settings" size={16} />
 					<span>{m.nav_settings()}</span>
@@ -274,14 +281,10 @@
 		color: var(--gray-12);
 	}
 
-	:global(.nav-brand-trigger ~ div) {
-		top: 0;
-	}
-
 	.nav-palette {
 		display: flex;
 		flex-direction: column;
-		width: 100%;
+		width: min(22rem, calc(100vw - 2rem));
 		max-height: min(34rem, calc(100vh - 5rem));
 		overflow: hidden;
 	}

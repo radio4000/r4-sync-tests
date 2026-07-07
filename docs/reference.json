@@ -480,6 +480,14 @@
 		{"name": "serializeView(view)", "desc": "Serialize View to compact string (no r4:// prefix)."},
 		{"name": "viewFromUrl(url)", "desc": "Extract a View from a URL (?q= param + option params)."},
 		{
+			"name": "channelViewFromUrl(url, slug?)",
+			"desc": "Extract a View from a channel-route URL: ?q= is plain search text, ?tags=a,b are tags with tagsMode=all."
+		},
+		{
+			"name": "parseTagsParam(value)",
+			"desc": "Parse a ?tags=a,b param value into bare tags (trimmed, empties dropped)."
+		},
+		{
 			"name": "viewToUrl(basePath, view)",
 			"desc": "Build a URL string from a View and base path (e.g. '/search')."
 		},

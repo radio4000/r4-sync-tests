@@ -2,7 +2,7 @@
 	import {goto} from '$app/navigation'
 	import {page} from '$app/state'
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
-	import {toChannelCardMedia} from '$lib/components/channel-ui-state.js'
+	import {toChannelCardMedia} from '$lib/components/channel-ui-state.ts'
 	import {shuffleArray} from '$lib/utils'
 	import {
 		handleCanvasClick as onCanvasClick,

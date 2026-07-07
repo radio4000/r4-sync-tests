@@ -246,74 +246,68 @@
 	})
 </script>
 
-<ChannelNavControlsPortal controls={navControls} />
+<ChannelNavControlsPortal controls={allTags.length ? navControls : undefined} />
 
 {#snippet navControls()}
-	{#if allTags.length}
-		<SearchInput bind:value={search} placeholder={m.tags_search_placeholder()} />
-		<PopoverMenu id="tags-data" closeOnClick={false}>
-			{#snippet trigger()}<Icon icon="filter-alt" />{filterLabelMap[filter]()}{/snippet}
-			<menu class="nav-vertical">
-				<button class:active={filter === 'all'} onclick={() => (filter = 'all')}
-					>{filterLabelMap.all()}</button
-				>
-				<button class:active={filter === 'single-use'} onclick={() => (filter = 'single-use')}
-					>{filterLabelMap['single-use']()}</button
-				>
-				<button class:active={filter === 'frequent'} onclick={() => (filter = 'frequent')}
-					>{filterLabelMap.frequent()}</button
-				>
-				<button class:active={filter === 'rare'} onclick={() => (filter = 'rare')}
-					>{filterLabelMap.rare()}</button
-				>
-			</menu>
-		</PopoverMenu>
-		<PopoverMenu id="tags-order" closeOnClick={false}>
-			{#snippet trigger()}
+	<SearchInput bind:value={search} placeholder={m.tags_search_placeholder()} />
+	<PopoverMenu id="tags-data" closeOnClick={false}>
+		{#snippet trigger()}<Icon icon="filter-alt" />{filterLabelMap[filter]()}{/snippet}
+		<menu class="nav-vertical">
+			<button class:active={filter === 'all'} onclick={() => (filter = 'all')}
+				>{filterLabelMap.all()}</button
+			>
+			<button class:active={filter === 'single-use'} onclick={() => (filter = 'single-use')}
+				>{filterLabelMap['single-use']()}</button
+			>
+			<button class:active={filter === 'frequent'} onclick={() => (filter = 'frequent')}
+				>{filterLabelMap.frequent()}</button
+			>
+			<button class:active={filter === 'rare'} onclick={() => (filter = 'rare')}
+				>{filterLabelMap.rare()}</button
+			>
+		</menu>
+	</PopoverMenu>
+	<PopoverMenu id="tags-order" closeOnClick={false}>
+		{#snippet trigger()}
+			<Icon
+				icon={direction === 'asc' ? 'funnel-ascending' : 'funnel-descending'}
+				strokeWidth={1.5}
+			/>
+			{sortLabelMap[sort]}
+		{/snippet}
+		<div class="row">
+			<select bind:value={sort} aria-label={m.sort_order_label()}>
+				<option value="count">{m.tags_sort_count()}</option>
+				<option value="alpha">{m.tags_sort_alpha()}</option>
+			</select>
+			<button
+				type="button"
+				onclick={() => {
+					direction = direction === 'asc' ? 'desc' : 'asc'
+				}}
+				title={direction === 'asc' ? m.channels_tooltip_sort_asc() : m.channels_tooltip_sort_desc()}
+				aria-label={direction === 'asc'
+					? m.channels_tooltip_sort_asc()
+					: m.channels_tooltip_sort_desc()}
+			>
 				<Icon
 					icon={direction === 'asc' ? 'funnel-ascending' : 'funnel-descending'}
 					strokeWidth={1.5}
 				/>
-				{sortLabelMap[sort]}
-			{/snippet}
-			<div class="row">
-				<select bind:value={sort} aria-label={m.sort_order_label()}>
-					<option value="count">{m.tags_sort_count()}</option>
-					<option value="alpha">{m.tags_sort_alpha()}</option>
-				</select>
-				<button
-					type="button"
-					onclick={() => {
-						direction = direction === 'asc' ? 'desc' : 'asc'
-					}}
-					title={direction === 'asc'
-						? m.channels_tooltip_sort_asc()
-						: m.channels_tooltip_sort_desc()}
-					aria-label={direction === 'asc'
-						? m.channels_tooltip_sort_asc()
-						: m.channels_tooltip_sort_desc()}
-				>
-					<Icon
-						icon={direction === 'asc' ? 'funnel-ascending' : 'funnel-descending'}
-						strokeWidth={1.5}
-					/>
-				</button>
-			</div>
-		</PopoverMenu>
-		<PopoverMenu id="tags-display" closeOnClick={false} style="margin-left: auto;">
-			{#snippet trigger()}<Icon icon={displayIconMap[display]} />{displayLabelMap[
-					display
-				]}{/snippet}
-			<menu class="view-modes">
-				<button class:active={display === 'list'} onclick={() => (display = 'list')}>
-					<Icon icon="unordered-list" /><small>{m.tags_display_list()}</small>
-				</button>
-				<button class:active={display === 'cloud'} onclick={() => (display = 'cloud')}>
-					<Icon icon="tag" /><small>{m.tags_display_cloud()}</small>
-				</button>
-			</menu>
-		</PopoverMenu>
-	{/if}
+			</button>
+		</div>
+	</PopoverMenu>
+	<PopoverMenu id="tags-display" closeOnClick={false} style="margin-left: auto;">
+		{#snippet trigger()}<Icon icon={displayIconMap[display]} />{displayLabelMap[display]}{/snippet}
+		<menu class="view-modes">
+			<button class:active={display === 'list'} onclick={() => (display = 'list')}>
+				<Icon icon="unordered-list" /><small>{m.tags_display_list()}</small>
+			</button>
+			<button class:active={display === 'cloud'} onclick={() => (display = 'cloud')}>
+				<Icon icon="tag" /><small>{m.tags_display_cloud()}</small>
+			</button>
+		</menu>
+	</PopoverMenu>
 {/snippet}
 
 {#if channelCtx.isLoading}
