@@ -295,6 +295,52 @@ export function analyzeChannel(channel, tracks = []) {
 		reasons.push(`Promotional language (${promotionalCount} terms)`)
 	}
 
+	// Name-based business signals. On a curation platform the channel *name* is the
+	// richest tell — real channels are named like radios/artists, spam like a business.
+	// Match the name plus the de-slugged handle so hyphenated slugs still resolve to words.
+	const slugWords = (channel.slug || '').replace(/[-_]+/g, ' ').toLowerCase()
+	// Strip digits glued to a word end so bulk-registered dupes ("…llp0", "…solutions1",
+	// "…inspections2") still resolve to their base token.
+	const nameText = `${title} ${slugWords}`.replace(/([a-z])\d+\b/gi, '$1')
+
+	// Legal-entity suffixes — a music channel practically never carries one.
+	if (/\b(llc|llp|pllc|inc|ltd|corp|gmbh|pty|pvt\.? ?ltd|s\.?r\.?l|plc)\b/i.test(nameText)) {
+		spamScore += 10
+		evidence.keywords.push('legal-entity')
+		reasons.push('Business legal-entity suffix in name')
+	}
+
+	// High-precision service/trade terms in the name (incl. plural/glued variants).
+	const professionPattern =
+		/\b(law|lawyer|lawyers|attorney|attorneys|solicitor|plumb(?:ing|er|ers)|roof(?:ing|er|ers)|hvac|heating|cooling|fuels|chiropract\w*|dentist\w*|dental|orthodont\w*|denture\w*|contractor|construction|remodel\w*|renovation|landscap\w*|lawn\s?care|cleaning|power\s?washing|pressure\s?(?:washing|cleaning)|painting|painters?|locksmith|realty|real\s?estate|mortgage|insurance|dermatolog\w*|carpentry|flooring|electric(?:ian)|handyman|movers?|nursery|foundation\s?(?:repair|solutions)|inspections?|pest\s?control|junk\s?removal|towing|septic|excavat\w*|concrete|fencing|welding|detailing|countertops?|cabinets?|restoration|waterproofing|gutter|siding|drywall|masonry)\b/i
+	if (professionPattern.test(nameText)) {
+		spamScore += 10
+		evidence.keywords.push('business-name')
+		reasons.push('Service-business term in channel name')
+	}
+
+	// Corporate name suffixes (…Solutions, …Group, …Institute).
+	if (
+		/\b(solutions|group|services|advisory|institute|academy|centre|clinic|agency|consulting|consultancy|enterprises|holdings|ventures|associates|logistics|foodservice|healthcare)\s*\d*$/i.test(
+			title.trim()
+		)
+	) {
+		spamScore += 6
+		evidence.keywords.push('corp-suffix')
+		reasons.push('Corporate suffix in name')
+	}
+
+	// Gambling / betting brand slugs — an entire spam vector of their own.
+	if (
+		/\b(918kiss|kiss918|mega888|pussy888|sc88|w88|fun88|bk8|sbobet|ufabet|188bet|togel|gacor|gclub|baccarat|joker(?:123|388)?|jili\w*|lyrabet|diuwin|wazamba|sportaza|pragmatic ?play)\b/i.test(
+			nameText
+		)
+	) {
+		spamScore += 10
+		evidence.keywords.push('gambling')
+		reasons.push('Gambling/betting brand pattern')
+	}
+
 	// Track count legitimacy bonus - channels with many tracks are likely legitimate
 	const trackCount = tracks.length
 	let legitimacyBonus = 0

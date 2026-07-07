@@ -1,13 +1,38 @@
 <script>
+	import {onMount, untrack} from 'svelte'
+	import {SvelteMap} from 'svelte/reactivity'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import {analyzeChannel} from './spam-detector.js'
 	import {sdk} from '@radio4000/sdk'
 	import {spamDecisionsCollection} from '$lib/collections/spam-decisions'
-	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {createQuery} from '@tanstack/svelte-query'
 	import {normalizeTrackMedia} from '$lib/collections/tracks'
 
 	const MAX_TRACK_COUNT = 10
+	const MIN_CONFIDENCE = 0.5
+	const TRACK_SLUG_BATCH_SIZE = 25
+
+	function chunk(values, size) {
+		const chunks = []
+		for (let index = 0; index < values.length; index += size) {
+			chunks.push(values.slice(index, index + size))
+		}
+		return chunks
+	}
+
+	async function fetchTracksForSlugs(slugs) {
+		const tracks = /** @type {Array<import('$lib/types').Track>} */ ([])
+		for (const slugBatch of chunk(slugs, TRACK_SLUG_BATCH_SIZE)) {
+			const {data, error} = await sdk.supabase
+				.from('channel_tracks')
+				.select('*')
+				.in('slug', slugBatch)
+			if (error) throw error
+			const trackRows = /** @type {Array<import('$lib/types').Track>} */ (data ?? [])
+			tracks.push(...trackRows)
+		}
+		return tracks.map(normalizeTrackMedia)
+	}
 
 	const channelsQuery = createQuery(() => ({
 		queryKey: ['spam-angel', 'channels', MAX_TRACK_COUNT],
@@ -27,7 +52,8 @@
 	const loading = $derived(channelsQuery.isPending)
 	const error = $derived(channelsQuery.error?.message ?? null)
 
-	// Batch-fetch tracks for every candidate channel in one query, grouped by slug.
+	// Fetch tracks for every candidate channel, grouped by slug. Supabase encodes `.in()`
+	// filters in the URL, so split slug batches to avoid URI-too-long/CORS-looking failures.
 	// `channels_with_tracks` only has track_count — the actual rows come from `channel_tracks`.
 	const slugs = $derived(allChannels.map((ch) => ch.slug).filter(Boolean))
 
@@ -35,10 +61,7 @@
 		queryKey: ['spam-angel', 'tracks', slugs],
 		queryFn: async () => {
 			if (!slugs.length) return []
-			const {data, error} = await sdk.supabase.from('channel_tracks').select('*').in('slug', slugs)
-			if (error) throw error
-			const tracks = /** @type {Array<import('$lib/types').Track>} */ (data ?? [])
-			return tracks.map(normalizeTrackMedia)
+			return fetchTracksForSlugs(slugs)
 		},
 		enabled: slugs.length > 0,
 		staleTime: 5 * 60 * 1000
@@ -54,40 +77,90 @@
 		return map
 	})
 
-	const decisionsQuery = useLiveQuery((q) => q.from({d: spamDecisionsCollection}))
-	const decisions = $derived(decisionsQuery.data ?? [])
+	const decisionsByChannel = new SvelteMap(
+		Array.from(spamDecisionsCollection.state.values(), (d) => [d.channelId, d.spam])
+	)
+	const pendingDecisionPersistence = new SvelteMap()
+	let decisionPersistenceScheduled = false
 
-	// Channels with spam signals, sorted by confidence (highest first)
-	const candidates = $derived(
+	// Channels with strong spam signals, sorted by confidence (highest first). Decisions are kept
+	// out of this derived value so pressing `s` does not rerun spam analysis for the whole queue.
+	const analyzedCandidates = $derived(
 		allChannels
 			.map((ch) => {
-				const decision = decisions.find((d) => d.channelId === ch.id)
 				const tracks = (ch.slug && tracksBySlug[ch.slug]) || []
 				return {
 					...ch,
 					tracks,
-					analysis: analyzeChannel(ch, tracks),
-					decision: decision?.spam
+					analysis: analyzeChannel(ch, tracks)
 				}
 			})
-			.filter((ch) => ch.analysis.confidence >= 0.2)
+			.filter((ch) => ch.analysis.confidence >= MIN_CONFIDENCE)
 			.sort((a, b) => b.analysis.confidence - a.analysis.confidence)
 	)
 
 	let expanded = $state(new Set())
-	let focusedIndex = $state(0)
+	let requestedFocusedIndex = $state(0)
 	let lastActionChannelId = $state(null)
 
-	function setDecision(channelId, spam) {
-		if (spamDecisionsCollection.state.has(channelId)) {
-			spamDecisionsCollection.delete(channelId)
+	function scheduleDecisionPersistence(channelId, spam) {
+		pendingDecisionPersistence.set(channelId, spam)
+		if (decisionPersistenceScheduled) return
+		decisionPersistenceScheduled = true
+		setTimeout(flushDecisionPersistence, 0)
+	}
+
+	function flushDecisionPersistence() {
+		decisionPersistenceScheduled = false
+		const entries = [...pendingDecisionPersistence]
+		pendingDecisionPersistence.clear()
+		for (const [channelId, spam] of entries) {
+			if (spamDecisionsCollection.state.has(channelId)) {
+				spamDecisionsCollection.delete(channelId)
+			}
+			if (spam !== undefined) {
+				spamDecisionsCollection.insert({channelId, spam})
+			}
 		}
-		spamDecisionsCollection.insert({channelId, spam})
+	}
+
+	function removeFromQueue(queue, channelId) {
+		const index = queue.findIndex((channel) => channel.id === channelId)
+		if (index === -1) return undefined
+		return queue.splice(index, 1)[0]
+	}
+
+	function restoreToReview(channel) {
+		if (!channel) return
+		const index = undecided.findIndex(
+			(queuedChannel) => queuedChannel.analysis.confidence < channel.analysis.confidence
+		)
+		if (index === -1) {
+			undecided.push(channel)
+		} else {
+			undecided.splice(index, 0, channel)
+		}
+	}
+
+	function setDecision(channelId, spam) {
+		if (!channelId) return
+		const channel =
+			removeFromQueue(undecided, channelId) ??
+			removeFromQueue(toDelete, channelId) ??
+			removeFromQueue(toKeep, channelId)
+
+		decisionsByChannel.set(channelId, spam)
+		if (channel) (spam ? toDelete : toKeep).push(channel)
+		scheduleDecisionPersistence(channelId, spam)
 		lastActionChannelId = channelId
 	}
 
 	function undoDecision(channelId) {
-		spamDecisionsCollection.delete(channelId)
+		if (!channelId) return
+		const channel = removeFromQueue(toDelete, channelId) ?? removeFromQueue(toKeep, channelId)
+		decisionsByChannel.delete(channelId)
+		restoreToReview(channel)
+		scheduleDecisionPersistence(channelId, undefined)
 	}
 
 	function undoLast() {
@@ -102,13 +175,17 @@
 	}
 
 	function handleKeydown(event) {
-		if (isTypingTarget(event.target)) return
+		if (event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) return
+		const handlesKey = ['j', 'k', 'ArrowDown', 'ArrowUp', 's', 'e', 'u'].includes(event.key)
+		if (!handlesKey) return
+
+		event.preventDefault()
+		event.stopImmediatePropagation()
+
 		if (event.key === 'j' || event.key === 'ArrowDown') {
-			event.preventDefault()
-			focusedIndex = Math.min(focusedIndex + 1, Math.max(undecided.length - 1, 0))
+			requestedFocusedIndex = Math.min(focusedIndex + 1, Math.max(undecided.length - 1, 0))
 		} else if (event.key === 'k' || event.key === 'ArrowUp') {
-			event.preventDefault()
-			focusedIndex = Math.max(focusedIndex - 1, 0)
+			requestedFocusedIndex = Math.max(focusedIndex - 1, 0)
 		} else if (event.key === 's') {
 			const channel = undecided[focusedIndex]
 			if (channel) setDecision(channel.id, true)
@@ -120,10 +197,22 @@
 		}
 	}
 
+	onMount(() => {
+		window.addEventListener('keydown', handleKeydown, {capture: true})
+		return () => window.removeEventListener('keydown', handleKeydown, {capture: true})
+	})
+
 	function clearAll() {
 		if (!confirm('Clear all decisions?')) return
-		for (const key of spamDecisionsCollection.state.keys()) {
-			spamDecisionsCollection.delete(key)
+		const keys = new Set([...spamDecisionsCollection.state.keys(), ...decisionsByChannel.keys()])
+		decisionsByChannel.clear()
+		undecided = [...analyzedCandidates]
+		toDelete = []
+		toKeep = []
+		requestedFocusedIndex = 0
+		lastActionChannelId = null
+		for (const key of keys) {
+			scheduleDecisionPersistence(key, undefined)
 		}
 	}
 
@@ -136,9 +225,32 @@
 		expanded = expanded
 	}
 
-	const undecided = $derived(candidates.filter((ch) => ch.decision === undefined))
-	const toDelete = $derived(candidates.filter((ch) => ch.decision === true))
-	const toKeep = $derived(candidates.filter((ch) => ch.decision === false))
+	function decisionFor(channel) {
+		return channel.id ? decisionsByChannel.get(channel.id) : undefined
+	}
+
+	let undecided = $state([])
+	let toDelete = $state([])
+	let toKeep = $state([])
+
+	$effect(() => {
+		const candidates = analyzedCandidates
+		untrack(() => {
+			undecided = candidates.filter((ch) => decisionFor(ch) === undefined)
+			toDelete = candidates.filter((ch) => decisionFor(ch) === true)
+			toKeep = candidates.filter((ch) => decisionFor(ch) === false)
+		})
+	})
+
+	const focusedIndex = $derived(Math.min(requestedFocusedIndex, Math.max(undecided.length - 1, 0)))
+
+	// Keep the focused card in view instead of letting the selection drift off-screen.
+	let reviewList = $state(null)
+	$effect(() => {
+		focusedIndex
+		undecided.length
+		reviewList?.querySelector('[aria-selected="true"]')?.scrollIntoView({block: 'nearest'})
+	})
 
 	function escapeSqlString(str) {
 		return str.replace(/'/g, "''")
@@ -168,18 +280,16 @@
 		return d.getFullYear().toString()
 	}
 
-	function confidenceColor(confidence) {
-		if (confidence >= 0.6) return 'var(--color-danger, #c00)'
-		if (confidence >= 0.4) return 'var(--color-warning, #a50)'
-		return 'var(--color-muted, #666)'
+	function confidenceLevel(confidence) {
+		if (confidence >= 0.7) return 'high'
+		if (confidence >= 0.6) return 'medium'
+		return 'low'
 	}
 </script>
 
 <svelte:head>
 	<title>Spam Angel | Radio4000 docs</title>
 </svelte:head>
-
-<svelte:window onkeydown={handleKeydown} />
 
 <header>
 	<div>
@@ -203,93 +313,85 @@
 {/if}
 
 <div class="triage">
-	<!-- For Review (top, full width) -->
 	<section class="column" data-column="review">
 		<details open>
 			<summary>For Review ({undecided.length})</summary>
-			<p class="hint">j/k or ↓/↑ to move · s to mark spam · e to keep · u to undo</p>
-			<ul class="list">
+			<p>j/k or ↓/↑ to move · s to mark spam · e to keep · u to undo · showing ≥50%</p>
+			<ul class="list" bind:this={reviewList}>
 				{#each undecided as channel, i (channel.id)}
 					{@const ev = channel.analysis.evidence}
 					{@const hasMusic = ev.musicTerms.length > 0}
 					{@const isExpanded = expanded.has(channel.id)}
-					<li class:focused={i === focusedIndex}>
-						<div class="main-row">
-							<a href="/{channel.slug}" class="avatar-link">
-								<ChannelAvatar id={channel.image} alt={channel.name} size={40} />
-							</a>
-
-							<div class="info">
-								<div class="title-row">
+					<li
+						aria-selected={i === focusedIndex}
+						data-confidence={confidenceLevel(channel.analysis.confidence)}
+					>
+						<article>
+							<header>
+								<figure>
+									<a href="/{channel.slug}">
+										<ChannelAvatar id={channel.image} alt={channel.name} size={40} />
+									</a>
+								</figure>
+								<hgroup>
 									<h3><a href="/{channel.slug}">{channel.name}</a></h3>
-									<span class="meta">{channel.slug} · {formatDate(channel.created_at)}</span>
-								</div>
+									<p>{channel.slug} · {formatDate(channel.created_at)}</p>
+								</hgroup>
+								<strong class="score" data-score
+									>{Math.round(channel.analysis.confidence * 100)}%</strong
+								>
+								<menu>
+									<button class="danger" onclick={() => setDecision(channel.id, true)}>Spam</button>
+									<button onclick={() => setDecision(channel.id, false)}>Keep</button>
+								</menu>
+							</header>
 
-								<div class="evidence">
-									{#if ev.trackSignals.length > 0}
-										<span class="tag" data-type="tracks"
-											>{ev.trackSignals.slice(0, 3).join(', ')}</span
-										>
-									{/if}
-									{#if ev.keywords.length > 0}
-										<span class="tag" data-type="spam"
-											>{ev.keywords.slice(0, 4).join(', ')}{ev.keywords.length > 4 ? '…' : ''}</span
-										>
-									{/if}
-									{#if ev.phrases.length > 0}
-										<span class="tag" data-type="spam">"{ev.phrases[0]}"</span>
-									{/if}
-									{#if ev.locations.length > 0}
-										<span class="tag" data-type="location">{ev.locations.join(', ')}</span>
-									{/if}
-									{#if hasMusic}
-										<span class="tag" data-type="music">{ev.musicTerms.join(', ')}</span>
-									{/if}
-								</div>
-							</div>
-
-							<span class="score" style="color: {confidenceColor(channel.analysis.confidence)}">
-								{Math.round(channel.analysis.confidence * 100)}%
-							</span>
-
-							<menu class="actions">
-								<button class="danger" onclick={() => setDecision(channel.id, true)}>Spam</button>
-								<button onclick={() => setDecision(channel.id, false)}>Keep</button>
-							</menu>
-						</div>
-
-						{#if isExpanded || (channel.description?.length ?? 0) > 100 || channel.tracks.length > 0}
-							<div
-								class="expanded"
-								class:collapsed={!isExpanded && (channel.description?.length ?? 0) > 100}
-							>
-								{#if channel.description}
-									<p class="desc" onclick={() => toggleExpand(channel.id)}>
-										{isExpanded ? channel.description : channel.description?.slice(0, 150)}
-										{#if !isExpanded && (channel.description?.length ?? 0) > 150}…{/if}
-									</p>
+							<ul aria-label="Spam signals">
+								{#if ev.trackSignals.length > 0}
+									<li data-signal="tracks">Tracks: {ev.trackSignals.slice(0, 3).join(', ')}</li>
 								{/if}
-								{#if isExpanded && channel.tracks.length > 0}
-									<ul class="track-list">
-										{#each channel.tracks as track (track.id)}
-											<li>
-												<span class="track-title">{track.title}</span>
-												<a
-													href={track.url}
-													rel="nofollow ugc noopener"
-													target="_blank"
-													class="track-url">{track.url}</a
-												>
-											</li>
-										{/each}
-									</ul>
-								{:else if !isExpanded && channel.tracks.length > 0}
-									<button class="track-toggle" onclick={() => toggleExpand(channel.id)}>
-										{channel.tracks.length} track{channel.tracks.length === 1 ? '' : 's'} — show
-									</button>
+								{#if ev.keywords.length > 0}
+									<li data-signal="spam">
+										Keywords: {ev.keywords.slice(0, 4).join(', ')}{ev.keywords.length > 4
+											? '…'
+											: ''}
+									</li>
 								{/if}
-							</div>
-						{/if}
+								{#if ev.phrases.length > 0}
+									<li data-signal="spam">Phrase: “{ev.phrases[0]}”</li>
+								{/if}
+								{#if ev.locations.length > 0}
+									<li data-signal="location">Location: {ev.locations.join(', ')}</li>
+								{/if}
+								{#if hasMusic}
+									<li data-signal="music">Music: {ev.musicTerms.join(', ')}</li>
+								{/if}
+							</ul>
+
+							{#if isExpanded || (channel.description?.length ?? 0) > 100 || channel.tracks.length > 0}
+								<section>
+									{#if channel.description}
+										<p>
+											{isExpanded ? channel.description : channel.description?.slice(0, 150)}
+											{#if !isExpanded && (channel.description?.length ?? 0) > 150}…{/if}
+										</p>
+									{/if}
+									{#if isExpanded && channel.tracks.length > 0}
+										<ul>
+											{#each channel.tracks as track (track.id)}
+												<li>
+													<a href={track.url} rel="nofollow ugc noopener" target="_blank">
+														{track.title || track.url}
+													</a>
+												</li>
+											{/each}
+										</ul>
+									{:else if !isExpanded && ((channel.description?.length ?? 0) > 150 || channel.tracks.length > 0)}
+										<button onclick={() => toggleExpand(channel.id)}>Show details</button>
+									{/if}
+								</section>
+							{/if}
+						</article>
 					</li>
 				{/each}
 			</ul>
@@ -362,29 +464,44 @@
 	.column summary {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		gap: 0.5rem;
 		font-weight: 600;
 		cursor: var(--interactive-cursor, pointer);
 		padding: 0.5rem;
 		background: var(--gray-2);
 		border-radius: var(--border-radius);
+		list-style: none;
+	}
+	.column summary::-webkit-details-marker {
+		display: none;
+	}
+
+	/* Rotating caret so open/closed state is obvious */
+	.column summary::before {
+		content: '▸';
+		display: inline-block;
+		transition: rotate 0.15s ease;
+		color: var(--gray-11);
+	}
+	.column details[open] > summary::before {
+		rotate: 90deg;
+	}
+
+	/* Push trailing controls (counts, buttons) to the right */
+	.column summary > :last-child {
+		margin-inline-start: auto;
 	}
 
 	.column summary button {
 		font-size: var(--font-4);
 	}
 
-	.column[data-column='delete'] summary::before {
-		content: '×';
-	}
-	.column[data-column='keep'] summary::before {
-		content: '✓';
-	}
-
 	.column .list {
 		max-height: 70vh;
 		overflow-y: auto;
+		/* Padding + scroll-padding so the selection ring on the first/last card isn't clipped */
+		padding: var(--space-2);
+		scroll-padding-block: var(--space-2);
 	}
 
 	/* Side column items (delete/keep) */
@@ -403,122 +520,138 @@
 		white-space: nowrap;
 	}
 
-	/* Review column card styles */
-	h3 {
-		margin: 0;
-		font-weight: normal;
-	}
-	h3 a {
-		color: inherit;
-		text-decoration: none;
-	}
-	h3 a:hover {
-		text-decoration: underline;
-	}
-	.avatar-link {
-		flex-shrink: 0;
-	}
-	.main-row {
+	/* Review cards: each is a self-contained card whose risk colour reads at a glance */
+	.column[data-column='review'] .list {
 		display: flex;
-		align-items: flex-start;
-		gap: 0.5rem;
+		flex-direction: column;
+		gap: var(--space-2);
 	}
-	.main-row :global(.placeholder) {
-		min-width: 40px;
+
+	.column[data-column='review'] li[data-confidence] {
+		border: 1px solid var(--gray-5);
+		border-radius: var(--border-radius);
+		padding: var(--space-2);
+		background: var(--gray-1);
 	}
-	.info {
+
+	.column[data-column='review'] article {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	.column[data-column='review'] article > header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin: 0;
+	}
+
+	.column[data-column='review'] hgroup {
 		flex: 1;
 		min-width: 0;
+		margin: 0;
 	}
-	.title-row {
-		display: flex;
-		align-items: baseline;
-		gap: 0.5rem;
-		flex-wrap: wrap;
+	.column[data-column='review'] hgroup h3 {
+		margin: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
-	.meta {
+	.column[data-column='review'] hgroup p {
+		margin: 0;
+		color: var(--gray-11);
 		font-size: var(--font-4);
-		opacity: 0.5;
 	}
-	.evidence {
+
+	.column[data-column='review'] figure {
+		inline-size: 40px;
+		block-size: 40px;
+		margin: 0;
+	}
+
+	.column[data-column='review'] figure a {
+		display: block;
+		inline-size: 100%;
+		block-size: 100%;
+	}
+
+	.column[data-column='review'] figure :global(img),
+	.column[data-column='review'] figure :global(.fallback) {
+		inline-size: 100%;
+		block-size: 100%;
+		object-fit: cover;
+	}
+
+	/* Score badge: the headline verdict, coloured by risk level */
+	.column[data-column='review'] .score {
+		flex: none;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		padding: 0.1em 0.5em;
+		border-radius: var(--border-radius);
+		background: var(--gray-4);
+		color: var(--gray-12);
+	}
+	.column[data-column='review'] li[data-confidence='medium'] .score {
+		background: var(--color-warning, orange);
+		color: light-dark(hsl(40 90% 12%), hsl(40 90% 8%));
+	}
+	.column[data-column='review'] li[data-confidence='high'] .score {
+		background: var(--color-red);
+		color: #fff;
+	}
+
+	.column[data-column='review'] ul[aria-label='Spam signals'] {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-1);
-		margin-top: var(--space-1);
-	}
-	.tag {
+		padding: 0;
+		list-style: none;
 		font-size: var(--font-4);
-		padding: 0.1em 0.4em;
+	}
+
+	.column[data-column='review'] [data-signal] {
+		padding-inline: 0.4em;
 		border-radius: var(--border-radius);
 	}
-	.tag[data-type='spam'] {
+
+	.column[data-column='review'] [data-signal='spam'] {
 		background: light-dark(hsl(0 70% 90%), hsl(0 40% 25%));
 	}
-	.tag[data-type='location'] {
+
+	.column[data-column='review'] [data-signal='location'] {
 		background: light-dark(hsl(30 70% 90%), hsl(30 40% 25%));
 	}
-	.tag[data-type='music'] {
+
+	.column[data-column='review'] [data-signal='music'] {
 		background: light-dark(hsl(120 50% 90%), hsl(120 30% 25%));
 	}
-	.tag[data-type='tracks'] {
+
+	.column[data-column='review'] [data-signal='tracks'] {
 		background: light-dark(hsl(260 60% 90%), hsl(260 35% 28%));
 	}
-	.score {
-		min-width: 2.5rem;
-		text-align: right;
-		font-weight: bold;
-	}
-	.actions {
-		display: flex;
-		gap: var(--space-1);
-	}
-	.expanded {
-		margin-top: 0.5rem;
-		margin-left: 48px;
-	}
-	.expanded.collapsed {
-		cursor: var(--interactive-cursor, pointer);
-	}
-	.desc {
+
+	/* Description / tracks: most muted layer of the card */
+	.column[data-column='review'] article > section {
 		margin: 0;
-		opacity: 0.8;
-		white-space: pre-wrap;
-		word-break: break-word;
-	}
-	.track-toggle {
+		color: var(--gray-10);
 		font-size: var(--font-4);
-		opacity: 0.7;
 	}
-	.track-list {
-		list-style: none;
-		margin: var(--space-1) 0 0;
-		padding: 0;
+	.column[data-column='review'] article > section :is(p, ul) {
+		margin: 0;
+	}
+
+	/* Actions live in the fixed-height header so variable body content never shifts them */
+	.column[data-column='review'] article > header > menu {
 		display: flex;
-		flex-direction: column;
 		gap: var(--space-1);
-		font-size: var(--font-4);
+		margin: 0;
 	}
-	.track-list li {
-		display: flex;
-		flex-direction: column;
-		gap: 0.1em;
-	}
-	.track-title {
-		opacity: 0.9;
-	}
-	.track-url {
-		opacity: 0.6;
-		word-break: break-all;
-	}
-	.hint {
-		font-size: var(--font-4);
-		opacity: 0.6;
-		margin: 0.25rem 0 0.5rem;
-	}
-	.list li.focused {
+
+	.column[data-column='review'] li[aria-selected='true'] {
 		outline: 2px solid var(--accent-9);
 		outline-offset: 2px;
-		border-radius: var(--border-radius);
 	}
 
 	/* Mobile: stack all vertically */
