@@ -1,6 +1,24 @@
 /* eslint-disable e18e/prefer-static-regex */
 import {businessPartners, spamDomains, spamKeywords, suspiciousPhrases} from './spam-words'
 
+// Domains/providers that indicate a track actually points at music, not a marketing site
+const musicProviderPattern =
+	/(youtube\.com|youtu\.be|soundcloud\.com|bandcamp\.com|mixcloud\.com|vimeo\.com|spotify\.com|discogs\.com|dailymotion\.com|archive\.org)/i
+const audioFileExtensionPattern = /\.(mp3|wav|flac|ogg|m4a|aac)(\?|$)/i
+
+function isMusicUrl(url) {
+	if (!url) return true // no url, nothing to flag
+	return musicProviderPattern.test(url) || audioFileExtensionPattern.test(url)
+}
+
+function hostnameOf(url) {
+	try {
+		return new URL(url).hostname.replace(/^www\./, '')
+	} catch {
+		return url
+	}
+}
+
 // Music-related terms that suggest legitimacy
 const musicTerms = [
 	'music',
@@ -59,7 +77,7 @@ const musicTerms = [
  * Analyze a channel for spam indicators
  * @param {{name?: string | null, description?: string | null, created_at?: string | null}} channel
  * @param {Array<import('$lib/types').Track>} [tracks] - Optional track data for enhanced analysis
- * @returns {{isSpam: boolean, confidence: number, reasons: string[], evidence: {keywords: string[], phrases: string[], locations: string[], patterns: string[], musicTerms: string[]}}}
+ * @returns {{isSpam: boolean, confidence: number, reasons: string[], evidence: {keywords: string[], phrases: string[], locations: string[], patterns: string[], musicTerms: string[], trackSignals: string[]}}}
  */
 export function analyzeChannel(channel, tracks = []) {
 	const reasons = []
@@ -70,13 +88,14 @@ export function analyzeChannel(channel, tracks = []) {
 	const text = `${title} ${description}`
 
 	// Evidence collectors
-	/** @type {{keywords: string[], phrases: string[], locations: string[], patterns: string[], musicTerms: string[]}} */
+	/** @type {{keywords: string[], phrases: string[], locations: string[], patterns: string[], musicTerms: string[], trackSignals: string[]}} */
 	const evidence = {
 		keywords: [],
 		phrases: [],
 		locations: [],
 		patterns: [],
-		musicTerms: []
+		musicTerms: [],
+		trackSignals: []
 	}
 
 	// Check for music terms (counter-evidence) — word boundaries to avoid "rap" in "photography" etc.
@@ -295,57 +314,55 @@ export function analyzeChannel(channel, tracks = []) {
 
 	spamScore = Math.max(0, spamScore - legitimacyBonus)
 
-	// Analyze tracks if provided
-	if (tracks.length > 0) {
-		// Check for business-like track titles
-		const businessTrackCount = tracks.filter((track) => {
-			const title = track.title.toLowerCase()
-			return /\b(service|company|business|professional|expert|specialist|repair|rental|clinic|dental|weight ?loss|marketing|electric works|lawn mowing|pest control)\b/i.test(
-				title
-			)
-		}).length
+	// Structural track signals dominate — a channel's own words are easy to spoof,
+	// but where its tracks actually point to is not.
+	let structuralScore = 0
+	const trackCountTotal = tracks.length
 
-		if (businessTrackCount > 0) {
-			spamScore += businessTrackCount * 3
-			reasons.push(`Business-like track titles (${businessTrackCount})`)
+	if (trackCountTotal > 0) {
+		const nonMusicTracks = tracks.filter((track) => !isMusicUrl(track.url))
+		if (nonMusicTracks.length > 0) {
+			const nonMusicFraction = nonMusicTracks.length / trackCountTotal
+			structuralScore += nonMusicFraction * 12
+			evidence.trackSignals.push(`${nonMusicTracks.length}/${trackCountTotal} non-music urls`)
+			reasons.push(`Non-music track urls (${nonMusicTracks.length}/${trackCountTotal})`)
+
+			const offendingDomains = [...new Set(nonMusicTracks.map((t) => hostnameOf(t.url)))]
+			evidence.trackSignals.push(...offendingDomains.slice(0, 3))
 		}
 
-		// Check for non-music URLs
-		const nonMusicUrls = tracks.filter((track) => {
-			const url = track.url.toLowerCase()
-			// Common business/spam domains vs music platforms
-			return (
-				!/(youtube|soundcloud|spotify|bandcamp|mixcloud|vimeo|dailymotion)/i.test(url) &&
-				/\.(com|org|net|biz)/i.test(url)
-			)
-		}).length
-
-		if (nonMusicUrls > 0) {
-			spamScore += nonMusicUrls * 2
-			reasons.push(`Non-music URLs (${nonMusicUrls})`)
+		const discogsMatchTracks = tracks.filter(
+			(track) =>
+				track.url &&
+				track.discogs_url &&
+				track.url === track.discogs_url &&
+				!/discogs\.com/i.test(track.url)
+		)
+		if (discogsMatchTracks.length > 0) {
+			structuralScore += 10
+			evidence.trackSignals.push('url = discogs_url')
+			reasons.push(`Track url equals discogs_url (${discogsMatchTracks.length})`)
 		}
 
-		// Check for promotional track content
-		const promoTrackCount = tracks.filter((track) => {
-			const trackContent = `${track.title} ${track.description || ''}`.toLowerCase()
-			return /(call now|contact us|visit our|best price|discount|offer|deal)/i.test(trackContent)
-		}).length
-
-		if (promoTrackCount > 0) {
-			spamScore += promoTrackCount * 2
-			reasons.push(`Promotional track content (${promoTrackCount})`)
+		const longDescriptionTracks = tracks.filter((track) => (track.description?.length ?? 0) > 300)
+		if (longDescriptionTracks.length > 0) {
+			structuralScore += Math.min(longDescriptionTracks.length, 3) * 4
+			evidence.trackSignals.push(`${longDescriptionTracks.length} track(s) with long description`)
+			reasons.push(`Long track descriptions (${longDescriptionTracks.length})`)
 		}
 	}
 
-	// Flag for review if description is unusually long (even if not clearly spam)
+	spamScore += structuralScore
+
+	// Flag for review if description is unusually long (secondary/medium evidence, not decisive alone)
 	const isLongDescription = description.length > 400
-
-	const confidence = Math.min(spamScore / 15, 1) // Adjusted denominator for new scoring patterns
-	const isSpam = confidence > 0.4 || isLongDescription
-
-	if (isLongDescription && confidence <= 0.4) {
-		reasons.push('Long description - flagged for manual review')
+	if (isLongDescription) {
+		spamScore += 2
+		reasons.push('Long channel description')
 	}
+
+	const confidence = Math.min(spamScore / 20, 1) // denominator raised so structural signals dominate
+	const isSpam = confidence > 0.4
 
 	return {isSpam, confidence, reasons, evidence}
 }
@@ -366,7 +383,14 @@ export function analyzeChannels(channels) {
 						isSpam: false,
 						confidence: 0,
 						reasons: ['Manually marked as legitimate'],
-						evidence: {keywords: [], phrases: [], locations: [], patterns: [], musicTerms: []}
+						evidence: {
+							keywords: [],
+							phrases: [],
+							locations: [],
+							patterns: [],
+							musicTerms: [],
+							trackSignals: []
+						}
 					}
 				}
 			}
