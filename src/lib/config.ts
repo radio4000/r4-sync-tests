@@ -65,6 +65,9 @@ export const conceptIcons = {
 /** Matches `@media (max-width: 768px)` in CSS — JS only; CSS literals stay as-is */
 export const MOBILE_BREAKPOINT = 768
 
+/** The header logo opens the nav popover; set false to make it a plain home link */
+export const navPopoverOnLogo = false
+
 export const MAP_TILE_STYLES = ['carto', 'topo', 'satellite'] as const
 export type MapTileStyle = (typeof MAP_TILE_STYLES)[number]
 export const DEFAULT_MAP_TILE_STYLE: MapTileStyle = 'satellite'

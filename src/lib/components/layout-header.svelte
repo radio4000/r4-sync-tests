@@ -13,10 +13,11 @@
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import NavPopover from '$lib/components/nav-popover.svelte'
+	import IconR4 from '$lib/components/icon-r4.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import InternetIndicator from '$lib/components/internet-indicator.svelte'
 	import * as m from '$lib/paraglide/messages'
-	import {appName, conceptIcons, MOBILE_BREAKPOINT} from '$lib/config'
+	import {appName, conceptIcons, MOBILE_BREAKPOINT, navPopoverOnLogo} from '$lib/config'
 	import {deckAccent} from '$lib/app-state.svelte'
 
 	const {preloading} = $props()
@@ -101,7 +102,14 @@
 			aria-label={appName}
 			{@attach tooltip({content: appName})}
 		>
-			<NavPopover />
+			{#if navPopoverOnLogo}
+				<NavPopover />
+			{:else}
+				<a href={resolve('/')} class="btn nav-btn">
+					<IconR4 size={18} />
+					<span class="btn-label">{appName}</span>
+				</a>
+			{/if}
 		</div>
 		<a
 			href={resolve('/explore')}
@@ -332,11 +340,6 @@
 
 	header.labels-right :global(.btn.nav-btn) {
 		flex-direction: row;
-		justify-content: flex-start;
-		min-width: min(100%, calc(var(--app-header-size) - 0.5rem));
-	}
-
-	header.labels-right :global(.brand-btn) {
 		justify-content: flex-start;
 		min-width: min(100%, calc(var(--app-header-size) - 0.5rem));
 	}

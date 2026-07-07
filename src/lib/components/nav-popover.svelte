@@ -16,7 +16,7 @@
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
 	import {getFeaturedSuggestions} from '$lib/featured-suggestions.svelte'
 	import {searchChannelsCombined} from '$lib/search'
-	import {conceptIcons} from '$lib/config'
+	import {appName, conceptIcons} from '$lib/config'
 	import * as m from '$lib/paraglide/messages'
 
 	const uid = $props.id()
@@ -95,9 +95,10 @@
 	}
 </script>
 
-<PopoverMenu align="left" valign="bottom" btnClass="brand-btn" bind:this={menuEl}>
+<PopoverMenu align="left" valign="bottom" btnClass="btn nav-btn brand-btn" bind:this={menuEl}>
 	{#snippet trigger()}
 		<IconR4 size={18} />
+		<span class="btn-label">{appName}</span>
 	{/snippet}
 
 	<div class="nav-palette">
@@ -244,14 +245,6 @@
 		display: flex;
 		place-items: center;
 	}
-	:global(.brand-btn:hover) {
-		background: var(--color-interface-elevated);
-	}
-
-	:global(.brand-btn:hover svg) {
-		color: var(--gray-12);
-	}
-
 	.nav-palette {
 		display: flex;
 		flex-direction: column;
