@@ -34,12 +34,6 @@
 /* Vertically center content, a bit, for pages with less content */
 .focused {
 	display: grid;
-
-	/* approach 1*/
-	/* min-height: 50dvh; */
-	/* place-content: center; */
-
-	/* approach 2*/
 	align-content: baseline;
 	margin-inline: auto;
 	gap: 1rem;
@@ -209,10 +203,9 @@ menu.nav-options {
 	}
 }
 
-menu.tags-menu {
+menu.nav-vertical.tags-menu {
 	max-height: 300px;
 	overflow-y: auto;
-	flex-direction: column;
 	gap: 0;
 }
 
@@ -286,6 +279,16 @@ menu {
 	gap: var(--space-1);
 	overflow-x: auto;
 	scrollbar-width: thin;
+	scrollbar-color: transparent transparent;
+	transition: scrollbar-color var(--duration-2);
+
+	&:hover {
+		scrollbar-color: var(--gray-7) transparent;
+	}
+
+	&:not(:hover)::-webkit-scrollbar-thumb {
+		background: transparent;
+	}
 
 	:where(.btn.chip) {
 		flex: 0 0 auto;
@@ -329,13 +332,6 @@ dl.meta {
 
 /* Useful for docs, longer text */
 .article {
-	/* --red: hsl(17 70% 55%); */
-	/* --slated-blue: hsl(221 35% 54%); */
-	/* --mint: hsl(150 50% 50%); */
-	/* --purple: hsl(280 40% 55%); */
-	/* --blue: hsl(190 50% 50%); */
-	/* --gold: hsl(35 70% 55%); */
-
 	h1 {
 		font-size: var(--font-9);
 	}

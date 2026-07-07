@@ -12,14 +12,15 @@
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {eq} from '@tanstack/db'
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
-	const channelActivity = $derived(getChannelActivity())
 	import {channelAvatarUrl} from '$lib/utils'
-	import {toChannelCardMedia} from '$lib/components/channel-ui-state.js'
+	import {isBroadcasting} from '$lib/deck'
+	import {toChannelCardMedia} from '$lib/components/channel-ui-state.ts'
 	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
 	import ChannelScene from '$lib/components/channel-scene-ogl.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import Icon from '$lib/components/icon.svelte'
 
+	const channelActivity = $derived(getChannelActivity())
 	const channelCtx = getChannelCtx()
 	const tracksQuery = getTracksQueryCtx()
 	let channel = $derived(channelCtx.data ?? null)
@@ -39,9 +40,7 @@
 		const channelId = channel?.id
 		if (!channelId) return false
 		const remoteLive = (broadcastQuery.data ?? []).length > 0
-		const localLive = Object.values(appState.decks).some(
-			(deck) => deck.broadcasting_channel_id === channelId
-		)
+		const localLive = isBroadcasting(appState.decks, channelId)
 		return remoteLive || localLive
 	})
 	const mediaItem = $derived.by(() => {

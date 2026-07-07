@@ -8,6 +8,7 @@ export interface Tag {
 	count: number
 }
 
+/** All tags in use across tracks, with usage counts (for tag browse/filter UIs). */
 export const tagsCollection = createCollection<Tag, string>(
 	queryCollectionOptions({
 		queryKey: ['tags'],

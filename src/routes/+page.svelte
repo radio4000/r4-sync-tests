@@ -405,7 +405,9 @@
 				{#if showBroadcastCountWidget}
 					<section class="section top-row-live">
 						<h2 class="section-title">
-							<a class="btn chip" href={resolve('/channels/broadcasting')}>{m.home_broadcasting()}</a>
+							<a class="btn chip" href={resolve('/channels/broadcasting')}
+								>{m.home_broadcasting()}</a
+							>
 						</h2>
 						<ol class="list">
 							{#each activeBroadcasts as broadcast (broadcast.channel_id)}
@@ -529,7 +531,7 @@
 		padding: var(--space-2) 0.5rem 0;
 	}
 
-	@media (min-width: 980px) {
+	@media (min-width: 1024px) {
 		.loggedout-top-row.modal-open {
 			grid-template-columns: minmax(24rem, 1.2fr) minmax(20rem, 1fr);
 			align-items: start;
@@ -632,7 +634,7 @@
 
 	.dashboard-card--link {
 		text-decoration: none;
-		transition: all 0.1s;
+		transition: background var(--duration-1);
 		padding-inline: 1rem;
 
 		&:hover,

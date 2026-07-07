@@ -58,8 +58,6 @@
 	function share() {
 		appState.modal_share = {channel}
 	}
-
-	let articleEl = $state()
 </script>
 
 <article
@@ -68,7 +66,6 @@
 	ondblclick={handleDblClick}
 	role="group"
 	aria-label={channel.name}
-	bind:this={articleEl}
 >
 	<figure>
 		<ChannelAvatar id={channel.image} alt={channel.name} />
@@ -367,6 +364,7 @@
 	.description {
 		color: light-dark(var(--gray-11), var(--gray-10));
 		overflow-wrap: break-word;
+		font-size: var(--font-3);
 	}
 
 	.actions :global(.channel-badge) {

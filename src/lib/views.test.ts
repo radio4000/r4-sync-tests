@@ -8,7 +8,9 @@ import {
 	viewURI,
 	viewLabel,
 	viewFromUrl,
-	viewToUrl
+	viewToUrl,
+	channelViewFromUrl,
+	parseTagsParam
 } from './views'
 import type {View} from './views'
 
@@ -652,5 +654,45 @@ describe('viewFromUrl', () => {
 		const result = viewFromUrl(url)
 		expect(result.sources[0].tagsMode).toBe('all')
 		expect(result.order).toBe('created')
+	})
+})
+
+describe('channelViewFromUrl', () => {
+	test('bare channel URL gives channel-only source', () => {
+		const url = new URL('http://x.com/ko002/tracks')
+		expect(channelViewFromUrl(url, 'ko002')).toEqual({sources: [{channels: ['ko002']}]})
+	})
+	test('?tags= become tags with tagsMode=all', () => {
+		const url = new URL('http://x.com/ko002/tracks?tags=jazz,dub')
+		expect(channelViewFromUrl(url, 'ko002')).toEqual({
+			sources: [{channels: ['ko002'], tags: ['jazz', 'dub'], tagsMode: 'all'}]
+		})
+	})
+	test('?q= is plain search text, not view syntax', () => {
+		const url = new URL('http://x.com/ko002/tracks?q=%23jazz%20miles')
+		expect(channelViewFromUrl(url, 'ko002').sources[0].search).toBe('#jazz miles')
+	})
+	test('order/direction/seedless options parse like search URLs', () => {
+		const url = new URL('http://x.com/ko002/tracks?tags=jazz&order=shuffle&direction=asc')
+		const view = channelViewFromUrl(url, 'ko002')
+		expect(view.order).toBe('shuffle')
+		expect(view.direction).toBe('asc')
+	})
+	test('invalid order is ignored', () => {
+		const url = new URL('http://x.com/ko002/tracks?order=banana')
+		expect(channelViewFromUrl(url, 'ko002').order).toBeUndefined()
+	})
+	test('no slug gives sourceless view', () => {
+		const url = new URL('http://x.com/tracks?tags=jazz')
+		expect(channelViewFromUrl(url)).toEqual({sources: [{tags: ['jazz'], tagsMode: 'all'}]})
+	})
+})
+
+describe('parseTagsParam', () => {
+	test('splits, trims and drops empties', () => {
+		expect(parseTagsParam(' jazz , dub ,,')).toEqual(['jazz', 'dub'])
+	})
+	test('null gives empty array', () => {
+		expect(parseTagsParam(null)).toEqual([])
 	})
 })

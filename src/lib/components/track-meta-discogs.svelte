@@ -6,7 +6,7 @@
 	/** @type {{
 	 *   track?: import('$lib/types').Track,
 	 *   tracks?: import('$lib/types').Track[],
-	 *   channel?: {id: string, slug: string},
+	 *   channel?: import('$lib/types').ChannelRef,
 	 *   canEdit?: boolean,
 	 *   discogsData?: object | null,
 	 *   autoload?: boolean

@@ -1,7 +1,6 @@
 import {describe, expect, test} from 'vitest'
 import {sdk} from '@radio4000/sdk'
-
-/** @typedef {import('$lib/types').BroadcastWithChannel} BroadcastWithChannel */
+import type {BroadcastWithChannel} from '$lib/types'
 
 const BROADCAST_SELECT = `
 	channel_id,
@@ -12,10 +11,9 @@ const BROADCAST_SELECT = `
 
 describe('broadcasts', () => {
 	test('broadcast query returns valid BroadcastWithChannel data', async () => {
-		const {data: broadcasts, error} =
-			/** @type {{data: BroadcastWithChannel[] | null, error: any}} */ (
-				await sdk.supabase.from('broadcast').select(BROADCAST_SELECT)
-			)
+		const {data: broadcasts, error} = (await sdk.supabase
+			.from('broadcast')
+			.select(BROADCAST_SELECT)) as {data: BroadcastWithChannel[] | null; error: unknown}
 
 		expect(error).toBeNull()
 		expect(Array.isArray(broadcasts)).toBe(true)

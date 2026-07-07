@@ -9,9 +9,8 @@
 </script>
 
 {#if count > 0}
-	<span
-		class={['presence-count', {corner}]}
-		title="{count} listener{count === 1 ? '' : 's'}">{count}</span
+	<span class={['presence-count', {corner}]} title="{count} listener{count === 1 ? '' : 's'}"
+		>{count}</span
 	>
 {/if}
 

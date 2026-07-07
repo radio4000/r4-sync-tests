@@ -30,9 +30,15 @@ button,
 
 	--input-shadow: lch(0 0 0 / 0.06) 0px 4px 4px -1px, lch(0 0 0 / 0.12) 0px 1px 1px 0px;
 
-	transition-property: border, background-color, color, opacity, transform, outline;
-	transition-duration: 100ms;
-	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-property: border, background-color, color, opacity, transform, scale, outline;
+	transition-duration: var(--duration-1);
+	transition-timing-function: var(--ease-out);
+}
+
+/* press feedback */
+button:not(.link):active,
+.btn:not(.link):active {
+	scale: 0.97;
 }
 
 button:focus,
@@ -47,7 +53,7 @@ button:disabled,
 .btn:disabled {
 	color: var(--gray-8);
 
-	:global(.icon) {
+	.icon {
 		opacity: 0.2;
 	}
 
@@ -62,13 +68,8 @@ a.active {
 
 button.active,
 .btn.active {
-	background: light-dark(var(--accent-9), var(--accent-10));
-	color: var(--accent-1);
-
-	svg,
-	.icon {
-		color: var(--gray-1);
-	}
+	background: light-dark(var(--accent-9), var(--accent-7));
+	color: light-dark(var(--gray-1), var(--gray-12));
 }
 
 /* Looks like an <a> — no padding, no border, underlined text */
@@ -165,12 +166,6 @@ button.chip,
 .btn.chip {
 	border-radius: 1rem;
 	padding: 0 var(--space-2);
-
-	&.active {
-		svg {
-			color: inherit;
-		}
-	}
 }
 
 .chip-group > :not(button) {
@@ -186,23 +181,6 @@ button.chip,
 		background: var(--accent-8);
 		border-color: var(--accent-9);
 	}
-}
-
-.btn.icon-label-below,
-button.icon-label-below {
-	flex-direction: column;
-	gap: 0.12rem;
-	padding: 0.26rem var(--space-2);
-	min-width: 3.1rem;
-	min-height: 3.2rem;
-	height: auto;
-}
-
-.btn.icon-label-right,
-button.icon-label-right {
-	flex-direction: row;
-	gap: var(--space-1);
-	padding: var(--space-1) var(--space-2);
 }
 
 .btn-label {
@@ -243,7 +221,7 @@ button.icon-label-right {
 }
 
 .mode-action.drifted {
-	color: var(--orange-9);
+	color: var(--color-warning);
 }
 
 /* Select: use normal text color and no border (styled via forms.css) */

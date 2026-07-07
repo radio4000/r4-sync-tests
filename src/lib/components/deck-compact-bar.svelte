@@ -2,24 +2,28 @@
 	import {untrack} from 'svelte'
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
-	import {appState, canEditChannel, removeDeck} from '$lib/app-state.svelte'
+	import {appState, canEditChannel} from '$lib/app-state.svelte'
 	import {
 		togglePlayPause,
 		next,
 		previous,
 		getMediaPlayer,
 		resyncAutoRadio,
-		clearUserInitiatedPlay,
+		leaveAutoRadio,
+		rejoinAutoRadio,
 		toggleDeckCompact,
+		expandDeck,
 		toggleShuffle
 	} from '$lib/api'
-	import {getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast'
+	import {isDbId, isMobileViewport} from '$lib/utils'
+	import {isGroupControlDeck, sortedListeningDeckIds} from '$lib/deck'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {parseUrl} from 'media-now/parse-url'
 	import * as m from '$lib/paraglide/messages'
 	import Icon from '$lib/components/icon.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
+	import DeckMenu from '$lib/components/deck-menu.svelte'
 	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import TrackCard from '$lib/components/track-card.svelte'
@@ -27,24 +31,14 @@
 	import VolumeControl from '$lib/components/volume-control.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
-	import {channelPresence} from '$lib/presence.svelte'
-	import {viewLabel} from '$lib/views'
 	import {shortcutHint} from '$lib/keyboard'
 
 	/** @type {{deckId: number, showEdgeControls?: boolean}} */
 	let {deckId, showEdgeControls = true} = $props()
 
 	let deck = $derived(appState.decks[deckId])
-	let isActiveDeck = $derived(appState.active_deck_id === deckId)
-	let listeningDeckIds = $derived(
-		Object.keys(appState.decks)
-			.map(Number)
-			.sort((a, b) => a - b)
-			.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
-	)
-	let isListeningGroupControlDeck = $derived(
-		!deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
-	)
+	let listeningDeckIds = $derived(sortedListeningDeckIds(appState.decks))
+	let isListeningGroupControlDeck = $derived(isGroupControlDeck(deck, deckId, listeningDeckIds))
 
 	// deckId never changes for this component instance — it's rendered inside
 	// an {#each ... (deckId)} keyed block, so a changed deckId remounts it.
@@ -54,28 +48,12 @@
 	const displayChannel = $derived(display.displayChannel)
 	const headerChannel = $derived(display.headerChannel)
 	const secondaryChannel = $derived(display.secondaryHeaderChannel)
-	const listenSlug = $derived(display.listenSlug)
-	const broadcastSlug = $derived(display.broadcastSlug)
-	const autoUri = $derived(
-		deck?.auto_radio && deck.playlist_slug
-			? viewLabel(deck.view ?? {sources: [{channels: [deck.playlist_slug]}]}) ||
-					`@${deck.playlist_slug}`
-			: undefined
-	)
-	const modePresenceCount = $derived(
-		deck?.listening_to_channel_id && listenSlug
-			? (channelPresence[listenSlug]?.broadcast ?? 0)
-			: deck?.broadcasting_channel_id && broadcastSlug
-				? (channelPresence[broadcastSlug]?.broadcast ?? 0)
-				: autoUri && deck?.playlist_slug
-					? (channelPresence[deck.playlist_slug]?.byUri?.[autoUri] ?? 0)
-					: 0
-	)
+	const modePresenceCount = $derived(display.presenceCount)
 	let canEditTrackChannel = $derived(
 		Boolean(displayChannel?.id && canEditChannel(displayChannel.id))
 	)
 	let trackHref = $derived(
-		!appState.embed_mode && displayTrack?.slug && displayTrack?.id
+		!appState.embed_mode && displayTrack?.slug && displayTrack?.id && isDbId(displayTrack.id)
 			? resolve('/[slug]/tracks/[tid]', {slug: displayTrack.slug, tid: String(displayTrack.id)})
 			: undefined
 	)
@@ -90,75 +68,82 @@
 	let canPrevFromQueue = $derived(canPrev(activeQueue, track?.id))
 	let canNextFromQueue = $derived(canNext(activeQueue, track?.id))
 
-	let mediaDuration = $derived(deck?.media_duration ?? NaN)
-	let mediaCurrentTime = $derived(deck?.media_current_time ?? 0)
-
 	let deckMenu = $state(/** @type {{close: () => void} | undefined} */ (undefined))
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
 <div
 	class="deck-compact-bar"
-	class:active-deck={isActiveDeck}
 	onclick={(e) => {
-		if (e.target instanceof Element && e.target.closest('a, button, input, menu')) return
+		const target = e.target instanceof Element ? e.target : undefined
+		const interactiveTarget = target?.closest(
+			'button, input, select, textarea, [popover], [role="slider"]'
+		)
+		if (isMobileViewport()) {
+			if (interactiveTarget) return
+			if (target?.closest('a')) e.preventDefault()
+			appState.active_deck_id = deckId
+			expandDeck(deckId)
+			return
+		}
+		if (interactiveTarget || target?.closest('a')) return
 		appState.active_deck_id = deckId
 	}}
 >
-	{#if appState.show_track_range_control !== false && displayTrack}
-		<PlayerProgress
-			currentTime={mediaCurrentTime}
-			{mediaDuration}
-			trackDuration={displayTrack?.duration}
-			isPlaying={Boolean(deck?.is_playing)}
-			disabled={Boolean(deck?.listening_to_channel_id)}
-			onseek={(val) => {
-				if (deck) deck.media_current_time = val
-				const mediaElement = getMediaPlayer(deckId)
-				if (mediaElement) mediaElement.currentTime = val
-			}}
-		/>
-	{/if}
-	<div class="header-info" class:active-track-bg={Boolean(displayTrack)}>
-		<div class="channel-panel">
-			{#if headerChannel}
-				<ChannelMicroCard
-					channel={headerChannel}
-					href={appState.embed_mode ? undefined : resolve('/[slug]', {slug: headerChannel.slug})}
-				/>
-			{/if}
-			{#if secondaryChannel}
-				<ChannelMicroCard
-					channel={secondaryChannel}
-					href={appState.embed_mode ? undefined : resolve('/[slug]', {slug: secondaryChannel.slug})}
-				/>
+	<div class="deck-inner" class:active-track-bg={Boolean(displayTrack)}>
+		<div class="deck-identity">
+			<div class="channel-panel">
+				{#if headerChannel}
+					<ChannelMicroCard
+						channel={headerChannel}
+						href={appState.embed_mode ? undefined : resolve('/[slug]', {slug: headerChannel.slug})}
+					/>
+				{/if}
+				{#if secondaryChannel}
+					<ChannelMicroCard
+						channel={secondaryChannel}
+						href={appState.embed_mode
+							? undefined
+							: resolve('/[slug]', {slug: secondaryChannel.slug})}
+					/>
+				{/if}
+			</div>
+			{#if displayTrack}
+				<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
+				<div
+					class="track-panel"
+					onclick={(e) => {
+						if (isMobileViewport()) return
+						if (!trackHref) return
+						if (e.target instanceof Element && e.target.closest('button, a')) return
+						goto(trackHref)
+					}}
+				>
+					<TrackCard track={displayTrack} {deckId} showMenu={false} />
+				</div>
 			{/if}
 		</div>
-		{#if displayTrack}
-			<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
-			<div
-				class="track-panel"
-				onclick={(e) => {
-					if (!trackHref) return
-					if (e.target instanceof Element && e.target.closest('button, a')) return
-					goto(trackHref)
+		{#if appState.show_track_range_control !== false && displayTrack}
+			<PlayerProgress
+				currentTime={deck?.media_current_time ?? 0}
+				mediaDuration={deck?.media_duration ?? NaN}
+				trackDuration={displayTrack?.duration}
+				isPlaying={Boolean(deck?.is_playing)}
+				disabled={Boolean(deck?.listening_to_channel_id)}
+				onseek={(val) => {
+					if (deck) deck.media_current_time = val
+					const mediaElement = getMediaPlayer(deckId)
+					if (mediaElement) mediaElement.currentTime = val
 				}}
-			>
-				<TrackCard
-					track={displayTrack}
-					{deckId}
-					canEdit={canEditTrackChannel}
-					menuAlign="end"
-					menuValign="top"
-				/>
-			</div>
+			/>
 		{/if}
-		<menu class="controls">
+		<menu class="deck-transport">
 			{#if !deck?.listening_to_channel_id && !deck?.auto_radio}
 				<button
 					onclick={() => previous(deckId, 'user_prev')}
 					aria-label={m.player_compact_prev()}
 					disabled={!canPrevFromQueue}
+					{@attach tooltip({content: m.player_tooltip_prev() + shortcutHint('previousTrack')})}
 				>
 					<Icon icon="previous-fill" />
 				</button>
@@ -168,6 +153,11 @@
 					onclick={() => togglePlayPause(deckId)}
 					aria-label={m.player_compact_play_pause()}
 					disabled={!canPlayFromQueue}
+					{@attach tooltip({
+						content:
+							(deck?.is_playing ? m.player_tooltip_pause() : m.player_tooltip_play()) +
+							shortcutHint('togglePlayPause')
+					})}
 				>
 					<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
 				</button>
@@ -175,6 +165,7 @@
 					onclick={() => next(deckId, 'user_next')}
 					aria-label={m.player_compact_next()}
 					disabled={!canNextFromQueue}
+					{@attach tooltip({content: m.player_tooltip_next() + shortcutHint('nextTrack')})}
 				>
 					<Icon icon="next-fill" />
 				</button>
@@ -183,10 +174,15 @@
 						onclick={() => toggleShuffle(deckId)}
 						class:active={deck?.shuffle}
 						aria-label={m.player_tooltip_shuffle()}
-						{@attach tooltip({content: m.player_tooltip_shuffle() + shortcutHint('toggleShuffle')})}
+						{@attach tooltip({
+							content: m.player_tooltip_shuffle() + shortcutHint('toggleShuffle')
+						})}
 					>
 						<Icon icon="shuffle" />
 					</button>
+				{/if}
+				{#if display.autoRadioAvailable}
+					<AutoRadioButton size={14} onclick={() => rejoinAutoRadio(deckId)} />
 				{/if}
 				<SpeedControl {deckId} {provider} />
 				<VolumeControl {deckId} />
@@ -197,6 +193,11 @@
 					onclick={() => togglePlayPause(deckId)}
 					aria-label={m.player_compact_play_pause()}
 					disabled={!canPlayFromQueue}
+					{@attach tooltip({
+						content:
+							(deck?.is_playing ? m.player_tooltip_pause() : m.player_tooltip_play()) +
+							shortcutHint('togglePlayPause')
+					})}
 				>
 					<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
 				</button>
@@ -205,36 +206,34 @@
 					drifted={!!deck?.auto_radio_drifted}
 					size={14}
 					count={modePresenceCount}
-					onclick={() => resyncAutoRadio(deckId)}
+					onclick={() =>
+						deck?.auto_radio_drifted ? resyncAutoRadio(deckId) : leaveAutoRadio(deckId)}
 				/>
 			{:else if !deck?.listening_to_channel_id}
 				<VolumeControl {deckId} />
 			{/if}
+		</menu>
+		<menu class="deck-actions">
 			{#if showEdgeControls && (!deck?.listening_to_channel_id || isListeningGroupControlDeck)}
-				<PopoverMenu align="end" valign="top" closeOnClick={false} bind:this={deckMenu}>
+				<PopoverMenu
+					align="end"
+					valign="top"
+					closeOnClick={false}
+					btnClass="ghost"
+					bind:this={deckMenu}
+				>
 					{#snippet trigger()}
 						<Icon icon="options-horizontal" />
 					{/snippet}
-					<menu class="nav-vertical">
-						{#if !appState.embed_mode}
-							<a href={resolve('/settings/player')} onclick={() => deckMenu?.close()}>
-								<Icon icon="settings" />
-								{m.settings_player()}
-							</a>
-						{/if}
-						<button
-							class="close-deck"
-							onclick={() => {
-								const bchId = getBroadcastingChannelId()
-								clearUserInitiatedPlay(deckId)
-								removeDeck(deckId)
-								if (bchId) notifyBroadcastState(bchId)
-							}}
-						>
-							<Icon icon="close" />
-							{m.player_tooltip_close_deck()}
-						</button>
-					</menu>
+					<DeckMenu
+						{deckId}
+						compact
+						track={displayTrack}
+						channel={displayChannel}
+						{trackHref}
+						canEditTrack={canEditTrackChannel}
+						closeMenu={() => deckMenu?.close()}
+					/>
 				</PopoverMenu>
 			{/if}
 			{#if showEdgeControls && isListeningGroupControlDeck}
@@ -262,20 +261,23 @@
 		border-top: 1px solid var(--gray-6);
 		min-width: 0;
 		overflow: visible;
+		background-color: var(--gray-1);
 	}
 
 	.deck-compact-bar :global(.progress) {
-		flex: 1 0 100%;
-		width: 100%;
+		grid-area: progress;
 		min-width: 0;
-		padding-bottom: 0;
+		padding: 0;
 	}
 
-	.header-info {
-		display: flex;
-		flex-direction: row;
+	/* Grid: identity, playback transport, deck actions; progress full width below. */
+	.deck-inner {
+		display: grid;
+		grid-template-columns: minmax(0, 2fr) minmax(2.75rem, 1fr) auto;
+		grid-template-areas:
+			'identity transport actions'
+			'progress progress progress';
 		align-items: center;
-		flex-wrap: wrap;
 		gap: var(--space-1);
 		min-width: 0;
 		flex: 1 1 auto;
@@ -285,12 +287,12 @@
 		padding-block: var(--space-1);
 	}
 
-	/* Deck-actions menu (settings + remove) groups with the expand toggle at the
-	   right end of the controls row. margin-left:auto pushes the pair over. */
-	.controls :global(.popover-menu) {
-		flex: 0 0 auto;
-		align-self: center;
-		margin-left: auto;
+	.deck-identity {
+		grid-area: identity;
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		min-width: 0;
 	}
 
 	.channel-panel {
@@ -299,11 +301,9 @@
 		flex-wrap: nowrap;
 		gap: var(--space-1);
 		min-width: 0;
-		flex: 0 0 auto;
 		max-width: 100%;
 		overflow-x: auto;
 		scrollbar-width: none;
-		order: 1;
 		align-self: center;
 	}
 
@@ -312,7 +312,10 @@
 	}
 
 	:global(.channel-panel .channel-micro-card) {
-		flex: 0 0 auto;
+		--track-artwork-size: 1rem;
+		flex: 0 1 auto;
+		min-width: calc(var(--track-artwork-size) + var(--space-1) + 10ch);
+		min-width: 10rem;
 		max-width: max-content;
 		align-self: center;
 		background: none;
@@ -320,48 +323,52 @@
 	}
 
 	.track-panel {
+		flex: 1 1 auto;
 		min-width: 0;
-		flex: 1 1 14rem;
-		width: auto;
-		max-width: none;
 		cursor: pointer;
-		order: 2;
 	}
 
-	.controls {
+	.deck-transport,
+	.deck-actions {
 		display: flex;
 		align-items: center;
-		justify-content: flex-end;
 		flex-wrap: nowrap;
 		gap: var(--space-1);
-		flex: 1 0 100%;
-		width: 100%;
 		min-width: 0;
-		order: 3;
+	}
+
+	.deck-transport {
+		grid-area: transport;
+		justify-content: center;
 		overflow-x: auto;
 		scrollbar-width: none;
 	}
 
-	.controls::-webkit-scrollbar {
+	.deck-actions {
+		grid-area: actions;
+		justify-content: flex-end;
+	}
+
+	.deck-transport::-webkit-scrollbar {
 		display: none;
 	}
 
-	.controls :global(.speed),
-	.controls :global(.volume) {
+	.deck-transport :global(.speed),
+	.deck-transport :global(.volume) {
 		flex: 1 1 7rem;
 		min-width: 0;
-		max-width: none;
 	}
-
-	/* Force compact controls to be fully shrinkable despite component defaults */
-	.controls :global(.speed .speed-btn) {
+	.deck-transport :global(.volume) {
+		max-width: 10rem;
+	}
+	.deck-transport :global(.speed .speed-btn) {
 		min-width: 0;
 	}
 
-	.controls :global(.speed .range),
-	.controls :global(.volume .range),
-	.controls :global(.volume media-mute-button),
-	.controls :global(.volume .btn) {
+	.deck-transport :global(.speed .range),
+	.deck-transport :global(.volume .range),
+	.deck-transport :global(.volume media-mute-button),
+	.deck-transport :global(.volume .btn) {
 		min-width: 0;
 	}
 
@@ -381,10 +388,6 @@
 		background: transparent;
 	}
 
-	.track-panel :global(.popover-menu) {
-		flex: 0 0 auto;
-	}
-
 	.track-panel :global(.card) {
 		padding: 0;
 	}
@@ -393,85 +396,39 @@
 		max-width: 100%;
 	}
 
-	@media (max-width: 767px) {
-		.header-info {
+	@media (max-width: 768px) {
+		.deck-inner {
 			padding-inline: var(--space-1);
-			gap: var(--space-1);
-			align-items: center;
-		}
-
-		.channel-panel {
-			flex: 0 0 auto;
-			order: 1;
-			max-width: 100%;
-		}
-
-		:global(.channel-panel .channel-micro-card) {
-			min-height: 1.35rem;
-			padding: 0.08rem var(--space-1) 0.08rem 0.08rem;
 		}
 
 		:global(.channel-panel .channel-micro-card .slug) {
-			max-width: 8ch;
+			max-width: 15ch;
 			overflow: hidden;
 			text-overflow: ellipsis;
 		}
 
-		.track-panel {
-			display: block;
-			flex: 1 1 14rem;
-			width: auto;
-			max-width: none;
-		}
-
-		.controls {
-			gap: var(--space-1);
-			flex: 1 1 auto;
-			width: 100%;
-			flex-wrap: nowrap;
-		}
-
-		.controls :global(.speed),
-		.controls :global(.volume) {
-			flex: 1 1 5rem;
-			max-width: none;
-		}
-
-		.controls :global(.speed .speed-btn),
-		.controls :global(.volume .btn),
-		.controls :global(.volume media-mute-button) {
-			min-width: 0;
-			padding-inline: var(--space-1);
-			font-size: var(--font-1);
-		}
-
+		/* Tapping the bar expands the deck on mobile — hide the duplicate */
 		.expand {
-			align-self: center;
+			display: none;
+		}
+	}
+
+	/* Mini player: channel + track + play on one row, progress below.
+	   Hidden via CSS only — everything stays in the DOM. Above
+	   1024px: the full desktop bar. */
+	@media (max-width: 1024px) {
+		.deck-transport > :global(*:not(.play)) {
+			display: none;
 		}
 	}
 
 	@media (min-width: 768px) {
-		.header-info {
-			align-items: center;
-			flex-wrap: nowrap;
-		}
-
-		.track-panel {
-			order: 3;
-			flex: 1 1 18rem;
-			width: auto;
-			max-width: none;
-		}
-
-		.controls {
-			order: 4;
-			flex: 0 1 auto;
-			width: auto;
+		.deck-transport {
 			overflow-x: visible;
 		}
 
-		.controls :global(.speed),
-		.controls :global(.volume) {
+		.deck-transport :global(.speed),
+		.deck-transport :global(.volume) {
 			flex: 1 1 6.75rem;
 		}
 

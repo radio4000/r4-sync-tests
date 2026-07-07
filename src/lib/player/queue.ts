@@ -2,8 +2,7 @@
  * Pure queue operations. No state mutation.
  * All functions return new arrays/values without side effects.
  */
-
-import {shuffleArray} from '$lib/utils'
+import type {Deck} from '$lib/types'
 
 /** Returns the next track ID in queue, or null if at end */
 export function queueNext(queue: string[], currentId: string): string | null {
@@ -30,34 +29,9 @@ export function queueInsertManyAfter(
 	return [...queue.slice(0, idx + 1), ...insertIds, ...queue.slice(idx + 1)]
 }
 
-/** Remove ID from queue */
-export function queueRemove(queue: string[], id: string): string[] {
-	return queue.filter((i) => i !== id)
-}
-
-/** Shuffle but keep current track at front */
-export function queueShuffleKeepCurrent(queue: string[], currentId: string): string[] {
-	const rest = queue.filter((id) => id !== currentId)
-	return [currentId, ...shuffleArray(rest)]
-}
-
-/** Rotate queue: move items before current to end (radio behavior) */
-export function queueRotate(queue: string[], currentId: string): string[] {
-	const idx = queue.indexOf(currentId)
-	if (idx <= 0) return [...queue]
-	return [...queue.slice(idx), ...queue.slice(0, idx)]
-}
-
-/** Deduplicate queue (keep first occurrence) */
-export function queueUnique(queue: string[]): string[] {
-	return [...new Set(queue)]
-}
-
 /** Get the active queue array for a deck (respects shuffle) */
 export function getActiveQueue(
-	deck:
-		| {shuffle?: boolean; playlist_tracks?: string[]; playlist_tracks_shuffled?: string[]}
-		| undefined
+	deck: Pick<Deck, 'shuffle' | 'playlist_tracks' | 'playlist_tracks_shuffled'> | undefined
 ): string[] {
 	if (!deck) return []
 	return deck.shuffle ? deck.playlist_tracks_shuffled || [] : deck.playlist_tracks || []

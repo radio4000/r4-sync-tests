@@ -26,7 +26,7 @@
 		  }
 		| {
 				mode: 'edit'
-				channel: {id: string; slug: string}
+				channel: import('$lib/types').ChannelRef
 				trackId: string
 				url?: string
 				title?: string

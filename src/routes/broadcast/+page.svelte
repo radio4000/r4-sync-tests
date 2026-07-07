@@ -1,16 +1,14 @@
 <script>
 	import {resolve} from '$app/paths'
 	import {appState} from '$lib/app-state.svelte'
+	import {isBroadcasting as isBroadcastingDeck} from '$lib/deck'
 	import Icon from '$lib/components/icon.svelte'
 	import IconR4 from '$lib/components/icon-r4.svelte'
 	import Seo from '$lib/components/seo.svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	const userChannel = $derived(appState.channel)
-	const isBroadcasting = $derived(
-		userChannel &&
-			Object.values(appState.decks).some((d) => d.broadcasting_channel_id === userChannel.id)
-	)
+	const isBroadcasting = $derived(isBroadcastingDeck(appState.decks, userChannel?.id))
 </script>
 
 <Seo title={m.broadcasts_you_are_live()} plain />

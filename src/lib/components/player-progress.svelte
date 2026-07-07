@@ -45,6 +45,8 @@
 	}
 
 	.progress time {
+		position: relative;
+		top: 0.1em;
 		font-size: var(--font-1);
 		color: var(--gray-9);
 		font-variant-numeric: tabular-nums;

@@ -111,6 +111,10 @@ function parseChannelParams(opts: Parameters<typeof parseLoadSubsetOptions>[0]) 
 	}
 }
 
+/**
+ * On-demand channel collection, keyed by id. Fetched by slug, id list, or paginated
+ * browse query (with optional track-count/image/coordinate filters) — see `parseChannelParams`.
+ */
 export const channelsCollection = createCollection<Channel, string>({
 	...queryCollectionOptions({
 		autoIndex: 'eager',
@@ -308,6 +312,7 @@ async function handleChannelDelete(id: string): Promise<void> {
 	if (response.error) throw new Error(getErrorMessage(response.error))
 }
 
+/** Create a channel for the signed-in user. */
 export function createChannel(input: {
 	name: string
 	slug: string
@@ -336,6 +341,7 @@ export function createChannel(input: {
 		.isPersisted.promise.then(() => channel)
 }
 
+/** Update a channel's fields, keeping appState.channel in sync if it's the active one. */
 export function updateChannel(id: string, changes: Record<string, unknown>) {
 	return channelsCollection
 		.update(id, (draft) => {
@@ -349,6 +355,7 @@ export function updateChannel(id: string, changes: Record<string, unknown>) {
 		})
 }
 
+/** Delete a channel and clean up app state that isn't rolled back automatically (deck, membership). */
 export function deleteChannel(id: string) {
 	// Clean up app state (not managed by collection, not automatically rolled back)
 	appState.channels = appState.channels?.filter((cid) => cid !== id)

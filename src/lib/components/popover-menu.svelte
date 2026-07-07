@@ -2,7 +2,7 @@
 	import {untrack, tick} from 'svelte'
 	import {createAttachmentKey} from 'svelte/attachments'
 
-	/** @type {{children?: import('svelte').Snippet, trigger?: import('svelte').Snippet, btnClass?: string, closeOnClick?: boolean, onclose?: () => void, triggerAttachment?: Function, align?: 'left' | 'right' | 'end', valign?: 'top' | 'bottom', [key: string]: any}} */
+	/** @type {{children?: import('svelte').Snippet, trigger?: import('svelte').Snippet, btnClass?: string, closeOnClick?: boolean, onclose?: () => void, triggerAttachment?: Function, align?: 'left' | 'right' | 'end', valign?: 'top' | 'bottom', centered?: boolean, [key: string]: any}} */
 	let {
 		children,
 		trigger,
@@ -12,6 +12,7 @@
 		triggerAttachment,
 		align = 'left',
 		valign = 'bottom',
+		centered = false,
 		...rest
 	} = $props()
 
@@ -30,8 +31,19 @@
 		popoverEl?.hidePopover()
 	}
 
+	export function open() {
+		popoverEl?.showPopover()
+	}
+
 	function positionPopover(el) {
 		if (!buttonEl) return
+		// Centered mode: let CSS handle placement (see [popover].centered).
+		if (centered) {
+			el.style.top = ''
+			el.style.left = ''
+			el.style.transformOrigin = ''
+			return
+		}
 		const rect = buttonEl.getBoundingClientRect()
 		const popoverRect = el.getBoundingClientRect()
 		const isRTL = document.documentElement.dir === 'rtl'
@@ -40,9 +52,19 @@
 			resolvedAlign === 'right'
 				? Math.max(8, rect.right - popoverRect.width)
 				: Math.min(rect.left, window.innerWidth - popoverRect.width - 8)
-		const top = valign === 'top' ? Math.max(8, rect.top - popoverRect.height - 4) : rect.bottom + 4
+		// Flip above the trigger when there isn't room below (e.g. a trigger
+		// pinned near the bottom of the viewport, like the mobile header).
+		const spaceBelow = window.innerHeight - rect.bottom
+		const spaceAbove = rect.top
+		const opensUp =
+			valign === 'top' || (spaceBelow < popoverRect.height + 8 && spaceAbove > spaceBelow)
+		const top = opensUp
+			? Math.max(8, rect.top - popoverRect.height - 4)
+			: Math.min(rect.bottom + 4, window.innerHeight - popoverRect.height - 8)
 		el.style.top = `${top}px`
 		el.style.left = `${Math.max(8, left)}px`
+		// Scale out of the trigger corner instead of the popover's center
+		el.style.transformOrigin = `${opensUp ? 'bottom' : 'top'} ${resolvedAlign === 'right' ? 'right' : 'left'}`
 	}
 
 	// Position popover below button and optionally close on action click
@@ -93,7 +115,7 @@
 	<button type="button" popovertarget={id} bind:this={buttonEl} {...triggerProps}>
 		{@render trigger?.()}
 	</button>
-	<div popover="auto" {id} bind:this={popoverEl}>
+	<div popover="auto" {id} class:centered bind:this={popoverEl}>
 		{#if hasBeenOpened}
 			{@render children?.()}
 		{/if}
@@ -106,6 +128,7 @@
 	}
 
 	[popover] {
+		--duration: var(--duration-2);
 		position: fixed;
 		margin: 0;
 		padding: var(--space-1);
@@ -114,5 +137,33 @@
 		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		box-shadow: var(--shadow-modal);
+		opacity: 1;
+		scale: 1;
+		transition:
+			opacity var(--duration) var(--ease-out),
+			scale var(--duration) var(--ease-out),
+			display var(--duration) allow-discrete,
+			overlay var(--duration) allow-discrete;
+	}
+	/* exit — quicker than the entrance */
+	[popover]:not(:popover-open) {
+		--duration: var(--duration-1);
+		opacity: 0;
+		scale: 0.97;
+	}
+	@starting-style {
+		[popover]:popover-open {
+			opacity: 0;
+			scale: 0.97;
+		}
+	}
+
+	/* Centered sheet (opt-in via the `centered` prop). */
+	[popover].centered {
+		top: 3.25rem;
+		left: 50%;
+		transform: translateX(-50%);
+		width: calc(100vw - 2rem);
+		max-width: 26rem;
 	}
 </style>

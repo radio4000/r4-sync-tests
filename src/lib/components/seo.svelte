@@ -1,6 +1,13 @@
 <script>
 	import {appName} from '$lib/config'
-	let {title, description = undefined, image = undefined, url = undefined, type = 'website', plain = false} = $props()
+	let {
+		title,
+		description = undefined,
+		image = undefined,
+		url = undefined,
+		type = 'website',
+		plain = false
+	} = $props()
 </script>
 
 <svelte:head>

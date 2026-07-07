@@ -51,29 +51,13 @@
 
 <style>
 	section {
-		margin-block: 1.5rem;
-	}
-
-	h2 {
-		margin-block-end: 0.5rem;
-	}
-
-	ul {
-		padding-left: 1.5rem;
-	}
-
-	li {
-		margin-block: 0.5rem;
-	}
-
-	p {
-		margin-block: 0.5rem;
+		margin-block: var(--space-3);
 	}
 
 	a {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.5rem;
-		margin-top: 0.75rem;
+		gap: var(--space-2);
+		margin-top: var(--space-3);
 	}
 </style>

@@ -1,7 +1,7 @@
 import {sdk} from '@radio4000/sdk'
 import {searchChannels} from '$lib/search-fts'
 import {channelsCollection} from '$lib/collections/channels'
-import {fuzzySearch} from '$lib/utils'
+import {dedupeById, fuzzySearch} from '$lib/utils'
 
 /**
  * Find channel by slug - tries local collection first, falls back to remote
@@ -44,12 +44,7 @@ export async function searchChannelsCombined({slugs = [], query = '', localChann
 	}
 	if (!promises.length) return []
 	const results = await Promise.all(promises)
-	const seen = new Set()
-	return results.flat().filter((c) => {
-		if (seen.has(c.id)) return false
-		seen.add(c.id)
-		return true
-	})
+	return dedupeById(results.flat())
 }
 
 /**

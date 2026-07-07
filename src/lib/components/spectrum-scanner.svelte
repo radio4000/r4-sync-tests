@@ -156,7 +156,9 @@
 		width: 2px;
 		background: var(--color);
 		min-height: 5px;
-		transition: all 0.2s;
+		transition:
+			width 0.2s,
+			background 0.2s;
 	}
 
 	.marker.tuned .marker-signal {

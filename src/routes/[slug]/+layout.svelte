@@ -19,8 +19,8 @@
 	import {
 		findAutoDecksForChannel,
 		findChannelDeck,
-		findChannelPlayingDeck,
-		findListeningDeck
+		findListeningDeck,
+		isListeningToChannel as isListeningToChannelDeck
 	} from '$lib/deck'
 	import ButtonFollow from '$lib/components/button-follow.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
@@ -28,7 +28,7 @@
 	import DeckChannelHeader from '$lib/components/deck-channel-header.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
-	import ChannelSectionMenu from '$lib/components/channel-section-menu.svelte'
+	import SectionMenu, {channelSectionMenuItems} from '$lib/components/section-menu.svelte'
 	import * as m from '$lib/paraglide/messages'
 	import {watchPresence, unwatchPresence, channelPresence} from '$lib/presence.svelte'
 	import {pickRouteChannel, updateStableChannelId} from '$lib/channel-route'
@@ -62,9 +62,7 @@
 	)
 	let channelId = $state('')
 	let channelIdSourceSlug = $state('')
-	let channelFromSlug = $derived(
-		/** @type {import('$lib/types').Channel | undefined} */ /** @type {unknown} */ channelBySlugQuery.data
-	)
+	let channelFromSlug = $derived(channelBySlugQuery.data)
 	$effect(() => {
 		const next = updateStableChannelId(slug, channelId, channelIdSourceSlug, channelFromSlug)
 		if (next.channelId !== channelId) channelId = next.channelId
@@ -83,9 +81,7 @@
 					.findOne()
 			: null
 	)
-	let channelFromId = $derived(
-		/** @type {import('$lib/types').Channel | undefined} */ /** @type {unknown} */ channelByIdQuery.data
-	)
+	let channelFromId = $derived(channelByIdQuery.data)
 	let channel = $derived(pickRouteChannel(slug, channelFromSlug, channelFromId))
 	let channelIsLoading = $derived(
 		!channel && (channelBySlugQuery.isLoading || (Boolean(channelId) && channelByIdQuery.isLoading))
@@ -139,17 +135,9 @@
 	// --- Deriveds ---
 
 	let isChannelLive = $derived(Boolean(channelBroadcastQuery.data))
-	let isListeningToChannel = $derived(
-		Boolean(
-			channel?.id &&
-			Object.values(appState.decks).some((d) => d.listening_to_channel_id === channel.id)
-		)
-	)
+	let isListeningToChannel = $derived(isListeningToChannelDeck(appState.decks, channel?.id))
 	let canEdit = $derived(canEditChannel(channel?.id))
 	let anyChannelAutoDecks = $derived(findAutoDecksForChannel(appState.decks, channel?.slug))
-	let channelPlayingDeck = $derived(
-		findChannelPlayingDeck(appState.decks, appState.active_deck_id, channel?.slug)
-	)
 	let channelListeningDeck = $derived(
 		findListeningDeck(appState.decks, appState.active_deck_id, channel?.id)
 	)
@@ -299,17 +287,17 @@
 								title={m.channel_card_join_broadcast()}
 								onclick={() => joinBroadcast(appState.active_deck_id, displayChannel.id)}
 							>
-								<ChannelAvatar id={displayChannel.image} alt={displayChannel.name} size={80} />
+								<ChannelAvatar id={displayChannel.image} alt={displayChannel.name} size={160} />
 							</button>
 						{:else}
 							<a href={resolve('/[slug]/image', {slug})} tabindex="-1">
-								<ChannelAvatar id={displayChannel.image} alt={displayChannel.name} size={80} />
+								<ChannelAvatar id={displayChannel.image} alt={displayChannel.name} size={160} />
 							</a>
 						{/if}
 					</div>
 					<div class="info">
 						<DeckChannelHeader
-							deck={channelListeningDeck ?? channelPlayingDeck ?? anyChannelAutoDecks[0]}
+							deck={channelListeningDeck ?? channelDeck ?? anyChannelAutoDecks[0]}
 							channel={displayChannel}
 							track={listeningTrack}
 							titleElement="h1"
@@ -377,7 +365,9 @@
 
 				<div class="channel-controls">
 					<menu class="channel-actions" role="group" aria-label="Channel actions">
-						{#if canEdit || isChannelLive || isListeningToChannel}
+						<!-- "Start broadcast" hidden for now — restore by adding canEdit back:
+						{#if canEdit || isChannelLive || isListeningToChannel} -->
+						{#if isChannelLive || isListeningToChannel}
 							<button
 								type="button"
 								class={[
@@ -387,15 +377,13 @@
 								]}
 								onclick={onLiveAction}
 								disabled={liveLoading}
-								{@attach tooltip({
-									content: canEdit
-										? isChannelLive
-											? m.broadcast_stop_button()
-											: m.broadcast_start_button()
-										: isListeningToChannel
-											? m.broadcasts_leave()
-											: m.broadcasts_join()
-								})}
+								aria-label={canEdit
+									? isChannelLive
+										? m.broadcast_stop_button()
+										: m.broadcast_start_button()
+									: isListeningToChannel
+										? m.broadcasts_leave()
+										: m.broadcasts_join()}
 							>
 								<Icon icon="signal" size={14} />
 								<span>
@@ -413,46 +401,58 @@
 							</button>
 						{/if}
 
-						<button
-							type="button"
-							class={[
-								'mode-action',
-								'play',
-								{active: isChannelPlaying, drifted: activeAutoDrifted}
-							]}
-							onclick={onPlayAction}
-							disabled={playLoading}
-							{@attach tooltip({content: playTooltip})}
-						>
-							<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={14} />
-							<span>{playLabel}</span>
-						</button>
+						<div class="mode-actions">
+							<button
+								type="button"
+								class={[
+									'primary',
+									'mode-action',
+									'play',
+									{active: isChannelPlaying, drifted: activeAutoDrifted}
+								]}
+								onclick={onPlayAction}
+								disabled={playLoading}
+								{@attach tooltip({content: playTooltip})}
+							>
+								<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={14} />
+								<span>{playLabel}</span>
+							</button>
 
-						<button
-							type="button"
-							class={['mode-action', 'shuffle']}
-							onclick={onShuffleAction}
-							disabled={playLoading}
-							{@attach tooltip({content: m.channels_tooltip_shuffle()})}
-						>
-							<Icon icon="shuffle" size={14} />
-							<span>{shuffleLabel}</span>
-						</button>
+							<button
+								type="button"
+								class={['mode-action', 'shuffle']}
+								onclick={onShuffleAction}
+								disabled={playLoading}
+								{@attach tooltip({content: m.channels_tooltip_shuffle()})}
+							>
+								<Icon icon="shuffle" size={14} />
+								<span>{shuffleLabel}</span>
+							</button>
+						</div>
 					</menu>
 				</div>
+
+				{#if !isTrackDetail && page.route.id !== '/[slug]/image'}
+					<div class="channel-tabs">
+						<SectionMenu
+							items={channelSectionMenuItems({
+								slug,
+								trackCount: channelTrackCount,
+								routeId: page.route.id
+							})}
+							label="Channel navigation"
+							scroll
+						/>
+					</div>
+				{/if}
 			</header>
 		{/if}
 
-		{#if !isTrackDetail}
+		{#if !isTrackDetail && channelNavControls}
 			<menu class="channel-nav">
-				{#if page.route.id !== '/[slug]/image'}
-					<ChannelSectionMenu {slug} channel={displayChannel} trackCount={channelTrackCount} />
-				{/if}
-				{#if channelNavControls}
-					<menu class="channel-nav-controls">
-						{@render channelNavControls()}
-					</menu>
-				{/if}
+				<menu class="channel-nav-controls">
+					{@render channelNavControls()}
+				</menu>
 			</menu>
 		{/if}
 	</div>
@@ -485,10 +485,11 @@
 		display: grid;
 		grid-template-areas:
 			'main secondary'
-			'controls controls';
+			'controls controls'
+			'tabs tabs';
 		grid-template-columns: 1fr auto;
 		gap: var(--space-1);
-		padding: var(--space-2);
+		padding: 2rem var(--space-3) 1rem;
 		min-width: 0;
 		align-items: center;
 		background: var(--gray-2);
@@ -501,11 +502,19 @@
 		z-index: 1;
 	}
 
-	@container (min-width: 500px) {
+	@container (min-width: 640px) {
 		header {
-			grid-template-areas: 'main controls secondary';
+			grid-template-areas:
+				'main controls secondary'
+				'tabs tabs tabs';
 			grid-template-columns: auto 1fr auto;
 		}
+	}
+
+	.channel-tabs {
+		grid-area: tabs;
+		min-width: 0;
+		margin-top: var(--space-2);
 	}
 
 	.channel-main {
@@ -517,7 +526,7 @@
 	}
 
 	.avatar {
-		width: 3rem;
+		width: 6rem;
 		flex-shrink: 0;
 	}
 
@@ -563,13 +572,18 @@
 	}
 
 	.channel-actions {
-		display: flex;
+		margin-top: var(--space-2);
 		align-items: stretch;
 		justify-content: center;
-		gap: var(--space-1);
 		flex: 1 1 auto;
 		min-width: 0;
-		margin: 0;
+	}
+
+	.mode-actions {
+		display: grid;
+		grid-auto-flow: column;
+		grid-auto-columns: 1fr;
+		gap: var(--space-1);
 	}
 
 	.channel-secondary-actions {

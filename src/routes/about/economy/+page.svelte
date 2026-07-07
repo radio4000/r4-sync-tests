@@ -1,4 +1,6 @@
 <script lang="ts">
+	/* this route is not yet linked anywhere, it's a draft, it doesnt need clean up */
+
 	import {resolve} from '$app/paths'
 	import {appName} from '$lib/config'
 	import {appState} from '$lib/app-state.svelte'
@@ -326,7 +328,7 @@
 				</div>
 
 				<!-- Three-party split -->
-				<details class="flow-section" open>
+				<details class="flow-section disclosure" open>
 					<summary>Who gets what</summary>
 					<p class="note">
 						From every {avgContribution} € contributed, three groups receive a share.
@@ -415,7 +417,7 @@
 				</details>
 
 				<!-- Breakeven -->
-				<details class="breakeven-section" open>
+				<details class="breakeven-section disclosure" open>
 					<summary>When does it become real?</summary>
 					<p class="note">
 						At {avgContribution} € average — how many contributors until each group reaches a meaningful
@@ -452,7 +454,7 @@
 				</details>
 
 				<!-- Timeline scrubber -->
-				<details class="projections-section" open>
+				<details class="projections-section disclosure" open>
 					<summary>How it grows over time</summary>
 					<p class="note">
 						Drag to explore any point in the future — assuming {monthlyGrowthRatePct}% monthly
@@ -519,7 +521,7 @@
 				</details>
 
 				<!-- Scenario comparison -->
-				<details class="scenarios-section" open>
+				<details class="scenarios-section disclosure" open>
 					<summary>Scale reference</summary>
 					<p class="note">
 						A few fixed examples to anchor the numbers — 10% platform, 20% channels-you-follow
@@ -983,11 +985,8 @@
 		letter-spacing: 0.04em;
 	}
 
-	/* ─── Flow visualization ─── */
-	.flow-section > summary,
-	.breakeven-section > summary,
-	.projections-section > summary,
-	.scenarios-section > summary {
+	/* ─── Flow visualization — disclosure toggle shared by all main-tab sections ─── */
+	.disclosure > summary {
 		font-size: var(--font-5);
 		font-weight: 600;
 		margin: 0 0 var(--space-3);
@@ -999,17 +998,11 @@
 		user-select: none;
 	}
 
-	.flow-section > summary::-webkit-details-marker,
-	.breakeven-section > summary::-webkit-details-marker,
-	.projections-section > summary::-webkit-details-marker,
-	.scenarios-section > summary::-webkit-details-marker {
+	.disclosure > summary::-webkit-details-marker {
 		display: none;
 	}
 
-	.flow-section > summary::after,
-	.breakeven-section > summary::after,
-	.projections-section > summary::after,
-	.scenarios-section > summary::after {
+	.disclosure > summary::after {
 		content: '';
 		width: 0.55rem;
 		height: 0.55rem;
@@ -1022,10 +1015,7 @@
 		margin-bottom: 0.1rem;
 	}
 
-	details.flow-section:not([open]) > summary::after,
-	details.breakeven-section:not([open]) > summary::after,
-	details.projections-section:not([open]) > summary::after,
-	details.scenarios-section:not([open]) > summary::after {
+	details.disclosure:not([open]) > summary::after {
 		transform: rotate(-45deg);
 	}
 
@@ -1584,7 +1574,7 @@
 	}
 
 	/* ─── Responsive ─── */
-	@media (max-width: 860px) {
+	@media (max-width: 1024px) {
 		.stat-grid,
 		.proj-grid {
 			grid-template-columns: 1fr 1fr;

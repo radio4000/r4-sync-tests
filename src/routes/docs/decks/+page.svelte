@@ -1,13 +1,10 @@
 <script>
 	import {appState, addDeck, removeDeck, deckAccent} from '$lib/app-state.svelte'
 	import {toggleDeckCompact, togglePlayerExpanded, toggleVideo, toggleQueuePanel} from '$lib/api'
+	import {sortedDeckIds} from '$lib/deck'
 	import InputRange from '$lib/components/input-range.svelte'
 
-	let deckIds = $derived(
-		Object.keys(appState.decks)
-			.map(Number)
-			.sort((a, b) => a - b)
-	)
+	let deckIds = $derived(sortedDeckIds(appState.decks))
 
 	function setNormal(deck) {
 		deck.compact = false

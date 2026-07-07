@@ -138,6 +138,32 @@ export function viewFromUrl(url: URL): View {
 	return view
 }
 
+/** Parse a `?tags=a,b` param into bare tags. */
+export function parseTagsParam(value: string | null): string[] {
+	return (value ?? '')
+		.split(',')
+		.map((t) => t.trim())
+		.filter(Boolean)
+}
+
+/** Extract a View from a channel-route URL (`/[slug]/tracks?tags=a,b&q=text`).
+ *  Unlike search URLs, `q` here is plain search text (no @/# syntax) and tags
+ *  live in a `tags` param, matched with tagsMode=all (each tag narrows). */
+export function channelViewFromUrl(url: URL, slug?: string): View {
+	const source: ViewSource = {}
+	if (slug) source.channels = [slug]
+	const tags = parseTagsParam(url.searchParams.get('tags'))
+	if (tags.length) {
+		source.tags = tags
+		source.tagsMode = 'all'
+	}
+	const search = url.searchParams.get('q')?.trim()
+	if (search) source.search = search
+	const view: View = {sources: [source]}
+	parseOptions(url.searchParams, view)
+	return view
+}
+
 // --- Utilities ---
 
 /** Human-readable label for a View: all sources, no options. */

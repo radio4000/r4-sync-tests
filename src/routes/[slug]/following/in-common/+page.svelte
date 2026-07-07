@@ -5,6 +5,7 @@
 	import {getChannelCtx} from '$lib/contexts'
 	import {appState} from '$lib/app-state.svelte'
 	import {getChannelConnections, getFollowedChannels} from '$lib/followed-channels.svelte'
+	import {getChannelsViewState, matchesChannelQuery} from '../../channels-view-state.svelte.ts'
 	import {dedupeById, extractMentions} from '$lib/utils'
 	import {findChannelBySlug} from '$lib/search'
 	import ChannelsView from '$lib/components/channels-view.svelte'
@@ -17,20 +18,7 @@
 
 	const FEATURED_LIMIT = 10
 
-	const d = appState.channels_display
-	let display = $state(d === 'grid' || d === 'list' || d === 'map' || d === 'infinite' ? d : 'grid')
-	const o = appState.channels_order
-	let order = $state(
-		o === 'updated' || o === 'created' || o === 'name' || o === 'tracks' ? o : 'updated'
-	)
-	/** @type {'asc' | 'desc'} */
-	let direction = $state(appState.channels_order_direction || 'desc')
-
-	$effect(() => {
-		appState.channels_display = display
-		appState.channels_order = order
-		appState.channels_order_direction = direction
-	})
+	const view = getChannelsViewState()
 
 	const channelCtx = getChannelCtx()
 	let channel = $derived(channelCtx.data)
@@ -43,11 +31,6 @@
 	let loading = $derived(conn.loading || follows.isLoading)
 	let featuredChannels = $state([])
 
-	const matches = (/** @type {any} */ c, /** @type {string} */ query) =>
-		!query ||
-		c.name?.toLowerCase().includes(query.toLowerCase()) ||
-		c.slug?.toLowerCase().includes(query.toLowerCase())
-
 	let featuredMentions = $derived(
 		extractMentions(channel?.description ?? '')
 			.map((slug) => slug.slice(1))
@@ -55,7 +38,7 @@
 	)
 	let followingIdSet = $derived(new Set(conn.ids))
 	let commonFollowing = $derived(follows.followedChannels.filter((c) => followingIdSet.has(c.id)))
-	let filteredChannels = $derived(commonFollowing.filter((c) => matches(c, q)))
+	let filteredChannels = $derived(commonFollowing.filter((c) => matchesChannelQuery(c, q)))
 	let hasFeatured = $derived(featuredChannels.length > 0)
 	let isOtherChannel = $derived(
 		Boolean(
@@ -135,7 +118,11 @@
 		bind:value={q}
 		placeholder={m.following_search_placeholder({count: commonFollowing.length})}
 	/>
-	<ChannelsViewControls bind:display bind:order bind:direction />
+	<ChannelsViewControls
+		bind:display={view.display}
+		bind:order={view.order}
+		bind:direction={view.direction}
+	/>
 {/snippet}
 
 <Seo title={`${m.nav_in_common()} - ${channel?.name || m.channel_page_fallback()}`} plain />
@@ -149,9 +136,9 @@
 	>
 		<ChannelsView
 			channels={filteredChannels}
-			bind:display
-			bind:order
-			bind:direction
+			bind:display={view.display}
+			bind:order={view.order}
+			bind:direction={view.direction}
 			showToolbar={false}
 		/>
 	</Subpage>

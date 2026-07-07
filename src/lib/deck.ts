@@ -52,18 +52,6 @@ export function findLoadedDeck(decks: Record<number, Deck>, slug?: string): Deck
 	return deckValues(decks).find((d) => d.playlist_slug === slug)
 }
 
-/** Find a deck playing a channel, preferring active deck. */
-export function findChannelPlayingDeck(
-	decks: Record<number, Deck>,
-	activeDeckId: number,
-	slug?: string
-): Deck | undefined {
-	if (!slug) return undefined
-	const active = decks[activeDeckId]
-	if (active && active.playlist_slug === slug) return active
-	return deckValues(decks).find((d) => d.playlist_slug === slug && d.is_playing)
-}
-
 /**
  * Find the deck holding a channel slug — the re-tap target for "play this channel".
  * Prefer the active deck, then a deck currently playing the slug, then any loaded deck.
@@ -108,4 +96,36 @@ export function isChannelPlaying(decks: Record<number, Deck>, slug?: string): bo
 export function isListeningToChannel(decks: Record<number, Deck>, channelId?: string): boolean {
 	if (!channelId) return false
 	return deckValues(decks).some((d) => d.listening_to_channel_id === channelId)
+}
+
+/** All deck IDs, sorted ascending. */
+export function sortedDeckIds(decks: Record<number, Deck>): number[] {
+	return Object.keys(decks)
+		.map(Number)
+		.sort((a, b) => a - b)
+}
+
+/** Deck IDs currently listening to a broadcast, sorted ascending. */
+export function sortedListeningDeckIds(decks: Record<number, Deck>): number[] {
+	return deckValues(decks)
+		.filter((d) => Boolean(d.listening_to_channel_id))
+		.map((d) => d.id)
+		.sort((a, b) => a - b)
+}
+
+/**
+ * Whether this deck should show the shared listening-group controls (sync button,
+ * leave-broadcast) — true for non-listening decks, or the first deck in a listening group.
+ */
+export function isGroupControlDeck(
+	deck: Deck | undefined,
+	deckId: number,
+	listeningDeckIds: number[]
+): boolean {
+	return !deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
+}
+
+/** Whether the player UI should render, based on the `?player=false` URL param. */
+export function showPlayerParam(url: URL): boolean {
+	return url.searchParams.get('player') !== 'false'
 }

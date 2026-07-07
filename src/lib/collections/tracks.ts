@@ -12,7 +12,7 @@ import {getErrorMessage} from './utils'
 
 const log = logger.ns('tracks').seal()
 import {searchTracks} from '$lib/search-fts'
-import type {Track, TrackWithMeta} from '$lib/types'
+import type {ChannelRef, Track, TrackWithMeta} from '$lib/types'
 
 /** Parse provider/media_id from a track's URL, filling in any missing fields. */
 export function normalizeTrackMedia<
@@ -89,6 +89,10 @@ function getTrackQueryKey(params: TrackQueryParams): (string | number)[] {
 	return ['tracks']
 }
 
+/**
+ * On-demand track collection, keyed by id. Fetched by slug (channel), id list (keep-alive
+ * pins), tags, or full-text search — see `parseTrackParams`/`getTrackQueryKey`.
+ */
 export const tracksCollection = createCollection<Track, string>({
 	...queryCollectionOptions({
 		queryKey: (opts) => getTrackQueryKey(parseTrackParams(opts)),
@@ -169,9 +173,7 @@ export const tracksCollection = createCollection<Track, string>({
 				const {data, error} = await query
 				if (error) throw error
 				const tracks = ((data || []) as Track[]).map(normalizeTrackMedia)
-				tracksCollection.utils.writeBatch(() => {
-					for (const t of tracks) tracksCollection.utils.writeUpsert(t)
-				})
+				tracksCollection.utils.writeUpsert(tracks)
 				return tracks
 			}
 
@@ -179,9 +181,7 @@ export const tracksCollection = createCollection<Track, string>({
 			if (params.ftsEq) {
 				const {tracks: rawTracks} = await searchTracks(params.ftsEq, {limit: params.limit || 50})
 				const tracks = rawTracks.map(normalizeTrackMedia)
-				tracksCollection.utils.writeBatch(() => {
-					for (const t of tracks) tracksCollection.utils.writeUpsert(t)
-				})
+				tracksCollection.utils.writeUpsert(tracks)
 				return tracks
 			}
 
@@ -310,6 +310,7 @@ async function handleTrackDelete(id: string): Promise<void> {
 	if (response.error) throw new Error(getErrorMessage(response.error))
 }
 
+/** Merge cached enrichment (duration, artwork, etc.) from trackMetaCollection onto a track. */
 export function getTrackWithMeta(track: Track): TrackWithMeta {
 	if (!track.media_id) return track
 	const provider = track.provider ?? null
@@ -320,8 +321,9 @@ export function getTrackWithMeta(track: Track): TrackWithMeta {
 	return {...track, ...meta}
 }
 
+/** Add a track to a channel; returns the new track's id once persisted. */
 export function addTrack(
-	channel: {id: string; slug: string},
+	channel: ChannelRef,
 	input: {url: string; title: string; description?: string; discogs_url?: string}
 ) {
 	const parsed = parseUrl(input.url)
@@ -352,11 +354,8 @@ export function addTrack(
 		.isPersisted.promise.then(() => id)
 }
 
-export function updateTrack(
-	channel: {id: string; slug: string},
-	id: string,
-	changes: Record<string, unknown>
-) {
+/** Update a track's fields, re-deriving provider/media_id if the url changed. */
+export function updateTrack(channel: ChannelRef, id: string, changes: Record<string, unknown>) {
 	const parsed = typeof changes.url === 'string' ? parseUrl(changes.url) : null
 	return tracksCollection
 		.update(id, {metadata: {slug: channel.slug}}, (draft) => {
@@ -369,12 +368,13 @@ export function updateTrack(
 		.isPersisted.promise.then(() => {})
 }
 
-export function deleteTrack(channel: {id: string; slug: string}, id: string) {
+export function deleteTrack(channel: ChannelRef, id: string) {
 	return tracksCollection
 		.delete(id, {metadata: {slug: channel.slug}})
 		.isPersisted.promise.then(() => {})
 }
 
+/** Apply the same field changes to multiple tracks (e.g. bulk-tagging in batch-edit). */
 export function batchUpdateTracksUniform(
 	channel: Channel,
 	ids: string[],
@@ -394,6 +394,7 @@ export function batchUpdateTracksUniform(
 		.isPersisted.promise.then(() => {})
 }
 
+/** Apply per-track field changes in one transaction (each id gets its own `changes`). */
 export function batchUpdateTracksIndividual(
 	channel: Channel,
 	updates: Array<{id: string; changes: Record<string, unknown>}>
@@ -424,6 +425,7 @@ export function batchDeleteTracks(channel: Channel, ids: string[]) {
 		.isPersisted.promise.then(() => {})
 }
 
+/** Compare cached tracks for `slug` against remote (count + latest updated_at); invalidates and returns whether stale. */
 export async function checkTracksFreshness(slug: string): Promise<boolean> {
 	return queryClient.fetchQuery({
 		queryKey: ['tracks-freshness', slug],
@@ -507,9 +509,7 @@ export async function fetchRecentTracksForSlugs(
 			.order('created_at', {ascending: false})
 		if (error) throw error
 		const tracks = ((data || []) as Track[]).map(normalizeTrackMedia)
-		tracksCollection.utils.writeBatch(() => {
-			for (const t of tracks) tracksCollection.utils.writeUpsert(t)
-		})
+		tracksCollection.utils.writeUpsert(tracks)
 		all.push(...tracks)
 	}
 	return all.toSorted((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
@@ -534,12 +534,11 @@ export async function fetchRecentTracks({
 		.range(offset, offset + limit - 1)
 	if (error) throw error
 	const tracks = ((data || []) as Track[]).map(normalizeTrackMedia)
-	tracksCollection.utils.writeBatch(() => {
-		for (const t of tracks) tracksCollection.utils.writeUpsert(t)
-	})
+	tracksCollection.utils.writeUpsert(tracks)
 	return tracks
 }
 
+/** Load a channel's tracks into the collection if fewer than `track_count` are cached. */
 export async function ensureTracksLoaded(slug: string): Promise<void> {
 	const existing = [...tracksCollection.state.values()].filter((t) => t?.slug === slug)
 	if (existing.length) {
@@ -558,12 +557,8 @@ export async function ensureTracksLoaded(slug: string): Promise<void> {
 		tracksCollection.startSyncImmediate()
 	}
 
-	tracksCollection.utils.writeBatch(() => {
-		log.debug('ensureTracksLoaded', slug, data.length)
-		for (const track of data) {
-			tracksCollection.utils.writeUpsert(track)
-		}
-	})
+	log.debug('ensureTracksLoaded', slug, data.length)
+	tracksCollection.utils.writeUpsert(data)
 }
 
 /**

@@ -96,6 +96,76 @@
 		}
 	],
 
+	"src/lib/types.ts": [
+		{
+			"name": "ChannelRef",
+			"desc": "Pick<Channel, 'id' | 'slug'> — minimal channel handle for play/track APIs."
+		}
+	],
+
+	"src/lib/deck.ts": [
+		{
+			"name": "deckTitle(deck, title)",
+			"desc": "Deck title: use the given title, or derive one from the view/slug."
+		},
+		{
+			"name": "deckValues(decks)",
+			"desc": "All decks as an array (from the Record)."
+		},
+		{
+			"name": "findAutoDecksForChannel(decks, slug)",
+			"desc": "Auto-radio decks whose channel matches a slug (via view source or playlist_slug)."
+		},
+		{
+			"name": "pickAutoResyncDeck(decks, activeDeckId, slug, autoDecks)",
+			"desc": "Pick which auto-radio deck to resync: prefer the active deck if it matches, else first auto deck."
+		},
+		{
+			"name": "findPlayingDeck(decks, slug)",
+			"desc": "Find the deck playing a specific channel slug (is_playing)."
+		},
+		{
+			"name": "findLoadedDeck(decks, slug)",
+			"desc": "Find any deck loaded with a specific channel slug (not necessarily playing)."
+		},
+		{
+			"name": "findChannelDeck(decks, activeDeckId, slug)",
+			"desc": "Find the deck holding a channel slug — the re-tap target for \"play this channel\". Prefers active deck, then a deck playing the slug, then any loaded deck."
+		},
+		{
+			"name": "findListeningDeck(decks, activeDeckId, channelId)",
+			"desc": "Find a deck listening to a channel (by channel ID), preferring active deck."
+		},
+		{
+			"name": "isBroadcasting(decks, channelId)",
+			"desc": "Check if any deck is broadcasting for a given channel ID."
+		},
+		{
+			"name": "isChannelPlaying(decks, slug)",
+			"desc": "Check if any deck is playing a given channel slug."
+		},
+		{
+			"name": "isListeningToChannel(decks, channelId)",
+			"desc": "Check if any deck is listening to a given channel ID."
+		},
+		{
+			"name": "sortedDeckIds(decks)",
+			"desc": "All deck IDs, sorted ascending."
+		},
+		{
+			"name": "sortedListeningDeckIds(decks)",
+			"desc": "Deck IDs currently listening to a broadcast, sorted ascending."
+		},
+		{
+			"name": "isGroupControlDeck(deck, deckId, listeningDeckIds)",
+			"desc": "Whether this deck shows the shared listening-group controls (sync, leave-broadcast)."
+		},
+		{
+			"name": "showPlayerParam(url)",
+			"desc": "Whether the player UI should render, based on the ?player=false URL param."
+		}
+	],
+
 	"src/lib/collections": [
 		{"name": "queryClient", "desc": "TanStack Query client."},
 
@@ -222,14 +292,21 @@
 			"desc": "Play a channel, optionally starting from a specific track ID."
 		},
 		{"name": "playTrackInNewDeck(trackId, slug)", "desc": "Play a track in a newly created deck."},
-		{
-			"name": "playChannelInNewDeck(channel, trackId?)",
-			"desc": "Play a channel in a newly created deck."
-		},
 		{"name": "shufflePlayChannel(deckId, {id, slug})", "desc": "Random start plus shuffle."},
 		{"name": "togglePlayPause(deckId)", "desc": "Toggle play/pause for a deck."},
-		{"name": "playFromHere(deckId, trackId)", "desc": "Play from track to end."},
+		{
+			"name": "playChannelAuto(channel)",
+			"desc": "Auto-radio if the channel has duration coverage, else plain play. Always targets the active deck."
+		},
+		{
+			"name": "toggleChannelPlay(channel, trackId?)",
+			"desc": "Primary tap-play for a channel, keyed by channel not deck. Focuses/resyncs an existing deck holding the channel, else starts fresh via playChannelAuto."
+		},
 
+		{
+			"name": "ensureActiveDeck()",
+			"desc": "Return the active deck, creating a compact one when all decks are closed."
+		},
 		{"name": "setPlaylist(deckId, trackIds, options?)", "desc": "Set queue to track IDs."},
 		{
 			"name": "loadDeckView(deckId, view, trackIds?)",
@@ -237,7 +314,6 @@
 		},
 		{"name": "addToPlaylist(deckId, trackIds)", "desc": "Append track IDs to queue."},
 		{"name": "playNext(deckId, trackIds)", "desc": "Insert after current track."},
-		{"name": "removeFromQueue(deckId, trackId)", "desc": "Remove track from queue."},
 		{"name": "clearQueue(deckId)", "desc": "Keep current track, clear the rest."},
 		{"name": "clearAllQueue(deckId)", "desc": "Clear entire queue including current track."},
 		{
@@ -248,8 +324,6 @@
 			"name": "applyRemoteState(deckId, state)",
 			"desc": "Merge partial deck state from broadcast sync."
 		},
-		{"name": "shuffleRemaining(deckId)", "desc": "Shuffle remaining tracks."},
-		{"name": "rotateQueue(deckId)", "desc": "Move played to end."},
 		{
 			"name": "toggleShuffle(deckId)",
 			"desc": "Toggle shuffle mode (switch between original/shuffled order)."
@@ -268,10 +342,17 @@
 			"name": "joinAutoRadio(deckId, tracks, view?)",
 			"desc": "Start deterministic live radio. View differentiates shuffles and sets label."
 		},
-		{"name": "leaveAutoRadio(deckId)", "desc": "Stop auto-radio on a deck."},
 		{
 			"name": "resyncAutoRadio(deckId)",
 			"desc": "Resync drifted deck to current auto-radio position."
+		},
+		{
+			"name": "leaveAutoRadio(deckId)",
+			"desc": "Exit auto-radio, keep queue and current track playing."
+		},
+		{
+			"name": "rejoinAutoRadio(deckId)",
+			"desc": "Join auto-radio for the deck's current channel — the way back after leaveAutoRadio. Reuses the deck's view if same channel."
 		},
 		{
 			"name": "toggleChannelAutoRadio(slug, tracks?)",
@@ -280,8 +361,15 @@
 
 		{"name": "toggleTheme()", "desc": "Light/dark mode."},
 		{"name": "toggleQueuePanel(deckId)", "desc": "Toggle queue sidebar for a deck."},
-		{"name": "toggleDeckCompact(deckId)", "desc": "Compact/expand a deck."},
+		{
+			"name": "toggleDeckCompact(deckId)",
+			"desc": "Compact/expand a deck. On mobile, leaving compact goes fullscreen via expandDeck."
+		},
 		{"name": "togglePlayerExpanded(deckId)", "desc": "Fullscreen a deck."},
+		{
+			"name": "expandDeck(deckId)",
+			"desc": "Expand a deck fullscreen; other expanded decks return to compact."
+		},
 		{"name": "openSearch()", "desc": "Focus search input."},
 
 		{"name": "resetLocalData()", "desc": "Clear localStorage and IndexedDB."}
@@ -295,14 +383,6 @@
 			"name": "queueInsertManyAfter(queue, currentId, insertIds)",
 			"desc": "Insert many after current ID."
 		},
-		{"name": "queueRemove(queue, id)", "desc": "Remove ID."},
-
-		{
-			"name": "queueShuffleKeepCurrent(queue, currentId)",
-			"desc": "Shuffle but keep current first."
-		},
-		{"name": "queueRotate(queue, currentId)", "desc": "Rotate queue from current."},
-		{"name": "queueUnique(queue)", "desc": "Remove duplicates."},
 		{"name": "getActiveQueue(deck)", "desc": "Original or shuffled queue based on deck.shuffle."},
 		{"name": "canPlay(queue, trackId)", "desc": "True when trackId is in queue."},
 		{"name": "canPrev(queue, trackId)", "desc": "True when a previous track exists."},
@@ -332,12 +412,12 @@
 			"desc": "Min fraction of tracks with duration (0.5)."
 		},
 		{
-			"name": "playbackState(tracks, totalDuration, rotationStartUnix, nowMs)",
-			"desc": "Compute track + offset at a given moment."
+			"name": "AUTO_RADIO_SYNC_GRACE_MS",
+			"desc": "Drift detection stays quiet this long after join/resync while the seek lands (5s)."
 		},
 		{
-			"name": "AutoRadio",
-			"desc": "Stateful wrapper: setTracks + tick. Re-shuffles on week rollover."
+			"name": "playbackState(tracks, totalDuration, rotationStartUnix, nowMs)",
+			"desc": "Compute track + offset at a given moment."
 		}
 	],
 
@@ -400,6 +480,14 @@
 		{"name": "serializeView(view)", "desc": "Serialize View to compact string (no r4:// prefix)."},
 		{"name": "viewFromUrl(url)", "desc": "Extract a View from a URL (?q= param + option params)."},
 		{
+			"name": "channelViewFromUrl(url, slug?)",
+			"desc": "Extract a View from a channel-route URL: ?q= is plain search text, ?tags=a,b are tags with tagsMode=all."
+		},
+		{
+			"name": "parseTagsParam(value)",
+			"desc": "Parse a ?tags=a,b param value into bare tags (trimmed, empties dropped)."
+		},
+		{
 			"name": "viewToUrl(basePath, view)",
 			"desc": "Build a URL string from a View and base path (e.g. '/search')."
 		},
@@ -428,12 +516,19 @@
 			"desc": "Return auto-radio decks whose stored view matches the given view identity."
 		},
 		{
-			"name": "processViewTracks(tracks, view)",
-			"desc": "Post-process tracks: tag post-filter, fuzzy search, sort/shuffle."
+			"name": "processViewTracks(tracks, view, options?)",
+			"desc": "Post-process tracks: tag post-filter, fuzzy search, sort/shuffle. options.inputOrder='created-desc' skips the default re-sort when input is already created_at desc."
 		},
 		{
 			"name": "queryView(getView)",
 			"desc": "Reactive view query (component init). Returns {tracks, channels, loading, strategy} getters."
+		}
+	],
+
+	"src/lib/collections/utils.ts": [
+		{
+			"name": "createLocalCollection(config)",
+			"desc": "Shared setup for collections that never touch the server (captureEvents, spamDecisions, trackMeta, views)."
 		}
 	],
 
@@ -462,12 +557,18 @@
 			"name": "getBroadcastingChannelId()",
 			"desc": "Get the channel ID being broadcast from any deck."
 		},
-		{"name": "startBroadcast(channelId, trackId?)", "desc": "Low-level: create the remote broadcast record for a track."},
+		{
+			"name": "startBroadcast(channelId, trackId?)",
+			"desc": "Low-level: create the remote broadcast record for a track."
+		},
 		{
 			"name": "startChannelBroadcast(channel, {deckId?, tid?})",
 			"desc": "Shared go-live path for all broadcast buttons: broadcasts what's playing, else auto-plays the channel (from tid) then goes live. Returns {ok, reason?}."
 		},
-		{"name": "stopBroadcast(channelId)", "desc": "Stop broadcasting; also clears deck broadcast flags."},
+		{
+			"name": "stopBroadcast(channelId)",
+			"desc": "Stop broadcasting; also clears deck broadcast flags."
+		},
 		{"name": "joinBroadcast(deckId, channelId)", "desc": "Listen to broadcast on a deck."},
 		{
 			"name": "resyncBroadcastDeck(deckId)",
@@ -476,6 +577,17 @@
 		{"name": "leaveBroadcast(deckId)", "desc": "Stop listening on a deck."},
 		{"name": "upsertRemoteBroadcast(channelId)", "desc": "Upsert broadcast record."},
 		{"name": "validateListeningState()", "desc": "Verify listening state."}
+	],
+
+	"src/lib/wake-lock.js": [
+		{
+			"name": "requestPlaybackWakeLock(deckId)",
+			"desc": "Hold the screen wake lock while deckId is playing (ref-counted across decks)."
+		},
+		{
+			"name": "releasePlaybackWakeLock(deckId)",
+			"desc": "Release deckId's hold on the wake lock."
+		}
 	],
 
 	"src/lib/metadata/discogs.js": [
@@ -508,23 +620,15 @@
 		},
 		{"name": "toIsoDateTime(date)", "desc": "Convert date input to ISO datetime string."},
 		{"name": "isValidDateInput(date)", "desc": "True when Date/string/number is a valid date."},
-		{"name": "dateYear(dateString)", "desc": "Just the year."},
-		{
-			"name": "dateProvenance(dateString)",
-			"desc": "Smart: 'this week'/'this month'/'recent'/year."
-		},
 		{"name": "relativeDate(dateString)", "desc": "Returns 'X days ago'."},
 		{"name": "relativeDateDetailed(dateString)", "desc": "Days/months/years ago."},
-		{"name": "relativeDateSolar(dateString)", "desc": "Cosmic time: sun orbits + earth rotations."},
-		{"name": "relativeTime(dateInput)", "desc": "Recent: relative. Older: date+time."},
 		{"name": "getDateRange(items)", "desc": "Min/max created_at from item list."},
 		{"name": "generateYearPeriods(start, end)", "desc": "Year buckets for date grouping."},
 		{
 			"name": "generateQuarterPeriods(start, end, quarterNames?)",
 			"desc": "Quarter buckets for date grouping."
 		},
-		{"name": "generateMonthPeriods(start, end)", "desc": "Month buckets for date grouping."},
-		{"name": "filterByDateRange(items, period)", "desc": "Filter items to a date period."}
+		{"name": "generateMonthPeriods(start, end)", "desc": "Month buckets for date grouping."}
 	],
 
 	"src/lib/utils.ts": [
@@ -546,14 +650,12 @@
 		{"name": "trimWithEllipsis(text, maxLength?)", "desc": "Truncate with ellipsis."},
 		{"name": "shuffleArray(arr, rand?)", "desc": "Fisher-Yates shuffle."},
 		{"name": "seededRandom(seed)", "desc": "Deterministic PRNG from string seed."},
-		{
-			"name": "generateFrequency(name, slug, min, max)",
-			"desc": "Deterministic frequency from string."
-		},
-		{"name": "timeAgo(dateString)", "desc": "Relative time: 'Xm ago', 'Xh Ym ago'."},
 		{"name": "channelAvatarUrl(id, size?, format?)", "desc": "Cloudinary URL for channel avatar."},
-		{"name": "trackImageUrl(track, size?, format?)", "desc": "Cloudinary URL for track artwork."},
-		{"name": "pickRandomN(n)", "desc": "Pick n random items from array."},
+		{"name": "trackImageUrl(mediaId, size?)", "desc": "YouTube thumbnail URL for a track."},
+		{
+			"name": "paginationFromUrl(url, defaultPer?)",
+			"desc": "Parse page/per search params, clamped to positive ints."
+		},
 		{
 			"name": "countStrings(strings)",
 			"desc": "Count occurrences → {value, count}[], sorted by frequency then alpha."
@@ -566,18 +668,28 @@
 			"name": "getTopChannelSlugs(channels, limit)",
 			"desc": "Top channel slugs sorted by track count + recency."
 		},
-		{
-			"name": "getTopTagValues(tracks, limit)",
-			"desc": "Top tag value strings from a collection of tracks."
-		},
 		{"name": "featuredScore(channel)", "desc": "Score channel for featured/homepage ranking."},
 		{"name": "formatDay(iso)", "desc": "YYYY-MM-DD from ISO datetime."},
 		{"name": "groupByDay(items)", "desc": "Group items by created_at day."},
 		{"name": "dedupeById(rows)", "desc": "Keep first row per id."},
-		{"name": "buildTagGraph(tracks, options?)", "desc": "Co-occurrence graph of tags."},
 		{
 			"name": "fuzzySearch(query, items, keys, {limit?, threshold?})",
 			"desc": "Generic local fuzzy search."
+		},
+		{
+			"name": "getPlayCountThreshold(durationSec?)",
+			"desc": "Seconds of listening before a play counts (Last.fm scrobble rule)."
+		}
+	],
+
+	"src/lib/track-add.ts": [
+		{
+			"name": "trackAddData(track)",
+			"desc": "Prefill data for adding an existing track to the user's radio."
+		},
+		{
+			"name": "trackAddSearchParams(track)",
+			"desc": "URLSearchParams for /add prefill links, skipping empty fields."
 		}
 	],
 
@@ -615,6 +727,10 @@
 		{"name": "date-formal.svelte", "desc": "Localized formal date-time display."},
 		{"name": "Icon", "desc": "Iconify icon wrapper."},
 		{"name": "LinkEntities", "desc": "Parses #tags @mentions into search links."},
+		{
+			"name": "FilterChips",
+			"desc": "Removable chips for the active ?tags= filter selection (+ optional search/matching chips)."
+		},
 
 		{"name": "ButtonPlay", "desc": "Channel play button."},
 		{"name": "ButtonFollow", "desc": "Follow/unfollow button."},
@@ -624,10 +740,50 @@
 			"desc": "Shared title/slug/tags header for deck + channel layouts (auto + broadcast sync controls)."
 		},
 		{"name": "Deck", "desc": "Full deck UI: player, queue panel, broadcast/auto-radio controls."},
-		{"name": "SearchInput", "desc": "Debounced search input with @mention autocomplete."},
+		{"name": "SearchInput", "desc": "Debounced search input with a clear button."},
 		{"name": "ViewsBar", "desc": "Saved/pinned views navigation bar."},
 		{"name": "KeyboardShortcuts", "desc": "Initializes global keyboard handling."},
-		{"name": "InternetIndicator", "desc": "Online/offline status indicator."}
+		{"name": "InternetIndicator", "desc": "Online/offline status indicator."},
+
+		{
+			"name": "section-menu.svelte",
+			"desc": "Generic per-page tab strip (nav of href/label/active items)."
+		},
+		{
+			"name": "channelSectionMenuItems({slug, trackCount?, routeId?})",
+			"desc": "Module export of section-menu.svelte. Items for the channel page nav (tracks/tags/mentions/following/followers)."
+		},
+		{
+			"name": "track-meta-shell.svelte",
+			"desc": "Shell for track meta panels: raw-JSON toggle over a MetaDefinitionList."
+		}
+	],
+
+	"src/lib/components (map)": [
+		{
+			"name": "buildChannelsGeoJSON(channels, activity, palette)",
+			"desc": "Channels as a GeoJSON FeatureCollection for map markers."
+		},
+		{
+			"name": "getMarkerStyle(channel, activity, palette)",
+			"desc": "Marker color/size for a channel's live state."
+		},
+		{"name": "buildMapStyle(name)", "desc": "MapLibre style object for a base tile name."},
+		{"name": "BASE_TILE_IDS", "desc": "Available base tile style ids: carto, topo, satellite."},
+		{"name": "swapBaseTiles(map, name)", "desc": "Swap the map's base tile layer."},
+		{
+			"name": "setupOverlays(map, {showGraticules, showDayNight})",
+			"desc": "Add graticule/day-night overlay layers to the map."
+		},
+		{"name": "updateNightLayer(map)", "desc": "Refresh the day/night terminator overlay."},
+		{
+			"name": "resolveCssColor(variableName, fallback?)",
+			"desc": "Read a CSS custom property as a color string."
+		},
+		{
+			"name": "resolveCssColorFloat(variableName, fallback?)",
+			"desc": "Read a CSS custom property as [r,g,b] floats (for map paint expressions)."
+		}
 	],
 
 	"src/lib/broadcast-utils.js": [
@@ -659,7 +815,7 @@
 		{"name": "DeckDisplay", "desc": "Reactive track/channel display state for a deck."},
 		{
 			"name": "createDeckDisplay(deckId)",
-			"desc": "Build DeckDisplay with track/broadcast/header fallbacks."
+			"desc": "Build DeckDisplay with track/broadcast/header fallbacks. Includes autoRadioAvailable (channel has auto-radio coverage) gating the join button in deck transports, and presenceCount (listener count for the deck's current listen/broadcast/auto-radio mode)."
 		}
 	],
 
@@ -682,6 +838,10 @@
 		{
 			"name": "initializeKeyboardShortcuts()",
 			"desc": "Attach global keydown listener from appState.shortcuts."
+		},
+		{
+			"name": "shortcutHint(name)",
+			"desc": "Rendered <kbd> hint for an action's current key, for tooltips."
 		}
 	],
 
@@ -712,6 +872,25 @@
 		{
 			"name": "buildChannelInfoCanvas({mediaItem, style, activeId, colors})",
 			"desc": "Render the 2D info-card texture used by 3D channel cards."
+		}
+	],
+
+	"src/routes/[slug]": [
+		{
+			"name": "getChannelsViewState()",
+			"desc": "Display/order/direction state for a channels list (followers, following, ...), persisted to appState. Shared by every [slug]/followers* and [slug]/following* page."
+		},
+		{
+			"name": "matchesChannelQuery(c, q)",
+			"desc": "Case-insensitive match against a channel's name or slug."
+		},
+		{
+			"name": "getMatchingTracksQuery(currentSlug)",
+			"desc": "Tracks of the channel named by the ?matching= URL param — the \"compare against @other-channel\" feature on tracks/tags pages."
+		},
+		{
+			"name": "getTagFilter()",
+			"desc": "URL-backed tag selection (?tags=a,b) shared by the channel page and its tracks subpage. Returns {selectedTags, toggleTag, clearTags}."
 		}
 	],
 

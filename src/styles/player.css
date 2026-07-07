@@ -36,38 +36,22 @@ media-control-bar {
 }
 
 media-time-display {
+	--media-control-background: none;
 	user-select: none;
 }
 
-media-time-display,
 media-time-range {
 	--media-control-background: none;
-}
-
-media-time-range {
 	/* Keep elapsed/played progress in active theme color. */
 	--media-range-bar-color: var(--accent-9);
 	--media-range-thumb-background: var(--accent-9);
 }
 
 .player {
-	h2 a,
-	h3 a {
+	:is(h2, h3) a {
 		text-decoration: none;
 	}
 	p {
 		margin: 0;
-	}
-
-	@media (min-width: 768px) {
-		media-volume-range {
-			display: initial;
-			margin-left: var(--space-1);
-			margin-right: var(--space-1);
-		}
-	}
-
-	media-volume-range {
-		display: none;
 	}
 }

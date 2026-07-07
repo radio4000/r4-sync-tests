@@ -1,3 +1,9 @@
+<!--
+The one MapLibre wrapper (init/resize/theme/URL sync); map-picker and map-channels
+compose it via props. Non-reactive map logic lives in map-markers.js, map-tile-styles.js,
+map-overlays.js, map-color.js - extend those rather than inlining here.
+map-broadcast-layer.js is an independent WebGL layer, coupled only via map-color.js.
+-->
 <script>
 	import 'maplibre-gl/dist/maplibre-gl.css'
 	import maplibregl from 'maplibre-gl'
@@ -5,7 +11,7 @@
 	import {resolve} from '$app/paths'
 	import {page} from '$app/state'
 	import {SvelteURLSearchParams} from 'svelte/reactivity'
-	/** @import { StyleSpecification } from 'maplibre-gl' */
+	import {buildCartoStyle, isDarkTheme} from './map-tile-styles.js'
 
 	let {
 		latitude = null,
@@ -16,33 +22,6 @@
 		syncUrl = false,
 		projection = 'mercator'
 	} = $props()
-
-	const TILE_URLS = {
-		light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-		dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-	}
-
-	function isDarkTheme() {
-		return document.documentElement.classList.contains('dark')
-	}
-
-	/** @returns {StyleSpecification} */
-	function buildStyle(dark = false) {
-		const url = dark ? TILE_URLS.dark : TILE_URLS.light
-		return {
-			version: 8,
-			sources: {
-				carto: {
-					type: 'raster',
-					tiles: [url.replace('{s}', 'a'), url.replace('{s}', 'b'), url.replace('{s}', 'c')],
-					tileSize: 256,
-					attribution:
-						'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-				}
-			},
-			layers: [{id: 'carto', type: 'raster', source: 'carto'}]
-		}
-	}
 
 	function setup(node) {
 		let disposed = false
@@ -62,7 +41,7 @@
 
 			map = new maplibregl.Map({
 				container: node,
-				style: buildStyle(isDarkTheme()),
+				style: buildCartoStyle(isDarkTheme()),
 				center: [lng, lat],
 				zoom: z,
 				doubleClickZoom: false,
@@ -120,7 +99,7 @@
 
 			themeObserver = new MutationObserver(() => {
 				if (disposed || !map) return
-				const nextStyle = buildStyle(isDarkTheme())
+				const nextStyle = buildCartoStyle(isDarkTheme())
 				map.setStyle(nextStyle)
 				// setStyle wipes all user-added sources/layers; re-notify once the new style is loaded
 				map.once('styledata', () => {

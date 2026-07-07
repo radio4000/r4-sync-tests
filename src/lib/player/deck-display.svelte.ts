@@ -12,6 +12,9 @@ import {channelsCollection} from '$lib/collections/channels'
 import {broadcastsCollection} from '$lib/collections/broadcasts'
 import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 import {unpackEphemeralTrack} from '$lib/broadcast-utils'
+import {hasAutoRadioCoverage} from '$lib/player/auto-radio'
+import {channelPresence} from '$lib/presence.svelte'
+import {viewLabel} from '$lib/views'
 import type {Channel, Track, BroadcastDeckState} from '$lib/types'
 
 export interface DeckDisplay {
@@ -27,6 +30,8 @@ export interface DeckDisplay {
 	readonly secondaryHeaderChannel: Channel | undefined
 	readonly listenSlug: string | undefined
 	readonly broadcastSlug: string | undefined
+	readonly autoRadioAvailable: boolean
+	readonly presenceCount: number
 }
 
 export function createDeckDisplay(deckId: number): DeckDisplay {
@@ -87,6 +92,33 @@ export function createDeckDisplay(deckId: number): DeckDisplay {
 		deck?.broadcasting_channel_id
 			? (broadcastChannelQuery.data?.[0]?.slug as string | undefined)
 			: undefined
+	)
+
+	// URI identifying the auto-radio view this deck is playing, used to key
+	// per-view presence counts (a channel can have multiple auto-radio views live).
+	const autoUri = $derived(
+		deck?.auto_radio && deck.playlist_slug
+			? viewLabel(deck.view ?? {sources: [{channels: [deck.playlist_slug]}]}) ||
+					`@${deck.playlist_slug}`
+			: undefined
+	)
+	const presenceCount = $derived(
+		deck?.listening_to_channel_id && listenSlug
+			? (channelPresence[listenSlug]?.broadcast ?? 0)
+			: deck?.broadcasting_channel_id && broadcastSlug
+				? (channelPresence[broadcastSlug]?.broadcast ?? 0)
+				: autoUri && deck?.playlist_slug
+					? (channelPresence[deck.playlist_slug]?.byUri?.[autoUri] ?? 0)
+					: 0
+	)
+
+	// Whether the deck's current channel has enough duration data for auto-radio.
+	// Gates the join button in the deck transports (compact bar + player).
+	const channelTracksQuery = useLiveQuery((q) =>
+		q.from({t: tracksCollection}).where(({t}) => eq(t.slug, deck?.playlist_slug ?? ''))
+	)
+	const autoRadioAvailable = $derived(
+		Boolean(deck?.playlist_slug) && hasAutoRadioCoverage((channelTracksQuery.data ?? []) as Track[])
 	)
 
 	let lastTrack = $state<Track | undefined>(undefined)
@@ -154,6 +186,12 @@ export function createDeckDisplay(deckId: number): DeckDisplay {
 		},
 		get broadcastSlug() {
 			return broadcastSlug
+		},
+		get autoRadioAvailable() {
+			return autoRadioAvailable
+		},
+		get presenceCount() {
+			return presenceCount
 		}
 	}
 }

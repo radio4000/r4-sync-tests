@@ -8,28 +8,31 @@
 	import {
 		next,
 		play,
+		pause,
 		previous,
 		togglePlayPause,
 		toggleDeckCompact,
-		toggleQueuePanel,
-		toggleVideo,
 		getUserInitiatedPlay,
 		setUserInitiatedPlay,
 		resyncAutoRadio,
+		leaveAutoRadio,
+		rejoinAutoRadio,
 		recordSeekPosition,
-		clearUserInitiatedPlay,
 		toggleShuffle
 	} from '$lib/api'
+	import {requestPlaybackWakeLock, releasePlaybackWakeLock} from '$lib/wake-lock'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
-	import {playbackState, toAutoTracks} from '$lib/player/auto-radio'
-	import {leaveBroadcast, getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast.js'
+	import {sortedListeningDeckIds, sortedDeckIds, isGroupControlDeck} from '$lib/deck'
+	import {playbackState, toAutoTracks, AUTO_RADIO_SYNC_GRACE_MS} from '$lib/player/auto-radio'
+	import {getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast.js'
 	import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/broadcast-utils'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
-	import {appState, canEditChannel, removeDeck, deckAccent} from '$lib/app-state.svelte'
+	import {appState, canEditChannel, deckAccent} from '$lib/app-state.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
+	import DeckMenu from '$lib/components/deck-menu.svelte'
 	import SpeedControl from '$lib/components/speed-control.svelte'
 	import VolumeControl from '$lib/components/volume-control.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
@@ -47,10 +50,8 @@
 		trackAutoRadioPresence,
 		untrackAutoRadioPresence,
 		trackBroadcastPresence,
-		untrackBroadcastPresence,
-		channelPresence
+		untrackBroadcastPresence
 	} from '$lib/presence.svelte'
-	import {viewLabel} from '$lib/views'
 	/** @typedef {import('$lib/types').Track} Track */
 	/** @typedef {import('$lib/types').Channel} Channel */
 
@@ -62,21 +63,10 @@
 	let deck = $derived(appState.decks[deckId])
 	let isActiveDeck = $derived(appState.active_deck_id === deckId)
 	let hasMultipleDecks = $derived(Object.keys(appState.decks).length > 1)
-	let listeningDeckIds = $derived(
-		Object.keys(appState.decks)
-			.map(Number)
-			.sort((a, b) => a - b)
-			.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
-	)
-	let isListeningGroupControlDeck = $derived(
-		!deck?.listening_to_channel_id || listeningDeckIds[0] === deckId
-	)
+	let listeningDeckIds = $derived(sortedListeningDeckIds(appState.decks))
+	let isListeningGroupControlDeck = $derived(isGroupControlDeck(deck, deckId, listeningDeckIds))
 	let hasListeningMultiDeck = $derived(listeningDeckIds.length > 1)
-	let listeningVideoMixActive = $derived.by(() => {
-		if (!hasListeningMultiDeck) return false
-		return listeningDeckIds.some((id) => Boolean(appState.decks[id]?.video_mix))
-	})
-	let deckIds = $derived(Object.keys(appState.decks).map(Number))
+	let deckIds = $derived(sortedDeckIds(appState.decks))
 	let accentColor = $derived(deckAccent(deckIds, deckId))
 
 	// Both media player elements
@@ -124,19 +114,6 @@
 	const syncTotalDuration = $derived(syncAutoTracks.reduce((sum, t) => sum + t.duration, 0))
 
 	let deckMenu = $state(/** @type {{close: () => void} | undefined} */ (undefined))
-	let isFullscreen = $state(false)
-	$effect(() => {
-		const handler = () => (isFullscreen = !!document.fullscreenElement)
-		document.addEventListener('fullscreenchange', handler)
-		return () => document.removeEventListener('fullscreenchange', handler)
-	})
-	function toggleFullscreen() {
-		if (document.fullscreenElement) {
-			document.exitFullscreen()
-		} else {
-			deckEl?.requestFullscreen()
-		}
-	}
 
 	let didPlay = $state(false)
 	let userHasPlayed = $state(false)
@@ -169,21 +146,7 @@
 		}))
 	})
 
-	const autoUri = $derived(
-		deck?.auto_radio && deck.playlist_slug
-			? viewLabel(deck.view ?? {sources: [{channels: [deck.playlist_slug]}]}) ||
-					`@${deck.playlist_slug}`
-			: undefined
-	)
-	const headerPresenceCount = $derived(
-		deck?.listening_to_channel_id && listenSlug
-			? (channelPresence[listenSlug]?.broadcast ?? 0)
-			: deck?.broadcasting_channel_id && broadcastSlug
-				? (channelPresence[broadcastSlug]?.broadcast ?? 0)
-				: autoUri && deck?.playlist_slug
-					? (channelPresence[deck.playlist_slug]?.byUri?.[autoUri] ?? 0)
-					: 0
-	)
+	const headerPresenceCount = $derived(display.presenceCount)
 
 	// Track previous track ID to detect changes for autoplay
 	let prevTrackId = $state(/** @type {string|undefined} */ (undefined))
@@ -301,16 +264,6 @@
 		recordSeekPosition(deckId, mediaElement.currentTime ?? 0)
 	}
 
-	function toggleListeningVideoMix() {
-		const next = !listeningVideoMixActive
-		for (const id of listeningDeckIds) {
-			const listeningDeck = appState.decks[id]
-			if (!listeningDeck?.listening_to_channel_id) continue
-			listeningDeck.video_mix = next
-			if (next) listeningDeck.hide_video_player = false
-		}
-	}
-
 	$effect(() => {
 		if (deck?.video_mix && !isListeningToBroadcast) deck.video_mix = false
 		if (hasListeningMultiDeck) return
@@ -349,9 +302,16 @@
 		if (!trackId) return
 		const el = mediaElement
 		if (!el) return
+		let prevTime = el.currentTime ?? 0
 		const onTime = () => {
 			if (!deck || deck.playlist_track !== trackId) return
-			deck.media_current_time = el.currentTime ?? 0
+			const currentTime = el.currentTime ?? 0
+			const delta = currentTime - prevTime
+			if (delta > 0 && delta < 3) {
+				deck.ms_listened = (deck.ms_listened ?? 0) + delta * 1000
+			}
+			prevTime = currentTime
+			deck.media_current_time = currentTime
 		}
 		const onDuration = () => {
 			if (!deck || deck.playlist_track !== trackId) return
@@ -392,6 +352,8 @@
 
 		if (!t) {
 			navigator.mediaSession.metadata = null
+			navigator.mediaSession.setActionHandler('play', null)
+			navigator.mediaSession.setActionHandler('pause', null)
 			navigator.mediaSession.setActionHandler('previoustrack', null)
 			navigator.mediaSession.setActionHandler('nexttrack', null)
 			return
@@ -420,6 +382,12 @@
 		const timer = setTimeout(applyMetadata, 800)
 
 		// Always register handlers — passing null removes the button on Android
+		navigator.mediaSession.setActionHandler('play', () => {
+			if (mediaElement) play(deckId, mediaElement)
+		})
+		navigator.mediaSession.setActionHandler('pause', () => {
+			if (mediaElement) pause(mediaElement)
+		})
 		navigator.mediaSession.setActionHandler('previoustrack', () => {
 			if (canPrevFromQueue) previous(deckId, 'user_prev')
 		})
@@ -429,18 +397,30 @@
 
 		return () => {
 			clearTimeout(timer)
+			navigator.mediaSession.setActionHandler('play', null)
+			navigator.mediaSession.setActionHandler('pause', null)
 			navigator.mediaSession.setActionHandler('previoustrack', null)
 			navigator.mediaSession.setActionHandler('nexttrack', null)
 		}
+	})
+
+	// Wake lock — keep the screen on while this deck is playing. Ref-counted across
+	// decks in the module itself, so multiple simultaneously-playing decks don't
+	// release each other's lock.
+	$effect(() => {
+		if (!deck?.is_playing) return
+		requestPlaybackWakeLock(deckId)
+		return () => releasePlaybackWakeLock(deckId)
 	})
 
 	// Auto-radio drift — re-evaluates on every timeupdate (~250ms while playing)
 	$effect(() => {
 		if (!deck?.auto_radio || deck.auto_radio_rotation_start == null) return
 		const t = mediaCurrentTime
-		// Skip while the initial seek is still landing. joinAutoRadio/resyncAutoRadio
-		// set auto_radio_drifted=false immediately; this guard prevents a false-positive
-		// drifted flip before the media element has moved off 0.
+		// Skip while the join/resync seek is still landing. joinAutoRadio/resyncAutoRadio
+		// set auto_radio_drifted=false immediately, but the seek settles asynchronously —
+		// evaluating in between flags a false positive on the very next timeupdate.
+		if (Date.now() - (deck.auto_radio_synced_at ?? 0) < AUTO_RADIO_SYNC_GRACE_MS) return
 		if (t < DRIFT_TOLERANCE_SECONDS) return
 		const snap = playbackState(
 			syncAutoTracks,
@@ -512,17 +492,9 @@
 			{/if}
 			{#if headerChannel}
 				<div class="header-channel">
-					<ChannelMicroCard
-						channel={headerChannel}
-						href={appState.embed_mode ? undefined : resolve('/[slug]', {slug: headerChannel.slug})}
-					/>
+					{@render headerChannelCard(headerChannel)}
 					{#if secondaryHeaderChannel}
-						<ChannelMicroCard
-							channel={secondaryHeaderChannel}
-							href={appState.embed_mode
-								? undefined
-								: resolve('/[slug]', {slug: secondaryHeaderChannel.slug})}
-						/>
+						{@render headerChannelCard(secondaryHeaderChannel)}
 					{/if}
 					{#each headerTags as tag (tag.value)}
 						<Tag href={tag.href} value={tag.value}>{tag.value}</Tag>
@@ -535,71 +507,7 @@
 						{#snippet trigger()}
 							<Icon icon="options-horizontal" />
 						{/snippet}
-						<menu class="nav-vertical">
-							<button
-								onclick={() => toggleVideo(deckId)}
-								class:active={!deck?.hide_video_player}
-								data-no-close
-							>
-								<Icon icon="tv" />
-								{deck?.hide_video_player ? m.player_hidden() : m.player_visible()}
-							</button>
-							{#if !isListeningToBroadcast && !deck?.auto_radio}
-								<button
-									onclick={() => toggleQueuePanel(deckId)}
-									class:active={!deck?.hide_queue_panel}
-									data-no-close
-								>
-									<Icon icon="unordered-list" />
-									{deck?.hide_queue_panel ? m.queue_hidden() : m.queue_visible()}
-								</button>
-							{/if}
-							{#if isListeningToBroadcast && hasListeningMultiDeck}
-								<button
-									onclick={toggleListeningVideoMix}
-									class:active={listeningVideoMixActive}
-									data-no-close
-								>
-									<Icon icon="gradient" />
-									Video mix
-								</button>
-							{/if}
-
-							<button class:active={isFullscreen} onclick={toggleFullscreen} data-no-close>
-								<Icon icon="fullscreen-alt" />
-								{isFullscreen ? 'Exit full screen' : 'Full screen'}
-							</button>
-
-							{#if !appState.embed_mode}
-								<a href={resolve('/settings/player')} onclick={() => deckMenu?.close()}>
-									<Icon icon="settings" />
-									{m.settings_player()}
-								</a>
-							{/if}
-
-							{#if !isListeningToBroadcast}
-								<button
-									class="close-deck"
-									onclick={() => {
-										const bchId = getBroadcastingChannelId()
-										clearUserInitiatedPlay(deckId)
-										removeDeck(deckId)
-										if (bchId) notifyBroadcastState(bchId)
-									}}
-								>
-									<Icon icon="close" />
-									{m.player_tooltip_close_deck()}
-								</button>
-							{:else if isListeningGroupControlDeck}
-								<button
-									class="close-deck"
-									onclick={() => listeningDeckIds.forEach((id) => leaveBroadcast(id))}
-								>
-									<Icon icon="close" />
-									{m.broadcasts_leave()}
-								</button>
-							{/if}
-						</menu>
+						<DeckMenu {deckId} {deckEl} closeMenu={() => deckMenu?.close()} />
 					</PopoverMenu>
 				{/if}
 				{#if showDeckActions && (hasMultipleDecks || !appState.embed_mode)}
@@ -613,6 +521,19 @@
 						})}
 					>
 						<Icon icon="deck-panel" />
+					</button>
+				{/if}
+				{#if deck?.expanded}
+					<button
+						class="minimize"
+						onclick={() => toggleDeckCompact(deckId)}
+						aria-label={m.player_tooltip_compact()}
+						{@attach tooltip({
+							content: m.player_tooltip_compact() + shortcutHint('toggleCompactDeck'),
+							position: 'top'
+						})}
+					>
+						<Icon icon="arrow-down" />
 					</button>
 				{/if}
 			</menu>
@@ -676,19 +597,6 @@
 	{@render children?.()}
 
 	<section class="bottom-chrome">
-		{#if appState.show_track_range_control !== false && displayTrack}
-			<PlayerProgress
-				currentTime={mediaCurrentTime}
-				{mediaDuration}
-				trackDuration={track?.duration}
-				isPlaying={Boolean(deck?.is_playing)}
-				disabled={isListeningToBroadcast}
-				onseek={(val) => {
-					if (deck) deck.media_current_time = val
-					if (mediaElement) mediaElement.currentTime = val
-				}}
-			/>
-		{/if}
 		<!-- 4. Channel/track info + mode info -->
 		<footer
 			class="track-panel"
@@ -723,6 +631,20 @@
 			{/if}
 		</footer>
 
+		{#if appState.show_track_range_control !== false && displayTrack}
+			<PlayerProgress
+				currentTime={mediaCurrentTime}
+				{mediaDuration}
+				trackDuration={track?.duration}
+				isPlaying={Boolean(deck?.is_playing)}
+				disabled={isListeningToBroadcast}
+				onseek={(val) => {
+					if (deck) deck.media_current_time = val
+					if (mediaElement) mediaElement.currentTime = val
+				}}
+			/>
+		{/if}
+
 		{#if !isListeningToBroadcast || deck?.auto_radio}
 			<menu class="controls">
 				{#if !isListeningToBroadcast && !deck?.auto_radio}
@@ -741,6 +663,9 @@
 							<Icon icon="shuffle" />
 						</button>
 					{/if}
+					{#if display.autoRadioAvailable}
+						<AutoRadioButton size={14} onclick={() => rejoinAutoRadio(deckId)} />
+					{/if}
 					<SpeedControl {deckId} {provider} />
 					<VolumeControl {deckId} />
 				{:else if deck?.auto_radio}
@@ -750,7 +675,8 @@
 						drifted={!!deck?.auto_radio_drifted}
 						size={14}
 						count={headerPresenceCount}
-						onclick={() => resyncAutoRadio(deckId)}
+						onclick={() =>
+							deck?.auto_radio_drifted ? resyncAutoRadio(deckId) : leaveAutoRadio(deckId)}
 					/>
 					<VolumeControl {deckId} />
 				{/if}
@@ -758,6 +684,13 @@
 		{/if}
 	</section>
 </div>
+
+{#snippet headerChannelCard(/** @type {Channel} */ ch)}
+	<ChannelMicroCard
+		channel={ch}
+		href={appState.embed_mode ? undefined : resolve('/[slug]', {slug: ch.slug})}
+	/>
+{/snippet}
 
 {#snippet btnPrev()}
 	<button
@@ -819,6 +752,23 @@
 		gap: 0.5rem;
 	}
 
+	/* Mobile-only "close the fullscreen sheet" affordance */
+	.minimize {
+		display: none;
+	}
+
+	@media (max-width: 768px) {
+		.minimize {
+			display: flex;
+			align-items: center;
+		}
+
+		/* .minimize takes over collapsing on mobile fullscreen — hide the duplicate */
+		:global(.deck.expanded) .compact-toggle {
+			display: none;
+		}
+	}
+
 	.header-channel {
 		display: flex;
 		flex-direction: row;
@@ -853,10 +803,6 @@
 		border-radius: 4px;
 	}
 
-	:global(.volume) {
-		margin-left: auto;
-	}
-
 	.controls {
 		display: flex;
 		align-items: center;
@@ -866,6 +812,25 @@
 		width: 100%;
 		flex-shrink: 0;
 		padding: 0.5rem;
+
+		:global(.volume) {
+			margin-left: auto;
+		}
+
+		/* Mobile: transport centered, speed/volume collapse to their buttons */
+		@media (max-width: 768px) {
+			justify-content: center;
+
+			:global(.speed),
+			:global(.volume) {
+				flex: 0 0 auto;
+				margin-left: 0;
+			}
+
+			:global(.volume .range) {
+				display: none;
+			}
+		}
 	}
 
 	.controls :global(.auto-btn) {
@@ -962,13 +927,18 @@
 	}
 
 	.bottom-chrome {
-		border-top: 1px solid var(--gray-7);
+		border-top: 1px solid var(--gray-5);
 		margin-top: auto;
 		display: flex;
 		flex-direction: column;
 
 		@media (max-width: 768px) {
 			margin-top: 0;
+
+			/* Progress bar moves below the controls */
+			> :global(.progress) {
+				order: 2;
+			}
 		}
 	}
 
@@ -1002,12 +972,5 @@
 	.listening-track-panel :global(article) {
 		flex: 1 1 auto;
 		min-width: 0;
-	}
-
-	@media (max-width: 768px) {
-		.controls {
-			gap: 0.1rem;
-			justify-content: flex-start;
-		}
 	}
 </style>

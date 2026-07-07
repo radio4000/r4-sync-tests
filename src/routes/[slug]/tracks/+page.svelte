@@ -3,9 +3,8 @@
 	import {goto} from '$app/navigation'
 	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
 	import {appState, canEditChannel} from '$lib/app-state.svelte'
-	import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
-	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {eq} from '@tanstack/db'
+	import {getMatchingTracksQuery} from '../matching-tracks-query.svelte.ts'
+	import {getTagFilter} from '../tag-filter.svelte'
 	import Tracklist from '$lib/components/tracklist.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
 	import Subpage from '$lib/components/subpage.svelte'
@@ -14,8 +13,9 @@
 	import Icon from '$lib/components/icon.svelte'
 	import Dialog from '$lib/components/dialog.svelte'
 	import SortControls from '$lib/components/sort-controls.svelte'
+	import FilterChips from '$lib/components/filter-chips.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
-	import {addToPlaylist, joinAutoRadio, loadDeckView, playTrack} from '$lib/api'
+	import {addToPlaylist, ensureActiveDeck, joinAutoRadio, loadDeckView, playTrack} from '$lib/api'
 	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
 	import {
 		canonicalTrackKey,
@@ -25,34 +25,20 @@
 		shuffleSeed
 	} from '$lib/utils'
 	import {processViewTracks, getAutoDecksForView} from '$lib/views.svelte'
-	import type {Track} from '$lib/types'
-	import type {View} from '$lib/views'
+	import {channelViewFromUrl, type View} from '$lib/views'
 	import * as m from '$lib/paraglide/messages'
-
-	const viewOrderValues = ['shuffle', 'updated', 'created', 'name', 'tracks'] as const
-	const viewDirectionValues = ['asc', 'desc'] as const
-
-	function readViewOrder(value: string | null): View['order'] {
-		return viewOrderValues.includes((value ?? '') as (typeof viewOrderValues)[number])
-			? (value as View['order'])
-			: 'created'
-	}
-
-	function readViewDirection(value: string | null): View['direction'] {
-		return viewDirectionValues.includes((value ?? '') as (typeof viewDirectionValues)[number])
-			? (value as View['direction'])
-			: 'desc'
-	}
 
 	const channelCtx = getChannelCtx()
 	const tracksQuery = getTracksQueryCtx()
 
 	let searchInput = $state(page.url.searchParams.get('q') ?? '')
-	let selectedTags = $derived(page.url.searchParams.get('tags')?.split(',').filter(Boolean) ?? [])
-	let searchValue = $derived(page.url.searchParams.get('q') ?? '')
-	let matchingSlug = $derived((page.url.searchParams.get('matching') ?? '').trim().toLowerCase())
-	let urlOrder = $derived(readViewOrder(page.url.searchParams.get('order')))
-	let urlDirection = $derived(readViewDirection(page.url.searchParams.get('direction')))
+	const {toggleTag} = getTagFilter()
+	// Single source of truth for the URL-backed filter (?tags=, ?q=, order/direction).
+	let urlView = $derived(channelViewFromUrl(page.url, page.params.slug))
+	let selectedTags = $derived(urlView.sources[0]?.tags ?? [])
+	let searchValue = $derived(urlView.sources[0]?.search ?? '')
+	let urlOrder = $derived(urlView.order ?? 'created')
+	let urlDirection = $derived(urlView.direction ?? 'desc')
 	let urlSeed = $derived((page.url.searchParams.get('seed') ?? '').trim())
 	let order = $state<View['order']>('created')
 	let direction = $state<View['direction']>('desc')
@@ -115,17 +101,9 @@
 
 	let slug = $derived(page.params.slug)
 	let channel = $derived(channelCtx.data)
-	const matchingTracksQuery = useLiveQuery(
-		(q) =>
-			matchingSlug
-				? q
-						.from({tracks: tracksCollection})
-						.where(({tracks}) => eq(tracks.slug, matchingSlug))
-						.orderBy(({tracks}) => tracks.created_at, 'desc')
-				: null,
-		[() => matchingSlug]
-	)
-	let matchingTracks = $derived((matchingTracksQuery.data ?? []) as Track[])
+	const matchingQuery = getMatchingTracksQuery(() => slug)
+	let matchingSlug = $derived(matchingQuery.matchingSlug)
+	let matchingTracks = $derived(matchingQuery.tracks)
 	let matchingTrackKeys = $derived.by(
 		() => new Set(matchingTracks.map(canonicalTrackKey).filter((v): v is string => Boolean(v)))
 	)
@@ -160,17 +138,14 @@
 		return processViewTracks(
 			allTracks,
 			{
-				sources: [
-					{
-						tags: selectedTags.length ? selectedTags : undefined,
-						tagsMode: 'all',
-						search: searchValue || undefined
-					}
-				],
+				sources: urlView.sources,
 				order: isSorting ? order : undefined,
 				direction: isSorting ? direction : undefined
 			},
-			order === 'shuffle' ? {shuffleRand: seededRandom(randomSeed || 'default-seed')} : undefined
+			order === 'shuffle'
+				? {shuffleRand: seededRandom(randomSeed || 'default-seed')}
+				: // allTracks arrives created_at desc from the live query, so the default sort is a no-op
+					{inputOrder: 'created-desc'}
 		)
 	})
 	let baseVisibleTracks = $derived(isFiltering ? filteredTracks : allTracks)
@@ -186,15 +161,9 @@
 	let hasActionableSelection = $derived(isFiltering && visibleTracks.length > 0)
 	let filteredAutoRadioTracks = $derived(toAutoTracks(visibleTracks))
 	let canShowFilteredAutoRadio = $derived(hasAutoRadioCoverage(visibleTracks))
-	let filteredAutoView: View = $derived.by(() => ({
-		sources: [
-			{
-				channels: slug ? [slug] : undefined,
-				tags: selectedTags.length ? selectedTags : undefined,
-				search: searchValue.trim() || undefined
-			}
-		]
-	}))
+	// Same sources as the filter above, so the deck's saved view (and its
+	// tagsMode=all) matches exactly what this page showed.
+	let filteredAutoView: View = $derived.by(() => ({sources: urlView.sources}))
 	let filteredAutoDecks = $derived.by(() =>
 		getAutoDecksForView(Object.values(appState.decks), filteredAutoView)
 	)
@@ -217,11 +186,6 @@
 	})
 
 	$effect(() => {
-		if (!matchingSlug || matchingSlug === slug) return
-		void ensureTracksLoaded(matchingSlug)
-	})
-
-	$effect(() => {
 		const trackId = targetTrackId
 		const elementId = targetTrackElementId
 		if (!trackId || !elementId || !tracksQuery.isReady || !visibleTracks.length) return
@@ -234,20 +198,6 @@
 		})
 	})
 
-	function toggleTag(tag: string) {
-		const normalized = tag.toLowerCase().trim()
-		const next = selectedTags.some((t) => t.toLowerCase() === normalized)
-			? selectedTags.filter((t) => t.toLowerCase() !== normalized)
-			: [...selectedTags, normalized]
-		const url = new URL(page.url)
-		if (next.length) {
-			url.searchParams.set('tags', next.join(','))
-		} else {
-			url.searchParams.delete('tags')
-		}
-		goto(url, {replaceState: true})
-	}
-
 	function clearMatchingFilter() {
 		const url = new URL(page.url)
 		url.searchParams.delete('matching')
@@ -256,13 +206,16 @@
 
 	function playFilteredTracks() {
 		if (!hasActionableSelection) return
+		const deckId = ensureActiveDeck().id
 		const ids = visibleTracks.map((t) => t.id)
-		loadDeckView(appState.active_deck_id, filteredAutoView, ids, {title: filteredPlaylistTitle})
-		playTrack(appState.active_deck_id, ids[0], null, 'play_search')
+		loadDeckView(deckId, filteredAutoView, ids, {title: filteredPlaylistTitle})
+		playTrack(deckId, ids[0], null, 'play_search')
 	}
 
 	function queueFilteredTracks() {
 		if (!hasActionableSelection) return
+		// With no deck open there is no queue to append to — start playing instead
+		if (!appState.decks[appState.active_deck_id]) return playFilteredTracks()
 		addToPlaylist(
 			appState.active_deck_id,
 			visibleTracks.map((t) => t.id)
@@ -289,6 +242,26 @@
 		reshuffleKey += 1
 	}
 </script>
+
+{#snippet filterActions(closeDialog = false)}
+	<menu class="row filter-actions">
+		<button
+			type="button"
+			class="primary"
+			onclick={() => {
+				playFilteredTracks()
+				if (closeDialog) showFiltersModal = false
+			}}
+		>
+			<Icon icon="play-fill" />
+			{m.tracks_play_filtered({count: visibleTracks.length})}
+		</button>
+		<button type="button" class="ghost" onclick={queueFilteredTracks}>
+			<Icon icon="unordered-list" />
+			{m.track_add_to_queue()}
+		</button>
+	</menu>
+{/snippet}
 
 <ChannelNavControlsPortal controls={navControls} />
 
@@ -323,7 +296,7 @@
 				><Icon icon="play-fill" /></button
 			>
 			<button type="button" title={m.common_queue()} onclick={queueFilteredTracks}
-				><Icon icon="next-fill" /></button
+				><Icon icon="unordered-list" /></button
 			>
 			{#if channel && canShowFilteredAutoRadio}
 				<AutoRadioButton
@@ -353,28 +326,23 @@
 			</header>
 		{/snippet}
 		<section class="filters-dialog">
-			<p class="filters-stats">
-				<strong>{visibleTracks.length}</strong> / {allTracks.length}
-				{m.nav_tracks()}
-			</p>
+			<div class="filters-stats-row">
+				<p class="filters-stats">
+					<strong>{visibleTracks.length}</strong> / {allTracks.length}
+					{m.nav_tracks()}
+				</p>
+				{#if hasActionableSelection}
+					{@render filterActions(true)}
+				{/if}
+			</div>
 			{#if activeFilterCount > 0}
-				<menu class="row filter-tags">
-					{#if searchValue}
-						<li><span class="chip">"{searchValue}"</span></li>
-					{/if}
-					{#if matchingSlug}
-						<li>
-							<button type="button" class="chip" onclick={clearMatchingFilter}
-								>@{matchingSlug} ×</button
-							>
-						</li>
-					{/if}
-					{#each selectedTags as tag (tag)}
-						<li>
-							<button type="button" class="chip" onclick={() => toggleTag(tag)}>{tag} ×</button>
-						</li>
-					{/each}
-				</menu>
+				<FilterChips
+					search={searchValue}
+					matching={matchingSlug}
+					tags={selectedTags}
+					onRemoveTag={toggleTag}
+					onClearMatching={clearMatchingFilter}
+				/>
 			{/if}
 			<section class="filters-dialog-panel">
 				<h3>{m.views_tags_label()}</h3>
@@ -412,7 +380,7 @@
 						</button>
 					</div>
 				</div>
-				<menu class="tags-menu">
+				<menu class="tags-filter">
 					{#each visibleTags as { value, count } (value)}
 						<button
 							type="button"
@@ -439,19 +407,20 @@
 		{/snippet}
 		<section class="tracks-page">
 			<header>
-				{#if isFiltering && (selectedTags.length > 0 || matchingSlug)}
-					<menu class="row filter-tags">
-						{#if matchingSlug}
-							<button type="button" class="chip" onclick={clearMatchingFilter}
-								>@{matchingSlug} ×</button
-							>
+				{#if hasActionableSelection || (isFiltering && (selectedTags.length > 0 || matchingSlug))}
+					<div class="row filter-row">
+						{#if isFiltering && (selectedTags.length > 0 || matchingSlug)}
+							<FilterChips
+								matching={matchingSlug}
+								tags={selectedTags}
+								onRemoveTag={toggleTag}
+								onClearMatching={clearMatchingFilter}
+							/>
 						{/if}
-						{#each selectedTags as tag (tag)}
-							<button type="button" class="chip" onclick={() => toggleTag(tag)}>
-								{tag} ×
-							</button>
-						{/each}
-					</menu>
+						{#if hasActionableSelection}
+							{@render filterActions()}
+						{/if}
+					</div>
 				{/if}
 			</header>
 
@@ -481,10 +450,10 @@
 
 <style>
 	header {
-		padding: 0.5rem;
+		padding-inline: 0.5rem;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-1);
+		gap: 0.5rem;
 	}
 
 	.tracks-page {
@@ -507,6 +476,18 @@
 		margin: 0;
 	}
 
+	.filters-stats-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+	}
+
+	.filter-actions {
+		align-items: center;
+	}
+
 	.filters-dialog-panel {
 		display: grid;
 		gap: var(--space-1);
@@ -515,11 +496,11 @@
 		}
 	}
 
-	.tags-menu {
+	.tags-filter {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-1);
-		max-height: min(32vh, 20rem);
+		max-height: min(32vh, 22rem);
 		overflow: auto;
 		button.active {
 			background: var(--accent-5);
@@ -552,9 +533,24 @@
 		font-size: 0.85em;
 	}
 
-	.filter-tags {
-		flex-wrap: wrap;
-		gap: var(--space-1);
+	.filter-row {
+		align-items: center;
+		margin-bottom: var(--space-2);
+	}
+
+	/* Connect the chips to the hashtag filter toggle in the nav row above */
+	header :global(.filter-chips)::before {
+		content: '└';
+		align-self: center;
+		margin-left: 0.5rem;
+		color: var(--gray-9);
+	}
+
+	/* ...and the actions to the chips they act on */
+	:global(.filter-chips) + .filter-actions::before {
+		content: '→';
+		align-self: center;
+		color: var(--gray-9);
 	}
 
 	.modal-header {

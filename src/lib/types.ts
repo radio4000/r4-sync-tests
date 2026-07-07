@@ -5,6 +5,9 @@ export interface Channel extends SDKChannel {
 	spam?: boolean
 }
 
+/** Minimal channel handle for play/track APIs — enough to identify (id) and route (slug). */
+export type ChannelRef = Pick<Channel, 'id' | 'slug'>
+
 export type Track = SDKTrack
 
 export interface TrackMetadataFields {
@@ -39,6 +42,9 @@ export interface Deck {
 	auto_radio_drifted?: boolean
 	view?: import('$lib/views').View
 	auto_radio_rotation_start?: number
+	/** Epoch ms of the last join/resync — drift detection stays quiet for a grace
+	 *  window after it while the seek lands. */
+	auto_radio_synced_at?: number
 	listening_drifted?: boolean
 	play_id?: string
 	track_played_at?: string | null
@@ -47,6 +53,7 @@ export interface Deck {
 	speed?: number
 	media_current_time?: number
 	media_duration?: number
+	ms_listened?: number
 }
 
 export interface AppState {
@@ -89,6 +96,8 @@ export interface AppState {
 	modal_track_edit?: {track: Track} | null
 	modal_share?: {track?: Track; channel: Channel} | null
 	modal_shortcuts?: boolean
+	/** One-shot signal: set true to open the nav palette (nav-popover), reset on open */
+	modal_nav?: boolean
 	show_welcome_hint?: boolean
 	show_onboarding_hint?: boolean
 	analytics_opt_in?: boolean

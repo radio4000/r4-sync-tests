@@ -44,6 +44,7 @@ function syncFollowsCollection(items: Array<{id: string}>) {
 	})
 }
 
+/** Fetch the current user's follows and reconcile them into followsCollection. */
 export async function loadUserFollows() {
 	const userChannelId = appState.channels?.[0]
 	if (!userChannelId) return
@@ -62,6 +63,7 @@ export async function loadUserFollows() {
 	}
 }
 
+/** Optimistically follow a channel; rolls back on failure (unique_violation is treated as success). */
 export async function followChannel(channelId: string) {
 	const userChannelId = appState.channels?.[0]
 	if (!userChannelId) return
@@ -80,6 +82,7 @@ export async function followChannel(channelId: string) {
 	}
 }
 
+/** Optimistically unfollow a channel; rolls back on failure. */
 export async function unfollowChannel(channelId: string) {
 	const userChannelId = appState.channels?.[0]
 	if (!userChannelId) return

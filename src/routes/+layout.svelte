@@ -1,6 +1,7 @@
 <script>
 	import '../styles/style.css'
 	import {appState, deckAccent} from '$lib/app-state.svelte'
+	import {sortedDeckIds} from '$lib/deck'
 	import AuthListener from '$lib/components/auth-listener.svelte'
 	import DraggablePanel from '$lib/components/draggable-panel.svelte'
 	import KeyboardShortcuts from '$lib/components/keyboard-shortcuts.svelte'
@@ -13,8 +14,9 @@
 	import AppBuildInfo from '$lib/components/app-build-info.svelte'
 	import AppUpdateBanner from '$lib/components/app-update-banner.svelte'
 	import {toggleDeckCompact} from '$lib/api'
+	import {isMobileViewport} from '$lib/utils'
 	import {onMount} from 'svelte'
-	import {SvelteMap} from 'svelte/reactivity'
+	import {SvelteMap, MediaQuery} from 'svelte/reactivity'
 	import {beforeNavigate, afterNavigate, goto} from '$app/navigation'
 	import {page} from '$app/state'
 	import {DISABLED_ROUTES, DISABLED_ROUTE_FALLBACK} from '$lib/modes'
@@ -54,11 +56,7 @@
 					Boolean(d.listening_to_channel_id))
 		)
 	)
-	let allDeckIds = $derived(
-		Object.keys(appState.decks)
-			.map(Number)
-			.sort((a, b) => a - b)
-	)
+	let allDeckIds = $derived(sortedDeckIds(appState.decks))
 	let compactDeckIds = $derived(allDeckIds.filter((id) => Boolean(appState.decks[id]?.compact)))
 	let compactListeningDeckIds = $derived(
 		compactDeckIds.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
@@ -81,14 +79,6 @@
 		}
 		return total
 	})
-
-	/**
-	 * @param {Element} _node
-	 * @returns {import('svelte/transition').TransitionConfig}
-	 */
-	function compactDeckTransition(_node) {
-		return {duration: 0}
-	}
 
 	// Ensure first client render uses persisted locale before any message call runs.
 	if (typeof window !== 'undefined') {
@@ -122,6 +112,13 @@
 	onMount(async () => {
 		if (DISABLED_ROUTES.some((p) => page.route.id?.startsWith(p))) {
 			goto(DISABLED_ROUTE_FALLBACK, {replaceState: true})
+		}
+		// Mobile decks are either compact or expanded. Persisted desktop strip
+		// decks (neither flag) normalize to compact once, at load.
+		if (isMobileViewport()) {
+			for (const deck of Object.values(appState.decks)) {
+				if (!deck.compact && !deck.expanded) deck.compact = true
+			}
 		}
 		trackAppPresence()
 		try {
@@ -170,8 +167,8 @@
 	})
 
 	// Theme application
-	const prefersLight = $derived(window.matchMedia('(prefers-color-scheme: light)').matches)
-	const theme = $derived(appState.theme ?? (prefersLight ? 'light' : 'dark'))
+	const prefersLight = new MediaQuery('(prefers-color-scheme: light)')
+	const theme = $derived(appState.theme ?? (prefersLight.current ? 'light' : 'dark'))
 	const uiLocale = $derived(appState.language ?? getLocale())
 
 	$effect(() => {
@@ -293,11 +290,7 @@
 					{#if compactDeckIds.length}
 						<section class="compact-decks" aria-label={m.decks_compact_label()}>
 							{#each compactLocalDeckIds as deckId (deckId)}
-								<div
-									class="compact-deck-item"
-									style:--deck-accent={deckAccent(allDeckIds, deckId)}
-									transition:compactDeckTransition
-								>
+								<div class="compact-deck-item" style:--deck-accent={deckAccent(allDeckIds, deckId)}>
 									<DeckCompactBar {deckId} />
 								</div>
 							{/each}
@@ -315,7 +308,6 @@
 											<div
 												class="compact-deck-item"
 												style:--deck-accent={deckAccent(allDeckIds, deckId)}
-												transition:compactDeckTransition
 											>
 												<DeckCompactBar {deckId} showEdgeControls={false} />
 											</div>
@@ -438,13 +430,21 @@
 		border-radius: 8px 8px 0 0;
 		overflow: hidden;
 		border-top: 1px solid var(--gray-4);
-		margin: 0 var(--space-1) var(--space-1);
 		/*
+		margin: 0 var(--space-1) var(--space-1);
 		padding: 0.4rem 0.5rem;
 		 */
 		position: sticky;
 		bottom: 0;
 		z-index: 30;
+		/* enter like a sheet; exits stay instant */
+		animation: compact-deck-in 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	@keyframes compact-deck-in {
+		from {
+			transform: translate3d(0, 100%, 0);
+		}
 	}
 
 	.compact-deck-item {
@@ -561,6 +561,10 @@
 
 		.compact-decks :global(.deck-compact-bar) {
 			min-width: 0;
+		}
+
+		.compact-group-toggle {
+			display: none;
 		}
 	}
 

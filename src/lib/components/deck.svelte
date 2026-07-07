@@ -1,6 +1,7 @@
 <script>
 	import {page} from '$app/state'
 	import {appState} from '$lib/app-state.svelte'
+	import {showPlayerParam, sortedListeningDeckIds} from '$lib/deck'
 	import Player from '$lib/components/player.svelte'
 	import QueuePanel from '$lib/components/queue-panel.svelte'
 
@@ -8,16 +9,11 @@
 	let {deckId, hasHistory = false} = $props()
 
 	let deck = $derived(appState.decks[deckId])
-	let showPlayer = $derived(page.url.searchParams.get('player') !== 'false')
+	let showPlayer = $derived(showPlayerParam(page.url))
 	let isListeningToBroadcast = $derived(Boolean(deck?.listening_to_channel_id))
 	let isBroadcasting = $derived(Boolean(deck?.broadcasting_channel_id))
 	let isAutoRadio = $derived(Boolean(deck?.auto_radio))
-	let firstListeningDeckId = $derived.by(() =>
-		Object.keys(appState.decks)
-			.map(Number)
-			.sort((a, b) => a - b)
-			.find((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
-	)
+	let firstListeningDeckId = $derived(sortedListeningDeckIds(appState.decks)[0])
 
 	// For deck 1: only show when there are tracks queued/playing or any history
 	// exists. hasHistory comes from the parent strip's shared live query so we
@@ -28,8 +24,6 @@
 
 	// Deck 1 hides when empty; additional decks are always visible
 	let visible = $derived(showPlayer && deck && (deckId !== 1 || hasContent))
-
-	let isActiveDeck = $derived(appState.active_deck_id === deckId)
 
 	// Inline deck width from stored value
 	let videoMixOpacity = $derived.by(() => {
@@ -100,7 +94,6 @@
 			'video-mix': Boolean(deck?.video_mix && isListeningToBroadcast),
 			broadcasting: isBroadcasting,
 			auto: isAutoRadio,
-			'active-deck': isActiveDeck,
 			resizing,
 			'hide-queue': deck?.hide_queue_panel,
 			'hide-video': deck?.hide_video_player
@@ -135,7 +128,7 @@
 	}
 
 	.deck:not(.expanded) {
-		transition: border-color var(--deck-transition-fast) var(--deck-transition-ease);
+		transition: border-color var(--duration-2) var(--ease-out);
 	}
 
 	.resize-handle {
@@ -307,10 +300,4 @@
 		flex: 1 1 auto;
 		min-height: 0;
 	}
-
-	/* @media (prefers-reduced-motion: reduce) {
-		.deck:not(.expanded) {
-			transition: none;
-		}
-	} */
 </style>

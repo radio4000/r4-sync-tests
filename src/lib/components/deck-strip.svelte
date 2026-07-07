@@ -1,6 +1,7 @@
 <script>
 	import {page} from '$app/state'
 	import {appState, deckAccent} from '$lib/app-state.svelte'
+	import {showPlayerParam, sortedDeckIds, sortedListeningDeckIds} from '$lib/deck'
 	import {captureEventsCollection} from '$lib/collections/capture-events'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {eq, inArray} from '@tanstack/db'
@@ -12,14 +13,8 @@
 	import PresenceCount from '$lib/components/presence-count.svelte'
 	import * as m from '$lib/paraglide/messages'
 
-	let deckIds = $derived(
-		Object.keys(appState.decks)
-			.map(Number)
-			.sort((a, b) => a - b)
-	)
-	let listeningDeckIds = $derived(
-		deckIds.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
-	)
+	let deckIds = $derived(sortedDeckIds(appState.decks))
+	let listeningDeckIds = $derived(sortedListeningDeckIds(appState.decks))
 	let videoMixListening = $derived(
 		listeningDeckIds.some((id) =>
 			Boolean(appState.decks[id]?.video_mix && !appState.decks[id]?.compact)
@@ -29,7 +24,7 @@
 	let allDecksCompact = $derived(
 		deckIds.length > 0 && deckIds.every((id) => appState.decks[id]?.compact)
 	)
-	let showPlayer = $derived(page.url.searchParams.get('player') !== 'false')
+	let showPlayer = $derived(showPlayerParam(page.url))
 	// One live query shared by the strip and every deck (passed down as a prop)
 	const historyQuery = useLiveQuery((q) =>
 		q.from({e: captureEventsCollection}).where(({e}) => eq(e.event, 'player:track_play'))
@@ -139,9 +134,10 @@
 		flex-direction: column;
 		flex-shrink: 0;
 		min-height: 0;
-		margin: var(--space-1);
 		overflow: clip;
-		border-radius: var(--border-radius);
+		/* 
+		margin: var(--space-1);
+		border-radius: var(--border-radius); */
 		border-left: 1px solid var(--gray-4);
 
 		&:empty {
@@ -418,7 +414,7 @@
 		@media (max-width: 768px) {
 			& {
 				border-left: none;
-				border-top: 1px solid var(--gray-4);
+				/*border-top: 1px solid var(--gray-4);*/
 			}
 
 			.deck-sections {

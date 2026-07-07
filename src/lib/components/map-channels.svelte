@@ -1,22 +1,17 @@
-<script module>
-	export {
-		MAP_TILE_STYLES as TILE_STYLES,
-		// eslint-disable-next-line no-import-assign -- false positive on re-export with rename
-		DEFAULT_MAP_TILE_STYLE as TILE_SATELLITE
-	} from '$lib/config'
-</script>
-
 <script>
 	import {goto} from '$app/navigation'
 	import maplibregl from 'maplibre-gl'
 	/** @import { GeoJSONSource } from 'maplibre-gl' */
-	import {mount, onDestroy, unmount, untrack} from 'svelte'
+	import {mount, onDestroy, unmount} from 'svelte'
 	import MapComponent from './map.svelte'
 	import ChannelCard from './channel-card.svelte'
 	import Icon from './icon.svelte'
 	import {BroadcastLayer} from './map-broadcast-layer.js'
-	import {channelsCollection} from '$lib/collections/channels'
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
+	import {resolveCssColor} from './map-color.js'
+	import {buildChannelsGeoJSON, getLatestChannel} from './map-markers.js'
+	import {swapBaseTiles} from './map-tile-styles.js'
+	import {setupOverlays, updateNightLayer as writeNightLayerData} from './map-overlays.js'
 	import {
 		DEFAULT_MAP_SHOW_DAY_NIGHT,
 		DEFAULT_MAP_SHOW_GRATICULES,
@@ -25,7 +20,7 @@
 	import * as m from '$lib/paraglide/messages'
 	const channelActivity = $derived(getChannelActivity())
 
-	/** @type {{channels?: any[], loading?: boolean, latitude?: number|null, longitude?: number|null, zoom?: number|null, syncUrl?: boolean, openSlug?: string|null, openRequestKey?: string|null, linkToMap?: boolean | 'global', showControls?: boolean, globeMode?: boolean, showGraticules?: boolean, showDayNight?: boolean, tileStyle?: 'carto' | 'topo' | 'satellite'}} */
+	/** @type {{channels?: import('$lib/types').Channel[], loading?: boolean, latitude?: number|null, longitude?: number|null, zoom?: number|null, syncUrl?: boolean, openSlug?: string|null, openRequestKey?: string|null, linkToMap?: boolean | 'global', showControls?: boolean, globeMode?: boolean, showGraticules?: boolean, showDayNight?: boolean, tileStyle?: 'carto' | 'topo' | 'satellite'}} */
 	let {
 		channels = [],
 		loading = false,
@@ -80,40 +75,16 @@
 		}
 		return [...byId.values()]
 	})
-	// GeoJSON derived from channel data — only recomputes when mapChannels changes,
-	// not on mapReady toggles (tile style changes etc.)
+	// GeoJSON derived from channel data, activity and palette — the map-ready
+	// effect below writes it into the source whenever any of those change.
 	const cachedGeoJSON = $derived.by(() => {
 		if (loading) return null
-		return buildGeoJSON()
+		return buildChannelsGeoJSON(
+			mapChannels,
+			{favoriteIds, broadcastingIds, playingSlugs, inDeckSlugs},
+			palette
+		)
 	})
-
-	function getLatestChannel(channel) {
-		return channelsCollection.state.get(channel.id) || channel
-	}
-
-	// Reuse one canvas and one probe element across all calls — creating/removing
-	// a DOM node per call forces a reflow each time (7+ per palette build).
-	const _colorCanvas = document.createElement('canvas')
-	_colorCanvas.width = _colorCanvas.height = 1
-	const _colorCtx = /** @type {CanvasRenderingContext2D} */ (
-		_colorCanvas.getContext('2d', {willReadFrequently: true})
-	)
-	const _colorProbe = document.createElement('div')
-	_colorProbe.style.visibility = 'hidden'
-	_colorProbe.style.position = 'absolute'
-	document.body.append(_colorProbe)
-
-	function resolveCssColor(variableName, fallback = '#888888') {
-		_colorProbe.style.color = `var(${variableName})`
-		const raw = getComputedStyle(_colorProbe).color
-		// Normalize to rgb() — getComputedStyle may return oklch() in modern browsers,
-		// which MapLibre's color parser doesn't support. Canvas always gives sRGB bytes.
-		_colorCtx.clearRect(0, 0, 1, 1)
-		_colorCtx.fillStyle = raw || fallback
-		_colorCtx.fillRect(0, 0, 1, 1)
-		const [r, g, b] = _colorCtx.getImageData(0, 0, 1, 1).data
-		return `rgb(${r}, ${g}, ${b})`
-	}
 
 	const palette = $derived.by(() => ({
 		// Fixed dark charcoal, not a theme var: tiles like topo/satellite are always
@@ -130,89 +101,21 @@
 		broadcastingStroke: resolveCssColor('--accent-11')
 	}))
 
-	function getChannelState(channel) {
-		const current = getLatestChannel(channel)
-		const isFavorite = favoriteIds.has(current.id)
-		const isBroadcasting = broadcastingIds.has(current.id)
-		const isPlaying = playingSlugs.has(current.slug)
-		const isInDeck = inDeckSlugs.has(current.slug)
-		const isActive = isBroadcasting || isPlaying || isInDeck
-		return {isFavorite, isBroadcasting, isPlaying, isInDeck, isActive}
-	}
-
-	function getMarkerStyle(channel) {
-		const state = getChannelState(channel)
-		// 5-tier visual hierarchy: favorite+broadcasting > broadcasting > active > favorite > normal
-		// mirrors channel card semantics while preserving favorite identity during live broadcast.
-		// State is encoded by fill + radius; every marker shares the white ring / dark shadow outline.
-		if (state.isFavorite && state.isBroadcasting) {
-			return {radius: 10, fillColor: palette.favoriteBroadcastFill, strokeWidth: 3}
-		}
-		if (state.isBroadcasting) {
-			return {radius: 9, fillColor: palette.broadcastingFill, strokeWidth: 3}
-		}
-		if (state.isActive) {
-			return {radius: 8, fillColor: palette.activeFill, strokeWidth: 2}
-		}
-		if (state.isFavorite) {
-			return {radius: 7, fillColor: palette.favoriteFill, strokeWidth: 2}
-		}
-		return {radius: 5, fillColor: palette.normalFill, strokeWidth: 1.5}
-	}
-
-	/** @returns {GeoJSON.FeatureCollection} */
-	function buildGeoJSON() {
+	/** @returns {any} */
+	function broadcastRingLayer() {
 		return {
-			type: 'FeatureCollection',
-			features: mapChannels.map((c) => {
-				const style = untrack(() => getMarkerStyle(c))
-				const state = untrack(() => getChannelState(c))
-				/** @type {GeoJSON.Feature} */
-				return {
-					type: 'Feature',
-					geometry: {type: 'Point', coordinates: [c.longitude, c.latitude]},
-					properties: {
-						id: c.id,
-						slug: c.slug,
-						radius: style.radius,
-						fillColor: style.fillColor,
-						strokeWidth: style.strokeWidth,
-						isBroadcasting: state.isBroadcasting,
-						isFavorite: state.isFavorite,
-						broadcastRingColor: state.isFavorite
-							? palette.favoriteBroadcastStroke
-							: palette.broadcastingStroke
-					}
-				}
-			})
-		}
-	}
-
-	/** @returns {GeoJSON.FeatureCollection} */
-	function buildStyledGeoJSON() {
-		return {
-			type: 'FeatureCollection',
-			features: mapChannels.map((c) => {
-				const style = untrack(() => getMarkerStyle(c))
-				const state = untrack(() => getChannelState(c))
-				/** @type {GeoJSON.Feature} */
-				return {
-					type: 'Feature',
-					geometry: {type: 'Point', coordinates: [c.longitude, c.latitude]},
-					properties: {
-						id: c.id,
-						slug: c.slug,
-						radius: style.radius,
-						fillColor: style.fillColor,
-						strokeWidth: style.strokeWidth,
-						isBroadcasting: state.isBroadcasting,
-						isFavorite: state.isFavorite,
-						broadcastRingColor: state.isFavorite
-							? palette.favoriteBroadcastStroke
-							: palette.broadcastingStroke
-					}
-				}
-			})
+			id: 'channels-broadcast-ring',
+			type: 'circle',
+			source: 'channels-source',
+			filter: ['==', ['get', 'isBroadcasting'], true],
+			paint: {
+				'circle-radius': ['+', ['get', 'radius'], 8],
+				'circle-color': 'rgba(0, 0, 0, 0)',
+				'circle-stroke-color': ['get', 'broadcastRingColor'],
+				'circle-stroke-width': ['case', ['==', ['get', 'isFavorite'], true], 3.5, 2.5],
+				'circle-opacity': 0.9,
+				'circle-blur': 0.1
+			}
 		}
 	}
 
@@ -221,20 +124,7 @@
 		if (!m || !fc) return
 		if (!m.getSource('channels-source')) {
 			m.addSource('channels-source', {type: 'geojson', data: fc})
-			m.addLayer({
-				id: 'channels-broadcast-ring',
-				type: 'circle',
-				source: 'channels-source',
-				filter: ['==', ['get', 'isBroadcasting'], true],
-				paint: {
-					'circle-radius': ['+', ['get', 'radius'], 8],
-					'circle-color': 'rgba(0, 0, 0, 0)',
-					'circle-stroke-color': ['get', 'broadcastRingColor'],
-					'circle-stroke-width': ['case', ['==', ['get', 'isFavorite'], true], 3.5, 2.5],
-					'circle-opacity': 0.9,
-					'circle-blur': 0.1
-				}
-			})
+			m.addLayer(broadcastRingLayer())
 			// Soft dark shadow beneath each marker — the "dark" half of the
 			// light+dark contrast combo, so markers read on pale tiles too.
 			m.addLayer({
@@ -283,22 +173,7 @@
 		} else {
 			const source = /** @type {GeoJSONSource | undefined} */ (m.getSource('channels-source'))
 			source?.setData(fc)
-			if (!m.getLayer('channels-broadcast-ring')) {
-				m.addLayer({
-					id: 'channels-broadcast-ring',
-					type: 'circle',
-					source: 'channels-source',
-					filter: ['==', ['get', 'isBroadcasting'], true],
-					paint: {
-						'circle-radius': ['+', ['get', 'radius'], 8],
-						'circle-color': 'rgba(0, 0, 0, 0)',
-						'circle-stroke-color': ['get', 'broadcastRingColor'],
-						'circle-stroke-width': ['case', ['==', ['get', 'isFavorite'], true], 3.5, 2.5],
-						'circle-opacity': 0.9,
-						'circle-blur': 0.1
-					}
-				})
-			}
+			if (!m.getLayer('channels-broadcast-ring')) m.addLayer(broadcastRingLayer())
 		}
 	}
 
@@ -426,228 +301,19 @@
 		)
 	}
 
-	// ── Tile styles ────────────────────────────────────────────────────────────
-
-	/** @param {'carto'|'topo'|'satellite'} name @returns {import('maplibre-gl').StyleSpecification} */
-	function buildMapStyle(name) {
-		const dark = document.documentElement.classList.contains('dark')
-		if (name === 'topo') {
-			return {
-				version: 8,
-				sources: {
-					topo: {
-						type: 'raster',
-						tiles: ['https://tile.opentopomap.org/{z}/{x}/{y}.png'],
-						tileSize: 256,
-						maxzoom: 17,
-						attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a> contributors'
-					}
-				},
-				layers: [{id: 'topo', type: 'raster', source: 'topo'}]
-			}
-		}
-		if (name === 'satellite') {
-			return {
-				version: 8,
-				sources: {
-					satellite: {
-						type: 'raster',
-						tiles: [
-							'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-						],
-						tileSize: 256,
-						maxzoom: 19,
-						attribution: 'Powered by Esri'
-					}
-				},
-				layers: [{id: 'satellite', type: 'raster', source: 'satellite'}]
-			}
-		}
-		// carto – mirrors map.svelte's buildStyle
-		const base = dark
-			? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-			: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-		return {
-			version: 8,
-			sources: {
-				carto: {
-					type: 'raster',
-					tiles: [base.replace('{s}', 'a'), base.replace('{s}', 'b'), base.replace('{s}', 'c')],
-					tileSize: 256,
-					attribution:
-						'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-				}
-			},
-			layers: [{id: 'carto', type: 'raster', source: 'carto'}]
-		}
-	}
-
-	const BASE_TILE_IDS = ['carto', 'topo', 'satellite']
-
-	/**
-	 * Swap only the base raster layer/source. A full `setStyle()` would tear down
-	 * every source and layer — including the channel markers, overlays and the
-	 * custom WebGL broadcast layer (shader recompile) — and blocks the UI ~1s.
-	 * Here the new base is added beneath the overlays, on top of the old base, and
-	 * the old base is dropped once the new tiles are in (so there's no blank flash).
-	 * @param {'carto'|'topo'|'satellite'} name
-	 */
-	function swapBaseTiles(name) {
-		const m = map
-		if (!m) return
-		const newId = name === 'carto' ? 'carto' : name
-		const layers = m.getStyle().layers
-		const bases = layers.filter((l) => BASE_TILE_IDS.includes(l.id))
-		if (bases.at(-1)?.id === newId) return // already the visible base
-		const firstOverlay = layers.find((l) => !BASE_TILE_IDS.includes(l.id))?.id
-		if (m.getSource(newId)) {
-			m.moveLayer(newId, firstOverlay)
-		} else {
-			const style = buildMapStyle(name)
-			const [srcId, srcDef] = Object.entries(style.sources)[0]
-			m.addSource(srcId, /** @type {any} */ (srcDef))
-			m.addLayer(/** @type {any} */ (style.layers[0]), firstOverlay)
-		}
-		const dropOldBases = () => {
-			for (const l of m.getStyle().layers) {
-				if (!BASE_TILE_IDS.includes(l.id) || l.id === newId) continue
-				if (m.getLayer(l.id)) m.removeLayer(l.id)
-				if (m.getSource(l.id)) m.removeSource(l.id)
-			}
-		}
-		if (m.isSourceLoaded(newId)) dropOldBases()
-		else m.once('idle', dropOldBases)
-	}
-
-	// ── Overlay GeoJSON builders ─────────────────────────────────────────────
-
-	/** Lines at equator, tropics of Cancer/Capricorn, Arctic/Antarctic circles. */
-	function buildGraticuleGeoJSON() {
-		/** @type {{id: string, lat: number}[]} */
-		const lines = [
-			{id: 'equator', lat: 0},
-			{id: 'tropic-cancer', lat: 23.4368},
-			{id: 'tropic-capricorn', lat: -23.4368},
-			{id: 'arctic', lat: 66.563},
-			{id: 'antarctic', lat: -66.563}
-		]
-		return {
-			type: 'FeatureCollection',
-			features: lines.map(({id, lat}) => ({
-				type: 'Feature',
-				geometry: {
-					type: 'LineString',
-					coordinates: [
-						[-180, lat],
-						[180, lat]
-					]
-				},
-				properties: {id}
-			}))
-		}
-	}
-
-	/** Night-side polygon computed from current solar position. */
-	/** @returns {import('geojson').FeatureCollection} */
-	function buildNightGeoJSON() {
-		const now = new Date()
-		const dayOfYear = Math.round(
-			(now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86_400_000
-		)
-		const decDeg = -23.45 * Math.cos(((2 * Math.PI) / 365) * (dayOfYear + 10))
-		const dec = (decDeg * Math.PI) / 180
-		// Small epsilon avoids tan(0) singularity at equinoxes
-		const tanDec = Math.abs(dec) < 0.002 ? 0.002 * Math.sign(dec || 1) : Math.tan(dec)
-		const noonLng = (12 - (now.getUTCHours() + now.getUTCMinutes() / 60)) * 15
-
-		const coords = []
-		for (let lng = -180; lng <= 180; lng += 2) {
-			const ha = ((lng - noonLng) * Math.PI) / 180
-			coords.push([lng, (Math.atan(-Math.cos(ha) / tanDec) * 180) / Math.PI])
-		}
-
-		// Build a CCW polygon (GeoJSON right-hand rule).
-		// Verified via shoelace: for dec≥0 (summer N) south pole is in night → reversed terminator;
-		// for dec<0 (winter N / current spring) north pole is in night → original (W→E) terminator.
-		const nightPole = decDeg >= 0 ? -90 : 90
-		let ring
-		if (decDeg >= 0) {
-			const rev = coords.toReversed()
-			ring = [...rev, [-180, nightPole], [180, nightPole], rev[0]]
-		} else {
-			ring = [...coords, [180, nightPole], [-180, nightPole], coords[0]]
-		}
-		return {
-			type: 'FeatureCollection',
-			features: [
-				{type: 'Feature', geometry: {type: 'Polygon', coordinates: [ring]}, properties: {}}
-			]
-		}
-	}
-
-	// ── Overlay layer setup ──────────────────────────────────────────────────
-
-	/** Add night-fill + graticule line layers. Called before channels-layer so they render beneath. */
-	function setupOverlays(m) {
-		if (!m.getSource('night-source')) {
-			m.addSource('night-source', {type: 'geojson', data: buildNightGeoJSON()})
-			m.addLayer({
-				id: 'night-layer',
-				type: 'fill',
-				source: 'night-source',
-				paint: {'fill-color': '#0a0a2e', 'fill-opacity': 0.45},
-				layout: {visibility: showDayNight ? 'visible' : 'none'}
-			})
-		}
-		if (!m.getSource('graticule-source')) {
-			m.addSource('graticule-source', {type: 'geojson', data: buildGraticuleGeoJSON()})
-			// Equator: solid red
-			m.addLayer({
-				id: 'graticule-equator',
-				type: 'line',
-				source: 'graticule-source',
-				filter: ['==', ['get', 'id'], 'equator'],
-				paint: {'line-color': '#cc4444', 'line-width': 1.5, 'line-opacity': 0.75},
-				layout: {visibility: showGraticules ? 'visible' : 'none'}
-			})
-			// Tropics & polar circles: dashed blue-gray
-			m.addLayer({
-				id: 'graticule-other',
-				type: 'line',
-				source: 'graticule-source',
-				filter: ['!=', ['get', 'id'], 'equator'],
-				paint: {
-					'line-color': '#6699bb',
-					'line-width': 1,
-					'line-opacity': 0.6,
-					'line-dasharray': [4, 4]
-				},
-				layout: {visibility: showGraticules ? 'visible' : 'none'}
-			})
-		}
-	}
-
 	function updateNightLayer() {
 		if (!map || !mapReady) return
-		const nightSource = /** @type {GeoJSONSource | undefined} */ (map.getSource('night-source'))
-		nightSource?.setData(buildNightGeoJSON())
+		writeNightLayerData(map)
 	}
 
 	function handleReady(m) {
 		map = m
-		setupOverlays(m)
+		setupOverlays(m, {showGraticules, showDayNight})
 		if (!broadcastLayer) broadcastLayer = new BroadcastLayer()
 		if (!m.getLayer('broadcast-3d')) m.addLayer(/** @type {any} */ (broadcastLayer))
 		updateBroadcastLayer()
 		mapReady = true // triggers the map-ready effect below
 		maybeAutoOpenSlug(openSlug, openRequestKey)
-	}
-
-	function refreshMarkerStyles() {
-		if (!map || !mapReady) return
-		const source = /** @type {GeoJSONSource | undefined} */ (map.getSource('channels-source'))
-		if (!source) return
-		source.setData(untrack(buildStyledGeoJSON))
 	}
 
 	function clearAutoOpenRetry() {
@@ -713,15 +379,6 @@
 	})
 
 	$effect(() => {
-		void favoriteIds
-		void broadcastingIds
-		void playingSlugs
-		void inDeckSlugs
-		void palette
-		refreshMarkerStyles()
-	})
-
-	$effect(() => {
 		void broadcastingIds
 		void mapChannels
 		updateBroadcastLayer()
@@ -745,7 +402,7 @@
 	$effect(() => {
 		const style = tileStyle
 		if (!map || !mapReady) return
-		swapBaseTiles(style)
+		swapBaseTiles(map, style)
 	})
 
 	// Graticule visibility toggle
@@ -769,7 +426,6 @@
 	})
 
 	onDestroy(() => {
-		_colorProbe.remove()
 		clearAutoOpenRetry()
 		clearPendingPopupLinkNavigation()
 		for (const cleanup of popupCleanupFns) cleanup()

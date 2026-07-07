@@ -1,6 +1,7 @@
 <script>
 	import {appState} from '$lib/app-state.svelte'
 	import {playChannel, togglePlayPause} from '$lib/api'
+	import {isChannelPlaying} from '$lib/deck'
 	import {pickFeatured, dailySeed} from '$lib/collections/featured'
 	import {shuffleSeed} from '$lib/utils'
 	import ChannelCard from './channel-card.svelte'
@@ -13,14 +14,10 @@
 	// Daily-seeded by default (same rotation as /featured); reshuffle picks a
 	// random seed for instant variety. Shared pickFeatured keeps both in sync.
 	let seed = $state(dailySeed())
-	let shuffling = $state(false)
 
 	const channels = $derived(pickFeatured(pool, {count: pickCount, seed}))
 	const first = $derived(channels[0] ?? null)
-	const isPlaying = $derived(
-		!!first &&
-			Object.values(appState.decks).some((d) => d.playlist_slug === first.slug && d.is_playing)
-	)
+	const isPlaying = $derived(isChannelPlaying(appState.decks, first?.slug))
 
 	function togglePlay() {
 		if (!first) return
@@ -29,13 +26,7 @@
 	}
 
 	function reshuffle() {
-		if (!pool.length || shuffling) return
-		shuffling = true
-		try {
-			seed = shuffleSeed()
-		} finally {
-			shuffling = false
-		}
+		if (pool.length) seed = shuffleSeed()
 	}
 </script>
 
@@ -56,12 +47,7 @@
 					</button>
 				{/if}
 				{#if pool.length > pickCount}
-					<button
-						type="button"
-						title={m.home_featured_refresh()}
-						onclick={reshuffle}
-						disabled={shuffling}
-					>
+					<button type="button" title={m.home_featured_refresh()} onclick={reshuffle}>
 						<Icon icon="switch-alt" />
 					</button>
 				{/if}
@@ -112,6 +98,12 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: flex-start;
+
+		@media (max-width: 640px) {
+			:global(.card .description) {
+				display: none;
+			}
+		}
 	}
 
 	.section-header {

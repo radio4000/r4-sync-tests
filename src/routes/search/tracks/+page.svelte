@@ -16,7 +16,7 @@
 	import {fromAction} from 'svelte/attachments'
 	import Pagination from '$lib/components/pagination.svelte'
 	import Seo from '$lib/components/seo.svelte'
-	import {getTopChannelSlugs} from '$lib/utils'
+	import {getTopChannelSlugs, paginationFromUrl} from '$lib/utils'
 	import * as m from '$lib/paraglide/messages'
 
 	const uid = $props.id()
@@ -27,8 +27,9 @@
 	const q = $derived(view.sources[0] ?? {})
 	const hasFilter = $derived(!!q.channels?.length || !!q.tags?.length || !!q.search)
 
-	const currentPage = $derived(Math.max(1, parseInt(page.url.searchParams.get('page') ?? '1') || 1))
-	const pageSize = $derived(Math.max(1, parseInt(page.url.searchParams.get('per') ?? '50') || 50))
+	const pagination = $derived(paginationFromUrl(page.url))
+	const currentPage = $derived(pagination.page)
+	const pageSize = $derived(pagination.per)
 
 	function onViewsBarChange(v) {
 		search.seedInput(viewLabel(v))

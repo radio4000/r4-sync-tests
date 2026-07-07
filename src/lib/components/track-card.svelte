@@ -2,10 +2,11 @@
 	import type {Snippet} from 'svelte'
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
-	import {playTrack, addToPlaylist, playTrackInNewDeck, togglePlayPause} from '$lib/api'
+	import {playTrack, playNext, addToPlaylist, playTrackInNewDeck, togglePlayPause} from '$lib/api'
 	import {deleteTrack} from '$lib/collections/tracks'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {appState} from '$lib/app-state.svelte'
+	import {trackAddSearchParams} from '$lib/track-add'
 	import type {Track, Channel} from '$lib/types'
 	import Icon from './icon.svelte'
 	import PopoverMenu from './popover-menu.svelte'
@@ -19,11 +20,15 @@
 		track: Track
 		index?: number
 		deckId?: number
+		/** Prebuilt trackId → deck info, hoisted out of the card to avoid iterating
+		 * appState.decks per row. Optional: cards without it fall back to per-card lookup. */
+		deckLookup?: Map<string, {deckId: number; isPlaying: boolean}>
 		selected?: boolean
 		onPlay?: (trackId: string) => void
 		showImage?: boolean
 		showSlug?: boolean
 		canEdit?: boolean
+		showMenu?: boolean
 		onTagClick?: (tag: string) => void
 		menuAlign?: 'left' | 'right' | 'end'
 		menuValign?: 'top' | 'bottom'
@@ -38,11 +43,13 @@
 		track,
 		index,
 		deckId,
+		deckLookup,
 		selected = false,
 		onPlay,
 		showImage = true,
 		showSlug = false,
 		canEdit = false,
+		showMenu = true,
 		onTagClick,
 		menuAlign,
 		menuValign,
@@ -55,7 +62,11 @@
 
 	const permalink = $derived(`/${track?.slug}/tracks/${track?.id}`)
 	const isRealTrack = $derived(isDbId(track?.id))
+	// When a deckLookup is provided (tracklist rows), it already encodes the same
+	// semantics the per-card branches below compute — see tracklist.svelte's builder.
+	const deckInfo = $derived(deckLookup?.get(track?.id))
 	const active = $derived.by(() => {
+		if (deckLookup) return Boolean(deckInfo)
 		if (deckId != null) {
 			const deck = appState.decks[deckId]
 			return deck?.playlist_track === track?.id
@@ -63,6 +74,7 @@
 		return Object.values(appState.decks).some((d) => d.playlist_track === track?.id)
 	})
 	const matchedDeckId = $derived.by(() => {
+		if (deckLookup) return deckInfo?.deckId ?? deckId ?? appState.active_deck_id
 		if (deckId != null) return deckId
 		for (const [id, deck] of Object.entries(appState.decks)) {
 			if (deck?.playlist_track === track?.id) return Number(id)
@@ -70,6 +82,7 @@
 		return appState.active_deck_id
 	})
 	const isTrackPlaying = $derived.by(() => {
+		if (deckLookup) return deckInfo?.isPlaying ?? false
 		const targetDeck = appState.decks[matchedDeckId]
 		return Boolean(targetDeck?.playlist_track === track?.id && targetDeck?.is_playing)
 	})
@@ -101,7 +114,8 @@
 
 	const addToRadio = () => {
 		if (!appState.user) {
-			const addPath = resolve('/add') + (track.url ? `?url=${encodeURIComponent(track.url)}` : '')
+			const query = trackAddSearchParams(track).toString()
+			const addPath = resolve('/add') + (query ? `?${query}` : '')
 			const authPath = resolve('/auth') + `?redirect=${encodeURIComponent(addPath)}`
 			goto(authPath)
 			return
@@ -195,7 +209,9 @@
 			{#if isRealTrack}
 				<span class="mobile">&rarr;</span>
 			{:else if track.url && !appState.embed_mode}
-				<a class="mobile" href={track.url} target="_blank" rel="noopener noreferrer">&rarr;</a>
+				<a class="mobile" href={track.url} target="_blank" rel="noopener noreferrer nofollow ugc"
+					>&rarr;</a
+				>
 			{/if}
 			{#if track.slug && track.discogs_url && !appState.embed_mode}
 				<a href="{permalink}/discogs" class="btn ghost discogs" title={m.track_meta_discogs()}
@@ -205,95 +221,104 @@
 			{#if showSlug}<small>@{track.slug}</small>{/if}
 		</time>
 	</div>
-	<PopoverMenu
-		bind:this={menu}
-		btnClass="ghost trackcard-contextBtn"
-		align={menuAlign}
-		valign={menuValign ?? 'top'}
-	>
-		{#snippet trigger()}
-			<Icon icon="options-horizontal" />
-		{/snippet}
-		<menu class="nav-vertical">
-			<button
-				type="button"
-				role="menuitem"
-				{@attach tooltip({content: m.common_play()})}
-				onclick={() => {
-					if (onPlay) {
-						onPlay(track.id)
-					} else {
-						playTrack(deckId ?? appState.active_deck_id, track.id, null, 'user_click_track')
-					}
-					menu?.close()
-				}}><Icon icon="play-fill" />{m.common_play()}</button
-			>
-			{#if !appState.embed_mode}
+	{#if showMenu}
+		<PopoverMenu
+			bind:this={menu}
+			btnClass="ghost trackcard-contextBtn"
+			align={menuAlign}
+			valign={menuValign ?? 'top'}
+		>
+			{#snippet trigger()}
+				<Icon icon="options-horizontal" />
+			{/snippet}
+			<menu class="nav-vertical">
 				<button
 					type="button"
 					role="menuitem"
-					{@attach tooltip({content: m.track_play_next()})}
+					{@attach tooltip({content: m.common_play()})}
 					onclick={() => {
-						addToPlaylist(deckId ?? appState.active_deck_id, [track.id])
+						if (onPlay) {
+							onPlay(track.id)
+						} else {
+							playTrack(deckId ?? appState.active_deck_id, track.id, null, 'user_click_track')
+						}
 						menu?.close()
-					}}><Icon icon="next-fill" />{m.track_play_next()}</button
+					}}><Icon icon="play-fill" />{m.common_play()}</button
 				>
-			{/if}
-			<button
-				type="button"
-				role="menuitem"
-				{@attach tooltip({content: m.track_card_play_in_deck()})}
-				onclick={async () => {
-					await playTrackInNewDeck(track.id, track.slug ?? undefined)
-					menu?.close()
-				}}><Icon icon="sidebar-fill-right" />{m.track_card_play_in_deck()}</button
-			>
-			{#if !appState.embed_mode}
+				{#if !appState.embed_mode}
+					<button
+						type="button"
+						role="menuitem"
+						{@attach tooltip({content: m.track_play_next()})}
+						onclick={() => {
+							playNext(deckId ?? appState.active_deck_id, [track.id])
+							menu?.close()
+						}}><Icon icon="next-fill" />{m.track_play_next()}</button
+					>
+					<button
+						type="button"
+						role="menuitem"
+						{@attach tooltip({content: m.track_add_to_queue()})}
+						onclick={() => {
+							addToPlaylist(deckId ?? appState.active_deck_id, [track.id])
+							menu?.close()
+						}}><Icon icon="unordered-list" />{m.track_add_to_queue()}</button
+					>
+				{/if}
 				<button
 					type="button"
 					role="menuitem"
-					{@attach tooltip({content: m.track_add_to_radio()})}
-					onclick={addToRadio}><Icon icon="add" />{m.track_add_to_radio()}</button
-				>
-			{/if}
-			{#if isRealTrack}
-				<button
-					type="button"
-					role="menuitem"
-					{@attach tooltip({content: m.share_native()})}
-					onclick={shareTrack}><Icon icon="share" />{m.share_native()}</button
-				>
-			{/if}
-			{#if onLocate}
-				<button type="button" role="menuitem" onclick={onLocate}
-					><Icon icon="arrow-down" />{m.track_card_locate_in_list()}</button
-				>
-			{/if}
-			{#if isRealTrack && !appState.embed_mode}
-				<a href={permalink} role="menuitem"
-					><Icon icon="circle-info" />{m.track_go_to()}</a
-				>
-			{:else if track.url && !appState.embed_mode}
-				<a href={track.url} target="_blank" rel="noopener noreferrer" role="menuitem"
-					><Icon icon="circle-info" />{m.track_card_open_video()}</a
-				>
-			{/if}
-			{#if canEdit}
-				<button type="button" role="menuitem" onclick={editTrack}
-					><Icon icon="edit" />{m.common_edit()}</button
-				>
-				<button
-					type="button"
-					class="menu-delete"
-					role="menuitem"
-					onclick={() => {
+					{@attach tooltip({content: m.track_card_play_in_deck()})}
+					onclick={async () => {
+						await playTrackInNewDeck(track.id, track.slug ?? undefined)
 						menu?.close()
-						showDeleteDialog = true
-					}}><Icon icon="delete" />{m.common_delete()}</button
+					}}><Icon icon="sidebar-fill-right" />{m.track_card_play_in_deck()}</button
 				>
-			{/if}
-		</menu>
-	</PopoverMenu>
+				{#if !appState.embed_mode}
+					<button
+						type="button"
+						role="menuitem"
+						{@attach tooltip({content: m.track_add_to_radio()})}
+						onclick={addToRadio}><Icon icon="add" />{m.track_add_to_radio()}</button
+					>
+				{/if}
+				{#if isRealTrack}
+					<button
+						type="button"
+						role="menuitem"
+						{@attach tooltip({content: m.share_native()})}
+						onclick={shareTrack}><Icon icon="share" />{m.share_native()}</button
+					>
+				{/if}
+				{#if onLocate}
+					<button type="button" role="menuitem" onclick={onLocate}
+						><Icon icon="arrow-down" />{m.track_card_locate_in_list()}</button
+					>
+				{/if}
+				{#if isRealTrack && !appState.embed_mode}
+					<a href={permalink} role="menuitem"><Icon icon="circle-info" />{m.track_go_to()}</a>
+				{:else if track.url && !appState.embed_mode}
+					<a href={track.url} target="_blank" rel="noopener noreferrer nofollow ugc" role="menuitem"
+						><Icon icon="circle-info" />{m.track_card_open_video()}</a
+					>
+				{/if}
+				{#if canEdit}
+					<button type="button" role="menuitem" onclick={editTrack}
+						><Icon icon="edit" />{m.common_edit()}</button
+					>
+					<button
+						type="button"
+						class="menu-delete"
+						role="menuitem"
+						onclick={() => {
+							menu?.close()
+							showDeleteDialog = true
+						}}><Icon icon="delete" />{m.common_delete()}</button
+					>
+				{/if}
+			</menu>
+		</PopoverMenu>
+	{/if}
 	{#if showDeleteDialog}
 		<Dialog bind:showModal={showDeleteDialog}>
 			{#snippet header()}
@@ -386,7 +411,7 @@
 		flex-flow: column;
 		justify-content: center;
 		min-width: 0;
-		gap: 0.1rem;
+		gap: 0;
 	}
 
 	.title {
@@ -406,18 +431,11 @@
 			color: inherit;
 			cursor: var(--interactive-cursor, pointer);
 		}
-		.active & {
-			color: var(--accent-10);
-		}
 	}
 
 	.active {
 		background: var(--gray-2);
 		border-color: var(--gray-5);
-		--tag-bg: var(--accent-2);
-		--tag-bg-hover: var(--accent-3);
-		--tag-bg-active: var(--accent-4);
-		--tag-color: var(--accent-10);
 	}
 
 	.selected {

@@ -5,6 +5,7 @@
 	import {spamDecisionsCollection} from '$lib/collections/spam-decisions'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {createQuery} from '@tanstack/svelte-query'
+	import {normalizeTrackMedia} from '$lib/collections/tracks'
 
 	const MAX_TRACK_COUNT = 10
 
@@ -26,6 +27,33 @@
 	const loading = $derived(channelsQuery.isPending)
 	const error = $derived(channelsQuery.error?.message ?? null)
 
+	// Batch-fetch tracks for every candidate channel in one query, grouped by slug.
+	// `channels_with_tracks` only has track_count — the actual rows come from `channel_tracks`.
+	const slugs = $derived(allChannels.map((ch) => ch.slug).filter(Boolean))
+
+	const tracksQuery = createQuery(() => ({
+		queryKey: ['spam-angel', 'tracks', slugs],
+		queryFn: async () => {
+			if (!slugs.length) return []
+			const {data, error} = await sdk.supabase.from('channel_tracks').select('*').in('slug', slugs)
+			if (error) throw error
+			const tracks = /** @type {Array<import('$lib/types').Track>} */ (data ?? [])
+			return tracks.map(normalizeTrackMedia)
+		},
+		enabled: slugs.length > 0,
+		staleTime: 5 * 60 * 1000
+	}))
+
+	const tracksBySlug = $derived.by(() => {
+		/** @type {Record<string, Array<import('$lib/types').Track>>} */
+		const map = {}
+		for (const track of tracksQuery.data ?? []) {
+			if (!track.slug) continue
+			;(map[track.slug] ??= []).push(track)
+		}
+		return map
+	})
+
 	const decisionsQuery = useLiveQuery((q) => q.from({d: spamDecisionsCollection}))
 	const decisions = $derived(decisionsQuery.data ?? [])
 
@@ -34,9 +62,11 @@
 		allChannels
 			.map((ch) => {
 				const decision = decisions.find((d) => d.channelId === ch.id)
+				const tracks = (ch.slug && tracksBySlug[ch.slug]) || []
 				return {
 					...ch,
-					analysis: analyzeChannel(ch),
+					tracks,
+					analysis: analyzeChannel(ch, tracks),
 					decision: decision?.spam
 				}
 			})
@@ -45,16 +75,49 @@
 	)
 
 	let expanded = $state(new Set())
+	let focusedIndex = $state(0)
+	let lastActionChannelId = $state(null)
 
 	function setDecision(channelId, spam) {
 		if (spamDecisionsCollection.state.has(channelId)) {
 			spamDecisionsCollection.delete(channelId)
 		}
 		spamDecisionsCollection.insert({channelId, spam})
+		lastActionChannelId = channelId
 	}
 
 	function undoDecision(channelId) {
 		spamDecisionsCollection.delete(channelId)
+	}
+
+	function undoLast() {
+		if (!lastActionChannelId) return
+		undoDecision(lastActionChannelId)
+		lastActionChannelId = null
+	}
+
+	function isTypingTarget(target) {
+		if (!target) return false
+		return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+	}
+
+	function handleKeydown(event) {
+		if (isTypingTarget(event.target)) return
+		if (event.key === 'j' || event.key === 'ArrowDown') {
+			event.preventDefault()
+			focusedIndex = Math.min(focusedIndex + 1, Math.max(undecided.length - 1, 0))
+		} else if (event.key === 'k' || event.key === 'ArrowUp') {
+			event.preventDefault()
+			focusedIndex = Math.max(focusedIndex - 1, 0)
+		} else if (event.key === 's') {
+			const channel = undecided[focusedIndex]
+			if (channel) setDecision(channel.id, true)
+		} else if (event.key === 'e') {
+			const channel = undecided[focusedIndex]
+			if (channel) setDecision(channel.id, false)
+		} else if (event.key === 'u') {
+			undoLast()
+		}
 	}
 
 	function clearAll() {
@@ -77,11 +140,15 @@
 	const toDelete = $derived(candidates.filter((ch) => ch.decision === true))
 	const toKeep = $derived(candidates.filter((ch) => ch.decision === false))
 
+	function escapeSqlString(str) {
+		return str.replace(/'/g, "''")
+	}
+
 	const sql = $derived(
 		toDelete
 			.map(
 				(ch) =>
-					`-- ${ch.name}\nDELETE FROM channel_track WHERE channel_id = '${ch.id}';\nDELETE FROM channels WHERE id = '${ch.id}';`
+					`-- ${ch.name} (@${ch.slug})\nselect ban_user_by_channel_slug('${escapeSqlString(ch.slug)}');`
 			)
 			.join('\n\n')
 	)
@@ -112,6 +179,8 @@
 	<title>Spam Angel | Radio4000 docs</title>
 </svelte:head>
 
+<svelte:window onkeydown={handleKeydown} />
+
 <header>
 	<div>
 		<h1>Spam Angel</h1>
@@ -138,12 +207,13 @@
 	<section class="column" data-column="review">
 		<details open>
 			<summary>For Review ({undecided.length})</summary>
+			<p class="hint">j/k or ↓/↑ to move · s to mark spam · e to keep · u to undo</p>
 			<ul class="list">
-				{#each undecided as channel (channel.id)}
+				{#each undecided as channel, i (channel.id)}
 					{@const ev = channel.analysis.evidence}
 					{@const hasMusic = ev.musicTerms.length > 0}
 					{@const isExpanded = expanded.has(channel.id)}
-					<li>
+					<li class:focused={i === focusedIndex}>
 						<div class="main-row">
 							<a href="/{channel.slug}" class="avatar-link">
 								<ChannelAvatar id={channel.image} alt={channel.name} size={40} />
@@ -156,6 +226,11 @@
 								</div>
 
 								<div class="evidence">
+									{#if ev.trackSignals.length > 0}
+										<span class="tag" data-type="tracks"
+											>{ev.trackSignals.slice(0, 3).join(', ')}</span
+										>
+									{/if}
 									{#if ev.keywords.length > 0}
 										<span class="tag" data-type="spam"
 											>{ev.keywords.slice(0, 4).join(', ')}{ev.keywords.length > 4 ? '…' : ''}</span
@@ -183,15 +258,36 @@
 							</menu>
 						</div>
 
-						{#if isExpanded || (channel.description?.length ?? 0) > 100}
+						{#if isExpanded || (channel.description?.length ?? 0) > 100 || channel.tracks.length > 0}
 							<div
 								class="expanded"
 								class:collapsed={!isExpanded && (channel.description?.length ?? 0) > 100}
 							>
-								<p class="desc" onclick={() => toggleExpand(channel.id)}>
-									{isExpanded ? channel.description : channel.description?.slice(0, 150)}
-									{#if !isExpanded && (channel.description?.length ?? 0) > 150}…{/if}
-								</p>
+								{#if channel.description}
+									<p class="desc" onclick={() => toggleExpand(channel.id)}>
+										{isExpanded ? channel.description : channel.description?.slice(0, 150)}
+										{#if !isExpanded && (channel.description?.length ?? 0) > 150}…{/if}
+									</p>
+								{/if}
+								{#if isExpanded && channel.tracks.length > 0}
+									<ul class="track-list">
+										{#each channel.tracks as track (track.id)}
+											<li>
+												<span class="track-title">{track.title}</span>
+												<a
+													href={track.url}
+													rel="nofollow ugc noopener"
+													target="_blank"
+													class="track-url">{track.url}</a
+												>
+											</li>
+										{/each}
+									</ul>
+								{:else if !isExpanded && channel.tracks.length > 0}
+									<button class="track-toggle" onclick={() => toggleExpand(channel.id)}>
+										{channel.tracks.length} track{channel.tracks.length === 1 ? '' : 's'} — show
+									</button>
+								{/if}
 							</div>
 						{/if}
 					</li>
@@ -364,6 +460,9 @@
 	.tag[data-type='music'] {
 		background: light-dark(hsl(120 50% 90%), hsl(120 30% 25%));
 	}
+	.tag[data-type='tracks'] {
+		background: light-dark(hsl(260 60% 90%), hsl(260 35% 28%));
+	}
 	.score {
 		min-width: 2.5rem;
 		text-align: right;
@@ -385,6 +484,41 @@
 		opacity: 0.8;
 		white-space: pre-wrap;
 		word-break: break-word;
+	}
+	.track-toggle {
+		font-size: var(--font-4);
+		opacity: 0.7;
+	}
+	.track-list {
+		list-style: none;
+		margin: var(--space-1) 0 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		font-size: var(--font-4);
+	}
+	.track-list li {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1em;
+	}
+	.track-title {
+		opacity: 0.9;
+	}
+	.track-url {
+		opacity: 0.6;
+		word-break: break-all;
+	}
+	.hint {
+		font-size: var(--font-4);
+		opacity: 0.6;
+		margin: 0.25rem 0 0.5rem;
+	}
+	.list li.focused {
+		outline: 2px solid var(--accent-9);
+		outline-offset: 2px;
+		border-radius: var(--border-radius);
 	}
 
 	/* Mobile: stack all vertically */

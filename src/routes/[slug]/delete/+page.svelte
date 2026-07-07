@@ -76,7 +76,10 @@
 	}
 </script>
 
-<Seo title={m.channel_delete_page_title({name: channel?.name || m.channel_page_fallback()})} plain />
+<Seo
+	title={m.channel_delete_page_title({name: channel?.name || m.channel_page_fallback()})}
+	plain
+/>
 
 <article>
 	{#if canDelete && channel}

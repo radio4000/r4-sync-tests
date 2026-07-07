@@ -22,6 +22,8 @@ A View has two lossless string forms:
 
 The difference is structural: ViewURI is one string (`@ko002 #jazz?order=shuffle`), SearchURL splits across params (`?q=@ko002 #jazz&order=shuffle`). `viewLabel(view)` returns the human query text (sources only, no options) — this is what goes into `?q=`.
 
+Channel routes (`/[slug]/tracks?tags=jazz,dub&q=text`) use a third, friendlier URL form: `channelViewFromUrl(url, slug)` reads it into a View. There `?q=` is plain search text (no `@`/`#` syntax) and `?tags=` are comma-separated bare tags with `tagsMode=all` — each selected tag narrows the result.
+
 ```
 @ko002
 r4://@ko002 #jazz

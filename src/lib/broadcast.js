@@ -16,6 +16,7 @@ import {broadcastsCollection} from '$lib/collections/broadcasts'
 import {channelsCollection} from '$lib/collections/channels'
 import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
 import {isDbId} from '$lib/utils'
+import {sortedDeckIds, sortedListeningDeckIds, isBroadcasting} from '$lib/deck'
 import {
 	calculateSeekTime,
 	DRIFT_TOLERANCE_SECONDS,
@@ -73,7 +74,7 @@ const broadcastChannels = new Map()
  */
 const broadcastStateChannels = new Map()
 /** Broadcaster cleanup monitors keyed by channelId
- * @type {Map<string, {intervalId: ReturnType<typeof setInterval>, idleSinceMs: number | null, stopping: boolean}>}
+ * @type {Map<string, {intervalId: ReturnType<typeof setInterval>, idleSinceMs: number | null, lastTickMs: number, stopping: boolean}>}
  */
 const broadcastLivenessMonitors = new Map()
 
@@ -94,7 +95,7 @@ const seekJobSeqByDeck = new Map()
 export function isUserBroadcasting(channelId) {
 	if (!channelId) return false
 	if (broadcastsCollection.state.get(channelId)) return true
-	return Object.values(appState.decks).some((deck) => deck.broadcasting_channel_id === channelId)
+	return isBroadcasting(appState.decks, channelId)
 }
 
 /** @param {string} channelId */
@@ -151,7 +152,7 @@ export async function joinBroadcast(deckId, channelId) {
 		}
 
 		// Tear down all existing decks before applying broadcast state
-		for (const id of getSortedDeckIds()) {
+		for (const id of sortedDeckIds(appState.decks)) {
 			stopBroadcastSync(id)
 			clearUserInitiatedPlay(id)
 			removeDeck(id)
@@ -169,9 +170,7 @@ export async function joinBroadcast(deckId, channelId) {
 		}
 
 		// Set active deck to the first listener deck
-		const listenerIds = getSortedDeckIds().filter(
-			(id) => appState.decks[id]?.listening_to_channel_id === channelId
-		)
+		const listenerIds = managedListenerIds(channelId)
 		if (listenerIds.length) {
 			appState.active_deck_id = listenerIds[0]
 		}
@@ -217,9 +216,7 @@ export async function resyncBroadcastDeck(deckId) {
 	}
 	if (!Array.isArray(decks) || !decks.length) return
 
-	const localManagedIds = getSortedDeckIds().filter(
-		(id) => appState.decks[id]?.listening_to_channel_id === channelId
-	)
+	const localManagedIds = managedListenerIds(channelId)
 	const localIndex = Math.max(0, localManagedIds.indexOf(deckId))
 	const matchedState =
 		(deck.playlist_track && decks.find((state) => state?.track_id === deck.playlist_track)) ??
@@ -323,7 +320,7 @@ export async function stopBroadcast(channelId) {
  * channel (from `tid` when given) if nothing is playing — then mark the source deck
  * as broadcasting. The single "go live" path shared by every broadcast button.
  * Stopping is just `stopBroadcast(channel.id)` (it already clears deck flags).
- * @param {{id: string, slug: string}} channel
+ * @param {import('$lib/types').ChannelRef} channel
  * @param {{deckId?: number, tid?: string}} [opts]
  * @returns {Promise<{ok: boolean, reason?: 'no-channel' | 'no-track'}>}
  */
@@ -331,8 +328,8 @@ export async function startChannelBroadcast(channel, {deckId = appState.active_d
 	if (!channel?.id) return {ok: false, reason: 'no-channel'}
 
 	// Prefer whatever is already playing; otherwise fall back to the target deck.
-	const playingDeck = Object.values(appState.decks).find(
-		(d) => Boolean(d?.is_playing && d?.playlist_track)
+	const playingDeck = Object.values(appState.decks).find((d) =>
+		Boolean(d?.is_playing && d?.playlist_track)
 	)
 	let sourceDeckId = playingDeck?.id ?? deckId
 	let trackId = playingDeck?.playlist_track ?? appState.decks[deckId]?.playlist_track
@@ -480,14 +477,15 @@ async function playBroadcastTrack(deckId, broadcast) {
 	return true
 }
 
-function getSortedDeckIds() {
-	return Object.keys(appState.decks)
-		.map(Number)
-		.sort((a, b) => a - b)
+function getBroadcasterDeckIds() {
+	return sortedDeckIds(appState.decks).filter((id) => !appState.decks[id]?.listening_to_channel_id)
 }
 
-function getBroadcasterDeckIds() {
-	return getSortedDeckIds().filter((id) => !appState.decks[id]?.listening_to_channel_id)
+/** Deck IDs of the local decks managed by (listening to) a broadcast channel, sorted. */
+function managedListenerIds(channelId) {
+	return sortedDeckIds(appState.decks).filter(
+		(id) => appState.decks[id]?.listening_to_channel_id === channelId
+	)
 }
 
 function startBroadcastLivenessMonitor(channelId) {
@@ -498,6 +496,7 @@ function startBroadcastLivenessMonitor(channelId) {
 	const monitor = {
 		intervalId,
 		idleSinceMs: null,
+		lastTickMs: Date.now(),
 		stopping: false
 	}
 	broadcastLivenessMonitors.set(channelId, monitor)
@@ -513,6 +512,18 @@ function stopBroadcastLivenessMonitor(channelId) {
 async function evaluateBroadcastLiveness(channelId) {
 	const monitor = broadcastLivenessMonitors.get(channelId)
 	if (!monitor || monitor.stopping) return
+
+	// A large gap since the previous tick means the tab was backgrounded/suspended —
+	// treat it as a resume, not accumulated idle time, so a briefly-backgrounded tab
+	// doesn't auto-stop the broadcast before playback has a chance to catch up.
+	const now = Date.now()
+	const tickGapMs = now - monitor.lastTickMs
+	monitor.lastTickMs = now
+	if (tickGapMs > BROADCAST_LIVENESS_INTERVAL_MS * 3) {
+		monitor.idleSinceMs = null
+		log.log(`liveness_resume_gap @${label(channelId)} ${tickGapMs}ms`)
+		return
+	}
 
 	const deckIds = getBroadcasterDeckIds()
 	if (!deckIds.length) {
@@ -540,7 +551,6 @@ async function evaluateBroadcastLiveness(channelId) {
 		return
 	}
 
-	const now = Date.now()
 	if (monitor.idleSinceMs == null) {
 		monitor.idleSinceMs = now
 		return
@@ -735,18 +745,14 @@ async function applyBroadcastState(channelId, decks) {
 	if (!Array.isArray(decks) || !decks.length) return
 
 	const incomingTrackIds = new Set(decks.map((d) => d?.track_id).filter(Boolean))
-	let managedIds = getSortedDeckIds().filter(
-		(id) => appState.decks[id]?.listening_to_channel_id === channelId
-	)
+	let managedIds = managedListenerIds(channelId)
 
 	// Add managed decks if needed for this specific broadcast channel.
 	while (managedIds.length < decks.length) {
 		const deck = addDeck()
 		deck.listening_to_channel_id = channelId
 		deck.hide_queue_panel = true
-		managedIds = getSortedDeckIds().filter(
-			(id) => appState.decks[id]?.listening_to_channel_id === channelId
-		)
+		managedIds = managedListenerIds(channelId)
 	}
 
 	// Remove excess managed decks only (never touch unrelated local decks).
@@ -761,9 +767,7 @@ async function applyBroadcastState(channelId, decks) {
 			clearUserInitiatedPlay(removeId)
 			removeDeck(removeId)
 		}
-		managedIds = getSortedDeckIds().filter(
-			(id) => appState.decks[id]?.listening_to_channel_id === channelId
-		)
+		managedIds = managedListenerIds(channelId)
 		removed = true
 	}
 
@@ -860,9 +864,7 @@ async function syncDeckToBroadcastState(deckId, channelId, state) {
 
 /** Validate that listening_to_channel_id points to an active broadcast (checks all decks) */
 export async function validateListeningState() {
-	const listeningDeckIds = Object.keys(appState.decks)
-		.map(Number)
-		.filter((id) => Boolean(appState.decks[id]?.listening_to_channel_id))
+	const listeningDeckIds = sortedListeningDeckIds(appState.decks)
 	for (const id of listeningDeckIds) {
 		const deck = appState.decks[id]
 		if (!deck?.listening_to_channel_id) continue
@@ -879,4 +881,24 @@ export async function validateListeningState() {
 			closeListeningDecksForChannel(deck.listening_to_channel_id)
 		}
 	}
+}
+
+// Resume broadcast/listen state on tab foreground. Backgrounded mobile tabs stall
+// setInterval and can drop the realtime websocket with no resync — on return, push a
+// fresh state if broadcasting, and force a state resync if listening (reusing the
+// same request_state round-trip a fresh listener uses on subscribe).
+if (typeof document !== 'undefined') {
+	const resumeBroadcastState = () => {
+		if (document.visibilityState !== 'visible') return
+		for (const channelId of broadcastStateChannels.keys()) {
+			log.log(`resume_broadcaster @${label(channelId)}`)
+			broadcastStateUpdate(channelId)
+		}
+		for (const [channelId, channel] of broadcastStateListeners) {
+			log.log(`resume_listener @${label(channelId)}`)
+			channel.send({type: 'broadcast', event: 'request_state', payload: {channel_id: channelId}})
+		}
+	}
+	document.addEventListener('visibilitychange', resumeBroadcastState)
+	window.addEventListener('pageshow', resumeBroadcastState)
 }

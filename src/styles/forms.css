@@ -58,9 +58,12 @@ input[type='range'] {
 	accent-color: var(--accent-7);
 	background: transparent;
 	-webkit-appearance: none;
+	--range-track-height: 0.2rem;
+	--range-thumb-size: 0.75rem;
+	min-height: var(--range-thumb-size);
 
 	&::-webkit-slider-runnable-track {
-		height: 0.2rem;
+		height: var(--range-track-height);
 		background: linear-gradient(
 			to right,
 			var(--range-track-color, var(--gray-4)) var(--range-fill, 0%),
@@ -69,17 +72,24 @@ input[type='range'] {
 	}
 
 	&::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		width: var(--range-thumb-size);
+		height: var(--range-thumb-size);
+		border-radius: 50%;
 		background: var(--range-color, var(--accent-9));
-		position: relative;
-		top: calc(-1 * var(--space-1));
+		margin-top: calc(var(--range-track-height) / 2 - var(--range-thumb-size) / 2);
 	}
 
 	&::-moz-range-thumb {
+		width: var(--range-thumb-size);
+		height: var(--range-thumb-size);
+		border-radius: 50%;
+		border: none;
 		background: var(--range-color, var(--accent-9));
-		border-color: var(--range-color, var(--accent-9));
 	}
 
 	&::-moz-range-track {
+		height: var(--range-track-height);
 		background: var(--gray-4);
 	}
 

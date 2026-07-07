@@ -2,7 +2,9 @@
 	import {page} from '$app/state'
 	import {resolve} from '$app/paths'
 	import {onMount} from 'svelte'
+	import {MediaQuery} from 'svelte/reactivity'
 	import {appState} from '$lib/app-state.svelte'
+	import {isBroadcasting as isBroadcastingDeck, sortedDeckIds} from '$lib/deck'
 	import AddTrackDialog from '$lib/components/track-add-dialog.svelte'
 	import EditTrackDialog from '$lib/components/track-edit-dialog.svelte'
 	import ShareDialog from '$lib/components/share-dialog.svelte'
@@ -10,33 +12,32 @@
 	import BroadcastToggle from '$lib/components/broadcast-toggle.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import Icon from '$lib/components/icon.svelte'
+	import NavPopover from '$lib/components/nav-popover.svelte'
 	import IconR4 from '$lib/components/icon-r4.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import InternetIndicator from '$lib/components/internet-indicator.svelte'
 	import * as m from '$lib/paraglide/messages'
-	import {appName, conceptIcons} from '$lib/config'
+	import {appName, conceptIcons, MOBILE_BREAKPOINT, navPopoverOnLogo} from '$lib/config'
 	import {deckAccent} from '$lib/app-state.svelte'
 
 	const {preloading} = $props()
 
 	const isSignedIn = $derived(!!appState.user)
 	const userChannel = $derived(appState.channel)
-	const isBroadcasting = $derived(
-		userChannel &&
-			Object.values(appState.decks).some((d) => d.broadcasting_channel_id === userChannel.id)
-	)
-	const deckIds = $derived(Object.keys(appState.decks).map(Number))
+	const isBroadcasting = $derived(isBroadcastingDeck(appState.decks, userChannel?.id))
+	const deckIds = $derived(sortedDeckIds(appState.decks))
 	const activeDeckColor = $derived(deckAccent(deckIds, appState.active_deck_id))
 
 	const DESKTOP_MIN = 1
 	const DESKTOP_MAX = 10000
 	const DESKTOP_DEFAULT = 188
 	const MOBILE_MIN = 52
-	const MOBILE_MAX = 92
-	const MOBILE_DEFAULT = 90
+	const MOBILE_MAX = 120
+	const MOBILE_DEFAULT = 100
 	const STORAGE_KEY_LABELS_VISIBLE = 'r5:layout-header-labels-visible'
 
-	let isMobileViewport = $state(false)
+	const mobileViewport = new MediaQuery(`(max-width: ${MOBILE_BREAKPOINT}px)`)
+
 	let headerSize = $state(DESKTOP_DEFAULT)
 	let labelsVisible = $state(true)
 	let labelLayout = $state(/** @type {'none' | 'right' | 'below'} */ ('none'))
@@ -49,13 +50,9 @@
 		return mobile ? [MOBILE_MIN, MOBILE_MAX] : [DESKTOP_MIN, DESKTOP_MAX]
 	}
 
-	function detectMobileViewport() {
-		return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
-	}
-
 	function applyModeFromSize() {
 		if (!labelsVisible) labelLayout = 'none'
-		else labelLayout = isMobileViewport ? 'below' : 'right'
+		else labelLayout = mobileViewport.current ? 'below' : 'right'
 	}
 
 	function loadSizeForViewport(mobile) {
@@ -70,27 +67,23 @@
 		localStorage.setItem(STORAGE_KEY_LABELS_VISIBLE, labelsVisible ? '1' : '0')
 	}
 
-	function toggleLabels() {
+	function toggleLabels(event) {
+		// Only on the header background — not links/buttons (fast double-taps)
+		if (event.target.closest('a, button, input, [popover]')) return
 		labelsVisible = !labelsVisible
 		applyModeFromSize()
 		persistLabelsVisible()
 	}
 
 	onMount(() => {
-		isMobileViewport = detectMobileViewport()
 		const stored =
 			typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY_LABELS_VISIBLE) : null
 		labelsVisible = stored == null ? true : stored === '1'
-		loadSizeForViewport(isMobileViewport)
-		const onViewportResize = () => {
-			const nextMobile = detectMobileViewport()
-			if (nextMobile !== isMobileViewport) {
-				isMobileViewport = nextMobile
-				loadSizeForViewport(nextMobile)
-			}
-		}
-		window.addEventListener('resize', onViewportResize)
-		return () => window.removeEventListener('resize', onViewportResize)
+		applyModeFromSize()
+	})
+
+	$effect(() => {
+		loadSizeForViewport(mobileViewport.current)
 	})
 </script>
 
@@ -98,22 +91,26 @@
 	class:labels-none={labelLayout === 'none'}
 	class:labels-right={labelLayout === 'right'}
 	class:labels-below={labelLayout === 'below'}
-	class:mobile={isMobileViewport}
+	class:mobile={mobileViewport.current}
 	style={`--app-header-size:${headerSize}px;`}
 	ondblclick={toggleLabels}
 >
 	<nav class="nav-secondary">
-		<a
-			href={resolve('/')}
-			class="btn home-link nav-btn"
-			class:active={page.route.id === '/'}
-			aria-label={appName}
+		<div
+			class="home-link"
 			style:color={activeDeckColor}
+			aria-label={appName}
 			{@attach tooltip({content: appName})}
 		>
-			<IconR4 />
-			<span class="btn-label">Home</span>
-		</a>
+			{#if navPopoverOnLogo}
+				<NavPopover />
+			{:else}
+				<a href={resolve('/')} class="btn nav-btn">
+					<IconR4 size={18} />
+					<span class="btn-label">{appName}</span>
+				</a>
+			{/if}
+		</div>
 		<a
 			href={resolve('/explore')}
 			class="btn nav-btn"
@@ -202,15 +199,15 @@
 
 <style>
 	header {
-		--app-nav-btn-size: clamp(2.05rem, calc(var(--app-header-size) * 0.34), 3.3rem);
-		--app-nav-glyph-size: clamp(0.88rem, calc(var(--app-nav-btn-size) * 0.42), 1.32rem);
-		--app-nav-gap: 0.34rem;
-		--app-nav-pad-inline: clamp(0.5rem, calc(var(--app-nav-btn-size) * 0.17), 0.62rem);
-		--app-nav-pad-block: clamp(0rem, calc(var(--app-nav-btn-size) * 0.06), 0.18rem);
+		--app-nav-btn-size: clamp(2rem, calc(var(--app-header-size) * 0.3), 3.5rem);
+		--app-nav-glyph-size: clamp(1.3rem, calc(var(--app-nav-btn-size) * 0.5), 1.5rem);
+		--app-nav-gap: 0.4rem;
+		--app-nav-pad-inline: clamp(0.5rem, calc(var(--app-nav-btn-size) * 0.2), 0.62rem);
+		--app-nav-pad-block: clamp(0rem, calc(var(--app-nav-btn-size) * 0.06), 0.2rem);
 		display: flex;
 		flex-flow: column nowrap;
 		gap: clamp(var(--space-1), calc(var(--app-nav-btn-size) * 0.2), 0.8rem);
-		padding: 0.5rem var(--space-1);
+		padding: var(--space-2) var(--space-1);
 		inline-size: clamp(min-content, var(--app-header-size), max-content);
 		min-inline-size: min-content;
 		max-inline-size: max-content;
@@ -247,12 +244,10 @@
 		min-width: var(--app-nav-btn-size);
 		height: auto;
 		width: auto;
-		margin: 0;
 		padding: var(--app-nav-pad-block) var(--app-nav-pad-inline);
 		gap: var(--app-nav-gap);
 		border-color: transparent;
 		background: transparent;
-		box-shadow: none;
 		transition:
 			min-width 120ms ease,
 			min-height 120ms ease,
@@ -316,7 +311,7 @@
 	}
 
 	.channel-link.nav-btn {
-		padding: var(--space-1) 0.32rem var(--space-1);
+		padding: var(--space-1) var(--space-2) var(--space-1);
 		--channel-avatar-size: var(--app-nav-glyph-size);
 
 		:global(img, .fallback, svg) {
@@ -346,7 +341,7 @@
 	header.labels-right :global(.btn.nav-btn) {
 		flex-direction: row;
 		justify-content: flex-start;
-		min-width: min(100%, calc(var(--app-header-size) - 0.55rem));
+		min-width: min(100%, calc(var(--app-header-size) - 0.5rem));
 	}
 
 	header.labels-right nav :global(.btn.nav-btn .btn-label) {
@@ -417,11 +412,8 @@
 		}
 
 		.user-nav {
-			margin: 0;
 			flex: 1;
 			justify-content: center;
-			overflow-x: auto;
-			scrollbar-width: none;
 		}
 
 		/* Active menu item keeps same style on mobile */
@@ -434,7 +426,7 @@
 	}
 
 	/* Tightest phones: drop labels in the crowded user-nav */
-	@media (max-width: 360px) {
+	@media (max-width: 520px) {
 		.user-nav :global(.btn.nav-btn .btn-label) {
 			display: none;
 		}

@@ -1,4 +1,5 @@
 import maplibregl from 'maplibre-gl'
+import {resolveCssColorFloat} from './map-color.js'
 
 // 300 km radius → ~30px rings at zoom 2 (world view), scaling naturally with zoom
 const RADIUS_METERS = 300_000
@@ -54,45 +55,6 @@ function mat4mul(a, b) {
 		}
 	}
 	return out
-}
-
-function readAccentColor() {
-	const canvas = document.createElement('canvas')
-	canvas.width = canvas.height = 1
-	const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'))
-	const div = document.createElement('div')
-	div.style.color = 'var(--accent-9)'
-	div.style.position = 'absolute'
-	div.style.visibility = 'hidden'
-	document.body.append(div)
-	const raw = getComputedStyle(div).color
-	div.remove()
-	ctx.fillStyle = raw || '#ff8800'
-	ctx.fillRect(0, 0, 1, 1)
-	const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data
-	return new Float32Array([r / 255, g / 255, b / 255])
-}
-
-/**
- * Read and normalize a CSS variable color to sRGB floats.
- * @param {string} variableName
- * @param {string} fallback
- */
-function readCssColor(variableName, fallback) {
-	const canvas = document.createElement('canvas')
-	canvas.width = canvas.height = 1
-	const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'))
-	const div = document.createElement('div')
-	div.style.color = `var(${variableName})`
-	div.style.position = 'absolute'
-	div.style.visibility = 'hidden'
-	document.body.append(div)
-	const raw = getComputedStyle(div).color
-	div.remove()
-	ctx.fillStyle = raw || fallback
-	ctx.fillRect(0, 0, 1, 1)
-	const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data
-	return new Float32Array([r / 255, g / 255, b / 255])
 }
 
 export class BroadcastLayer {
@@ -179,8 +141,8 @@ export class BroadcastLayer {
 
 		gl.bindVertexArray(null)
 
-		this.accentColor = readAccentColor()
-		this.favoriteBroadcastColor = readCssColor('--accent-6', '#ffbb00')
+		this.accentColor = resolveCssColorFloat('--accent-9', '#ff8800')
+		this.favoriteBroadcastColor = resolveCssColorFloat('--accent-6', '#ffbb00')
 	}
 
 	/** @param {WebGL2RenderingContext} gl @param {{modelViewProjectionMatrix: number[]}} options */

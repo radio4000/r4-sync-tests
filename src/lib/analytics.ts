@@ -1,13 +1,10 @@
 import posthog from 'posthog-js'
 import {appState} from '$lib/app-state.svelte'
-import {posthogKey} from '$lib/config'
+import {posthogKey, posthogHost} from '$lib/config'
 import {addCaptureEvent} from '$lib/collections/capture-events'
 import {logger} from '$lib/logger'
 
 const log = logger.ns('analytics').seal()
-
-const POSTHOG_KEY = posthogKey
-const POSTHOG_HOST = 'https://eu.i.posthog.com'
 
 let initialized = false
 // let identified = false
@@ -16,8 +13,8 @@ let initialized = false
 function init() {
 	if (initialized) return
 	initialized = true
-	posthog.init(POSTHOG_KEY, {
-		api_host: POSTHOG_HOST,
+	posthog.init(posthogKey, {
+		api_host: posthogHost,
 		defaults: '2026-01-30',
 		capture_pageview: false
 	})

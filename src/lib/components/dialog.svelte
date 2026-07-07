@@ -53,7 +53,7 @@
 
 <style>
 	dialog {
-		--duration: 150ms;
+		--duration: var(--duration-2);
 		border: none;
 		width: 100%;
 		max-width: 100%;
@@ -62,27 +62,36 @@
 		padding: clamp(0.5rem, 5dvh, 3rem) 0.75rem;
 		overflow-y: auto;
 		box-sizing: border-box;
+		opacity: 1;
+		scale: 1;
+		transition:
+			opacity var(--duration) var(--ease-out),
+			scale var(--duration) var(--ease-out),
+			display var(--duration) allow-discrete,
+			overlay var(--duration) allow-discrete;
 	}
-	dialog[open] {
-		animation: modal-in var(--duration) ease-out;
+	/* exit — quicker than the entrance */
+	dialog:not([open]) {
+		--duration: var(--duration-1);
+		opacity: 0;
+		scale: 0.98;
 	}
-	@keyframes modal-in {
-		from {
+	@starting-style {
+		dialog[open] {
 			opacity: 0;
-			transform: scale(0.98);
-		}
-		to {
-			opacity: 1;
-			transform: scale(1);
+			scale: 0.98;
 		}
 	}
 	dialog::backdrop {
 		background: oklch(0 0 0 / 0.7);
 		opacity: 1;
 		transition:
-			opacity var(--duration) ease-out,
+			opacity var(--duration) var(--ease-out),
 			display var(--duration) allow-discrete,
 			overlay var(--duration) allow-discrete;
+	}
+	dialog:not([open])::backdrop {
+		opacity: 0;
 	}
 	@starting-style {
 		dialog[open]::backdrop {

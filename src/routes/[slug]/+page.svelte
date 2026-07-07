@@ -17,8 +17,10 @@
 	import Icon from '$lib/components/icon.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import SearchInput from '$lib/components/search-input.svelte'
+	import FilterChips from '$lib/components/filter-chips.svelte'
 	import {relativeDate} from '$lib/dates'
-	import {extractHashtags, channelAvatarUrl} from '$lib/utils'
+	import {extractHashtags, channelAvatarUrl, getChannelTags} from '$lib/utils'
+	import {getTagFilter} from './tag-filter.svelte'
 	import {addToPlaylist, joinAutoRadio, playTrack, setPlaylist, togglePlayPause} from '$lib/api'
 	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
 	import {getAutoDecksForView} from '$lib/views.svelte'
@@ -44,36 +46,34 @@
 			.slice(0, FEATURED_LIMIT) // strip #
 	)
 
-	// Per-tag sections — store full matching list, slice only for display
-	let tagSections = $derived(
-		featuredTags.map((tag) => {
-			const tracks = allTracks.filter((t) => t.tags?.includes(tag))
-			return {tag, tracks}
-		})
-	)
+	// One pass over all tracks → tag→count map, instead of an O(n) filter per tag.
+	let tagCounts = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local lookup rebuilt by $derived, not reactive state
+		const map = new Map<string, number>()
+		for (const {value, count} of getChannelTags(allTracks)) map.set(value, count)
+		return map
+	})
 
-	// Only featured tags that actually have tracks
-	let availableTagSections = $derived(tagSections.filter((s) => s.tracks.length > 0))
+	// Only featured tags that actually have tracks, with their counts.
+	let availableTagSections = $derived(
+		featuredTags.map((tag) => ({tag, count: tagCounts.get(tag) ?? 0})).filter((s) => s.count > 0)
+	)
 
 	// Tags active in any deck's playlist
 	const deckPlaylistTags = $derived([
 		...new Set(
-			Object.values(appState.decks).flatMap(
-				(d) =>
-					d.playlist_title
-						?.split(' ')
-						.filter((t) => t.startsWith('#'))
-						.map((t) => t.slice(1)) ?? []
+			Object.values(appState.decks).flatMap((d) =>
+				extractHashtags(d.playlist_title ?? '').map((t) => t.slice(1))
 			)
 		)
 	])
 
-	// Per-tag sections for deck tags NOT already in featuredTags (avoids duplicate tabs)
+	// Deck tags NOT already in featuredTags (avoids duplicate tabs), with their counts.
 	let deckOnlyTagSections = $derived(
 		deckPlaylistTags
 			.filter((tag) => !featuredTags.includes(tag))
-			.map((tag) => ({tag, tracks: allTracks.filter((t) => t.tags?.includes(tag))}))
-			.filter((s) => s.tracks.length > 0)
+			.map((tag) => ({tag, count: tagCounts.get(tag) ?? 0}))
+			.filter((s) => s.count > 0)
 	)
 
 	let searchInput = $state('')
@@ -83,21 +83,11 @@
 		goto(`/${slug}/tracks?q=${encodeURIComponent(q)}`, {state: {focus: true}})
 	})
 
-	// Tag multi-selection — empty means "Latest"
-	let selectedTags = $state<string[]>([])
-
-	// Drop any selected tags that are no longer available
-	$effect(() => {
-		const validTags = new Set([...availableTagSections, ...deckOnlyTagSections].map((s) => s.tag))
-		const filtered = selectedTags.filter((t) => validTags.has(t))
-		if (filtered.length !== selectedTags.length) selectedTags = filtered
-	})
-
-	function toggleTag(tag: string) {
-		selectedTags = selectedTags.includes(tag)
-			? selectedTags.filter((t) => t !== tag)
-			: [...selectedTags, tag]
-	}
+	// Tag multi-selection — empty means "Latest". URL-backed (?tags=) so the
+	// selection shows the same everywhere: chips row, description tags, tracks page.
+	const tagFilter = getTagFilter()
+	let selectedTags = $derived(tagFilter.selectedTags)
+	const {toggleTag, clearTags} = tagFilter
 
 	// Tracks for the current selection
 	let tagFilteredTracks = $derived(
@@ -143,9 +133,7 @@
 	let previewCommonFollowing = $derived(commonFollowing.slice(0, 4))
 
 	// "Follows you" — the viewed channel appears in your own channel followers.
-	let followsYou = $derived(
-		Boolean(channel?.id && ownFollowers.ids.includes(channel.id))
-	)
+	let followsYou = $derived(Boolean(channel?.id && ownFollowers.ids.includes(channel.id)))
 
 	// Match score — computed from user's own tracks vs this channel's tracks
 	let userChannelSlug = $derived(appState.channel?.slug ?? '')
@@ -220,33 +208,29 @@
 			{#snippet trigger()}
 				<Icon icon="hash" />{selectedTags.length > 0 ? `(${selectedTags.length})` : ''}
 			{/snippet}
-			<menu class="tags-menu">
-				<button
-					type="button"
-					class:active={selectedTags.length === 0}
-					onclick={() => (selectedTags = [])}
-				>
+			<menu class="nav-vertical tags-menu">
+				<button type="button" class:active={selectedTags.length === 0} onclick={clearTags}>
 					{m.channel_section_latest()}
 					<span class="tag-count">({Math.min(allTracks.length, SECTION_TRACK_LIMIT)})</span>
 				</button>
-				{#each deckOnlyTagSections as { tag, tracks } (tag)}
+				{#each deckOnlyTagSections as { tag, count } (tag)}
 					<button
 						type="button"
 						data-deck-active
 						class:active={selectedTags.includes(tag)}
 						onclick={() => toggleTag(tag)}
 					>
-						#{tag} <span class="tag-count">({tracks.length})</span>
+						#{tag} <span class="tag-count">({count})</span>
 					</button>
 				{/each}
-				{#each availableTagSections as { tag, tracks } (tag)}
+				{#each availableTagSections as { tag, count } (tag)}
 					<button
 						type="button"
 						data-deck-active={deckPlaylistTags.includes(tag) || undefined}
 						class:active={selectedTags.includes(tag)}
 						onclick={() => toggleTag(tag)}
 					>
-						#{tag} <span class="tag-count">({tracks.length})</span>
+						#{tag} <span class="tag-count">({count})</span>
 					</button>
 				{/each}
 			</menu>
@@ -299,25 +283,22 @@
 	<article>
 		<div class="channel-meta">
 			{#if channel.url}
-				<div class="meta-row">
-					<p class="url"><a href={channel.url} target="_blank" rel="noopener">{channel.url}</a></p>
-				</div>
+				<small class="url"
+					><a href={channel.url} target="_blank" rel="noopener nofollow ugc">{channel.url}</a
+					></small
+				>
 			{/if}
-			<div class="meta-row">
-				{#if channel.description}
-					<p class="description"><LinkEntities slug={channel.slug} text={channel.description} /></p>
+			{#if channel.description}
+				<p class="description"><LinkEntities slug={channel.slug} text={channel.description} /></p>
+			{/if}
+			<small class="dates">
+				{#if hasCoordinates}
+					<a href={resolve('/[slug]/map', {slug})} class="coords-link">{coordinatesLabel}</a>
 				{/if}
-				<p class="dates">
-					{#if hasCoordinates}
-						<a href={resolve('/[slug]/map', {slug})} class="coords-link">{coordinatesLabel}</a>
-					{/if}
-					<small
-						>{m.channel_updated({
-							date: relativeDate(channel.latest_track_at ?? channel.updated_at)
-						})}</small
-					>
-				</p>
-			</div>
+				{m.channel_updated({
+					date: relativeDate(channel.latest_track_at ?? channel.updated_at)
+				})}
+			</small>
 		</div>
 
 		{#if appState.user && !canEdit}
@@ -328,31 +309,30 @@
 				hasMatchInfo}
 			{#if hasAnyOverlap}
 				<section class="common-follows compact">
-					{#if followsYou}
-						<div class="compact-row follows-you-row">
-							<Icon icon="favorite-fill" size={14} />
-							<p>{m.channel_follows_you()}</p>
-						</div>
-					{/if}
-					{#if hasMatchInfo}
+					{#if followsYou || hasMatchInfo}
 						<div class="compact-row match-score-row">
-							<span><Icon icon="flower-alt" size={14} /> {matchScore.total}% match</span>
-							<a
-								href={resolve('/[slug]/tracks', {slug}) +
-									`?matching=${encodeURIComponent(matchingSourceSlug)}`}
-							>
-								<Icon icon="play-fill" size={14} />
-								{matchScore.url.overlap}
-								{m.channel_match_tracks()}
-							</a>
-							<a
-								href={resolve('/[slug]/tags', {slug}) +
-									`?matching=${encodeURIComponent(matchingSourceSlug)}`}
-							>
-								<Icon icon="hashtag" size={14} />
-								{matchScore.tag.overlap}
-								{m.channel_match_tags()}
-							</a>
+							{#if followsYou}
+								<span><Icon icon="favorite-fill" size={14} /> {m.channel_follows_you()}</span>
+							{/if}
+							{#if hasMatchInfo}
+								<span><Icon icon="flower-alt" size={14} /> {matchScore.total}% match</span>
+								<a
+									href={resolve('/[slug]/tracks', {slug}) +
+										`?matching=${encodeURIComponent(matchingSourceSlug)}`}
+								>
+									<Icon icon="play-fill" size={14} />
+									{matchScore.url.overlap}
+									{m.channel_match_tracks()}
+								</a>
+								<a
+									href={resolve('/[slug]/tags', {slug}) +
+										`?matching=${encodeURIComponent(matchingSourceSlug)}`}
+								>
+									<Icon icon="hashtag" size={14} />
+									{matchScore.tag.overlap}
+									{m.channel_match_tags()}
+								</a>
+							{/if}
 						</div>
 					{/if}
 					{#if previewCommonFollowers.length > 0}
@@ -362,7 +342,9 @@
 									<ChannelAvatar id={c.image} alt={c.name} size={24} />
 								{/each}
 							</div>
-							<p>{m.channel_match_followed_by({names: compactOverlapText(commonFollowers)})}</p>
+							<small
+								>{m.channel_match_followed_by({names: compactOverlapText(commonFollowers)})}</small
+							>
 						</a>
 					{/if}
 					{#if previewCommonFollowing.length > 0}
@@ -372,7 +354,9 @@
 									<ChannelAvatar id={c.image} alt={c.name} size={24} />
 								{/each}
 							</div>
-							<p>{m.channel_match_also_follows({names: compactOverlapText(commonFollowing)})}</p>
+							<small
+								>{m.channel_match_also_follows({names: compactOverlapText(commonFollowing)})}</small
+							>
 						</a>
 					{/if}
 				</section>
@@ -380,6 +364,11 @@
 		{/if}
 
 		<section class="track-section">
+			{#if selectedTags.length > 0}
+				<div class="track-filters">
+					<FilterChips tags={selectedTags} onRemoveTag={toggleTag} />
+				</div>
+			{/if}
 			{#if tracksQuery.isReady && displayTracks.length > 0}
 				<Tracklist
 					tracks={displayTracks}
@@ -408,6 +397,8 @@
 				</footer>
 			{:else if tracksQuery.isLoading && (channel.track_count ?? 0) > 0}
 				<p class="empty">{m.channel_loading_tracks()}</p>
+			{:else if tracksQuery.isReady && selectedTags.length > 0 && displayTracks.length === 0}
+				<p class="empty">{m.tracks_empty_filter()}</p>
 			{:else if tracksQuery.isReady && allTracks.length === 0}
 				<p class="empty">{m.channel_no_tracks()}</p>
 			{/if}
@@ -428,25 +419,14 @@
 		gap: var(--space-1);
 	}
 
-	.meta-row {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: space-between;
-		align-items: flex-end;
-		gap: 0.5rem;
-	}
-
 	.dates {
-		color: var(--gray-10);
-		margin-left: auto;
 		display: inline-flex;
-		align-items: center;
+		align-items: baseline;
 		gap: var(--space-1);
 	}
 
 	.coords-link {
 		color: inherit;
-		font-size: var(--font-2);
 		letter-spacing: 0.01em;
 		text-decoration: underline;
 		text-decoration-style: dotted;
@@ -459,11 +439,9 @@
 		font-stretch: 90%;
 		font-style: italic;
 		color: light-dark(var(--gray-11), var(--gray-9));
-	}
-
-	.url {
-		font-style: italic;
-		color: var(--gray-9);
+		--tag-bg: var(--gray-4);
+		--tag-bg-hover: var(--gray-5);
+		--tag-bg-active: var(--gray-6);
 	}
 
 	.url a {
@@ -476,10 +454,15 @@
 		height: 100%;
 	}
 
+	.track-filters {
+		padding: 0 0.5rem var(--space-1);
+	}
+
 	.track-section {
 		display: flex;
 		flex-flow: column;
 		height: 100%;
+		padding-top: 0.5rem;
 		footer {
 			margin: auto 0 0;
 			padding: 0.5rem;
@@ -499,28 +482,25 @@
 	.common-follows {
 		padding: 0.5rem;
 		display: grid;
-		gap: var(--space-2);
 	}
 
 	.common-follows.compact {
-		font-size: var(--font-2);
+		font-size: var(--font-3);
+		color: var(--gray-10);
 	}
 
 	.match-score-row {
-		gap: clamp(var(--space-1), 1.4vw, var(--space-2));
+		gap: var(--space-2);
 		row-gap: var(--space-1);
-		padding-bottom: var(--space-1);
 		flex-wrap: wrap;
 		align-items: center;
-		color: var(--gray-10);
-		font-size: clamp(0.72rem, 2.8vw, var(--font-2));
 	}
 
 	.match-score-row span,
 	.match-score-row a {
 		display: inline-flex;
 		align-items: center;
-		gap: clamp(0.16rem, 0.9vw, 0.28rem);
+		gap: 0.25rem;
 		white-space: nowrap;
 		line-height: 1.2;
 	}
@@ -531,28 +511,13 @@
 		text-decoration-style: dotted;
 	}
 
-	.follows-you-row {
-		color: var(--accent-9);
-		gap: var(--space-1);
-	}
-
-	.follows-you-row p {
-		color: var(--accent-9) !important;
-	}
-
 	.compact-row {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		min-height: 1.8rem;
+		min-height: 1.5rem;
 		color: inherit;
 		text-decoration: none;
-	}
-
-	.compact-row p {
-		margin: 0;
-		color: var(--gray-11);
-		line-height: 1.25;
 	}
 
 	.compact-avatars {
@@ -565,7 +530,7 @@
 	.compact-avatars :global(svg) {
 		width: 1.2rem;
 		height: 1.2rem;
-		border-radius: 999px;
+		border-radius: 50%;
 		border: 1px solid var(--gray-1);
 		margin-right: calc(-1 * var(--space-1));
 		background: var(--gray-2);
