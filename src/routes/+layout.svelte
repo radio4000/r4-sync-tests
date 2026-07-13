@@ -11,6 +11,9 @@
 	import LiveChat from '$lib/components/live-chat.svelte'
 	import R4Loading from '$lib/components/r4-loading.svelte'
 	import ToolTip from '$lib/components/tool-tip.svelte'
+	import EditTrackDialog from '$lib/components/track-edit-dialog.svelte'
+	import ShareDialog from '$lib/components/share-dialog.svelte'
+	import ShortcutsDialog from '$lib/components/shortcuts-dialog.svelte'
 	import AppBuildInfo from '$lib/components/app-build-info.svelte'
 	import AppUpdateBanner from '$lib/components/app-update-banner.svelte'
 	import {toggleDeckCompact} from '$lib/api'
@@ -247,6 +250,9 @@
 			<AuthListener />
 			<KeyboardShortcuts />
 			<ToolTip />
+			<EditTrackDialog />
+			<ShareDialog />
+			<ShortcutsDialog />
 
 			{#each allDeckIds as deckId (deckId)}
 				<!-- Two pins: the whole queue (for next/prev) and, separately, the current

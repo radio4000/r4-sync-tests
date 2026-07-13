@@ -6,9 +6,6 @@
 	import {appState} from '$lib/app-state.svelte'
 	import {isBroadcasting as isBroadcastingDeck, sortedDeckIds} from '$lib/deck'
 	import AddTrackDialog from '$lib/components/track-add-dialog.svelte'
-	import EditTrackDialog from '$lib/components/track-edit-dialog.svelte'
-	import ShareDialog from '$lib/components/share-dialog.svelte'
-	import ShortcutsDialog from '$lib/components/shortcuts-dialog.svelte'
 	import BroadcastToggle from '$lib/components/broadcast-toggle.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import Icon from '$lib/components/icon.svelte'
@@ -133,9 +130,6 @@
 
 	<nav class="user-nav">
 		{#await preloading then}
-			<EditTrackDialog />
-			<ShareDialog />
-			<ShortcutsDialog />
 			{#if userChannel}
 				<AddTrackDialog class="nav-btn" label="Add" />
 				<a
