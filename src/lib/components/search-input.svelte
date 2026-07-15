@@ -2,6 +2,7 @@
 	import {Debounced} from 'runed'
 	import Icon from '$lib/components/icon.svelte'
 	import {afterNavigate} from '$app/navigation'
+	import {onMount} from 'svelte'
 	import * as m from '$lib/paraglide/messages'
 
 	/* A normal input, but with a search icon "inside" (on top) */
@@ -14,6 +15,7 @@
 
 	let inputValue = $state(value)
 	let lastExternalValue = value
+	let input
 
 	// Only sync when value changes externally (e.g. programmatic clear)
 	$effect(() => {
@@ -35,14 +37,12 @@
 		}
 	})
 
-	afterNavigate(() => {
-		// workaround for autofocus attr not always being enough
-		if (restProps.autofocus) {
-			/** @type {HTMLElement | null} */
-			const to_focus = document.querySelector('input[type="search"]')
-			to_focus?.focus()
-		}
-	})
+	function focusInput() {
+		if (restProps.autofocus) input?.focus({preventScroll: true})
+	}
+
+	onMount(focusInput)
+	afterNavigate(focusInput)
 
 	function clear() {
 		inputValue = ''
@@ -53,7 +53,13 @@
 
 <div class="search-input">
 	<Icon icon="search" />
-	<input type="search" placeholder={placeholderText} bind:value={inputValue} {...restProps} />
+	<input
+		bind:this={input}
+		type="search"
+		placeholder={placeholderText}
+		bind:value={inputValue}
+		{...restProps}
+	/>
 	{#if inputValue}
 		<button class="clear" title={m.common_clear()} onclick={clear} type="button">
 			<Icon icon="close" />

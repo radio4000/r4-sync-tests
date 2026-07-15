@@ -22,5 +22,7 @@
 	beforeNavigate((nav) => {
 		if (nav.to?.route.id !== nav.from?.route.id) navCtx?.setControls(undefined)
 	})
-	afterNavigate(() => navCtx?.setControls(controls))
+	afterNavigate(({from, to}) => {
+		if (to?.route.id !== from?.route.id) navCtx?.setControls(controls)
+	})
 </script>
