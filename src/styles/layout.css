@@ -157,7 +157,7 @@ nav {
 nav.nav-vertical,
 menu.nav-vertical {
 	flex-flow: column;
-	border: 1px solid var(--gray-6);
+	border: 1px solid var(--color-interface-border);
 	border-radius: var(--border-radius);
 
 	:where(a, button) {
@@ -193,7 +193,7 @@ menu.nav-options {
 	> a {
 		text-decoration: none;
 		padding: 2rem 1rem;
-		border: 1px solid var(--gray-6);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 
 		&:hover {
@@ -212,7 +212,7 @@ menu.nav-vertical.tags-menu {
 menu.view-modes {
 	padding-bottom: 0.5rem;
 	margin-bottom: var(--space-1);
-	border-bottom: 1px solid var(--gray-6);
+	border-bottom: 1px solid var(--color-interface-border);
 
 	button {
 		flex: 1;
@@ -244,7 +244,7 @@ menu {
 			min-height: 2rem;
 			text-decoration: none;
 			font-size: var(--font-4);
-			border-right: 1px solid var(--gray-6);
+			border-right: 1px solid var(--color-interface-border);
 		}
 		a:not(.btn):last-child {
 			border-right: none;

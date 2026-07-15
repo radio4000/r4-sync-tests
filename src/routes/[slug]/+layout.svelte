@@ -493,7 +493,7 @@
 		min-width: 0;
 		align-items: center;
 		background: var(--gray-2);
-		border-bottom: 1px solid var(--gray-3);
+		border-bottom: 1px solid var(--color-interface-border);
 		overflow: hidden;
 	}
 

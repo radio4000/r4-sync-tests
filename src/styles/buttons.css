@@ -24,7 +24,7 @@ button,
 
 	background: var(--button-bg);
 	color: var(--button-color);
-	border: 1px solid var(--gray-4);
+	border: 1px solid var(--color-control-border);
 	border-radius: var(--border-radius);
 	box-shadow: none;
 
@@ -46,7 +46,7 @@ button:hover,
 .btn:focus,
 .btn:hover {
 	background: var(--gray-4);
-	border-color: var(--gray-5);
+	border-color: var(--color-control-border-hover);
 }
 
 button:disabled,
@@ -103,7 +103,7 @@ button.ghost,
 	&:focus,
 	&:active,
 	&[aria-expanded='true'] {
-		border-color: var(--gray-6);
+		border-color: var(--color-control-border);
 	}
 }
 

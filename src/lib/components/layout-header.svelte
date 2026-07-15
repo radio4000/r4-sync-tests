@@ -206,7 +206,7 @@
 		min-inline-size: min-content;
 		max-inline-size: max-content;
 		background: var(--color-interface);
-		border-right: 1px solid var(--gray-4);
+		border-right: 1px solid var(--color-interface-border);
 		z-index: 50;
 		position: relative;
 		overflow: visible;
@@ -384,7 +384,7 @@
 			max-block-size: none;
 			box-sizing: border-box;
 			border: none;
-			border-top: 1px solid var(--gray-4);
+			border-top: 1px solid var(--color-interface-border);
 			border-radius: 0;
 		}
 

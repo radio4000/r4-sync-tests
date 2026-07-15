@@ -38,6 +38,8 @@
 	--color-interface: var(--gray-1);
 	--color-interface-elevated: var(--gray-2);
 	--color-interface-border: var(--gray-6);
+	--color-control-border: var(--color-interface-border);
+	--color-control-border-hover: var(--gray-7);
 
 	/* buttons (*-light/*-dark overrides come from the theme editor) */
 	--button-bg: light-dark(
