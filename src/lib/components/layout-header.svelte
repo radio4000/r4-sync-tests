@@ -248,6 +248,17 @@
 			padding 120ms ease;
 	}
 
+	nav :global(.broadcast-toggle.nav-btn) {
+		background: var(--button-bg);
+		border-color: var(--color-control-border);
+	}
+
+	nav :global(.broadcast-toggle.nav-btn:hover),
+	nav :global(.broadcast-toggle.nav-btn:focus) {
+		background: var(--gray-4);
+		border-color: var(--color-control-border-hover);
+	}
+
 	nav :global(.btn.nav-btn .btn-label) {
 		display: block;
 		font-size: var(--font-3);
