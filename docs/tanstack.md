@@ -67,6 +67,8 @@ For server-backed collections like `tracks` and `channels`, `onInsert` and `onUp
 
 Resolving specific ids (`ids.map((id) => collection.state.get(id))`) is O(1) per id. Expressing the same as a live query — `useLiveQuery((q) => q.from(...).where(inArray(id, ids)))` — builds a d2ts pipeline that rebuilds on every change; over a multi-thousand-row collection that is a ~1s main-thread block.
 
+Why: `in` scans the whole value list per row, so `inArray` filters are O(ids × rows) — seconds of main-thread blocking at a few thousand of each. Prefer a filter over a field with few distinct values (`eq(t.slug, slug)`) — one comparison per row. Related: `collection.state` is a getter that rebuilds a snapshot Map on every access — in loops, hoist it or use `collection.get(id)`, the direct O(1) lookup.
+
 Keep the Map lookups, but make them reactive by reading a **direct-collection** query as a trigger:
 
 ```js
@@ -140,6 +142,10 @@ Caveats learned the hard way:
 - `.offset()` is applied locally by d2ts, not forwarded to Supabase (the sync layer always fetches from row 0 with `limit = offset + pageSize`). Don't use it for server-side pagination.
 - For paged views, accumulate `limit = currentPage * pageSize` and `.slice()` locally. The `queryFn` should delta-fetch: look up cached results for the same query shape with a smaller limit and fetch only the new rows. See `channels.ts` `queryFn`.
 - Each dep change in `useLiveQuery` creates a new `createLiveQueryCollection`; our wrapper `cleanup()`s the old one to stop its d2ts pipeline and pending callbacks. Without this, stale collections cause delayed re-renders.
+
+### keepalive pin
+
+On-demand collections evict rows once no subscriber owns their subset — `tracks-keepalive.svelte` (with `collections/keepalive.ts`) pins a deck's queue resident; the how and why live in those files.
 
 ## debug routes
 
