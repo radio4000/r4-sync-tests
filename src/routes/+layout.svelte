@@ -36,6 +36,8 @@
 	import {leaveBroadcast, resyncBroadcastDeck} from '$lib/broadcast.js'
 	import {channelsCollection} from '$lib/collections/channels'
 	import TracksKeepalive from '$lib/components/tracks-keepalive.svelte'
+	import {tracksCollection} from '$lib/collections/tracks'
+	import {queuePinTargets} from '$lib/collections/keepalive'
 	import {channelPresence} from '$lib/presence.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import PresenceCount from '$lib/components/presence-count.svelte'
@@ -255,11 +257,13 @@
 			<ShortcutsDialog />
 
 			{#each allDeckIds as deckId (deckId)}
-				<!-- Two pins: the whole queue (for next/prev) and, separately, the current
-				     track. The queue pin re-hashes on queue edits and the current-track pin
-				     re-hashes on track changes — but never together, so one always keeps the
-				     playing row resident while the other swaps. -->
-				<TracksKeepalive ids={appState.decks[deckId]?.playlist_tracks ?? []} />
+				<!-- Two pins per deck — whole queue and current track — that never re-hash
+				     together, so one always keeps the playing row resident while the other
+				     swaps. The snapshot read (.get) is deliberate — see queuePinTargets(). -->
+				{@const queuePin = queuePinTargets(appState.decks[deckId], (id) =>
+					tracksCollection.get(id)
+				)}
+				<TracksKeepalive slugs={queuePin.slugs} ids={queuePin.ids} />
 				<TracksKeepalive
 					ids={appState.decks[deckId]?.playlist_track
 						? [appState.decks[deckId].playlist_track]
