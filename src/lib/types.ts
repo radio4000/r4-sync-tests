@@ -10,10 +10,44 @@ export type ChannelRef = Pick<Channel, 'id' | 'slug'>
 
 export type Track = SDKTrack
 
+export interface DiscogsTracklistItem {
+	position: string
+	type_: string
+	title: string
+	duration: string
+}
+
+export interface DiscogsVideo {
+	uri: string
+	title: string
+	description: string
+	duration: number
+	embed: boolean
+}
+
+export interface DiscogsResource {
+	artists_sort?: string
+	artists?: Array<{name: string}>
+	title?: string
+	year?: number
+	released_formatted?: string
+	country?: string
+	genres?: string[]
+	styles?: string[]
+	labels?: Array<{name: string; catno?: string}>
+	formats?: Array<{name: string; qty: string; descriptions?: string[]}>
+	community?: {have: number; want: number; rating: {count: number; average: number}}
+	tracklist?: DiscogsTracklistItem[]
+	videos?: DiscogsVideo[]
+	uri?: string
+	thumb?: string
+	_meta?: {fetchedAt?: string; sourceUrl?: string}
+}
+
 export interface TrackMetadataFields {
 	youtube_data?: {id?: string; duration?: number; [key: string]: unknown}
 	musicbrainz_data?: object
-	discogs_data?: object
+	discogs_data?: DiscogsResource
 }
 
 // Track joined with metadata from TrackMeta collection

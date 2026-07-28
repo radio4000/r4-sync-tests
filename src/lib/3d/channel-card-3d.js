@@ -91,6 +91,7 @@ export function resolveChannelCardStates(mediaItem, ui = {}) {
 	else if (isSelected) cardStyle = 'hover'
 	else if (isHovered) cardStyle = 'hover'
 
+	/** @type {'active' | 'selected' | null} */
 	let infoStyle = null
 	if (isActive) infoStyle = 'active'
 	else if (mediaItem.id === ui.selectedId) infoStyle = 'selected'

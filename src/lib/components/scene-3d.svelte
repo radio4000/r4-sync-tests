@@ -217,6 +217,7 @@
 	}
 
 	// React to scene config changes
+	/** @type {import('$lib/scene-state.svelte').SceneConfig | null} */
 	let prevConfig = null
 	$effect(() => {
 		const cfg = sceneState.current

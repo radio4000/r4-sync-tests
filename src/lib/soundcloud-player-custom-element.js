@@ -2,7 +2,7 @@
 import {logger} from '$lib/logger'
 
 const log = logger.ns('soundcloud-player').seal()
-let soundcloudApiReadyPromise = null
+let soundcloudApiReadyPromise
 
 /**
  * Minimal TimeRanges shim so media-chrome can read seekable/buffered ranges.

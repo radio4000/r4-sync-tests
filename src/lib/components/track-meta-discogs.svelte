@@ -8,7 +8,7 @@
 	 *   tracks?: import('$lib/types').Track[],
 	 *   channel?: import('$lib/types').ChannelRef,
 	 *   canEdit?: boolean,
-	 *   discogsData?: object | null,
+	 *   discogsData?: import('$lib/types').DiscogsResource | null,
 	 *   autoload?: boolean
 	 * }} */
 	let {track, tracks = [], channel, canEdit = false, discogsData = null, autoload = true} = $props()

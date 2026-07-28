@@ -12,31 +12,16 @@
 	const RE_YT_SHORT = /youtu\.be\/([^?]+)/
 
 	/**
-	 * @typedef {{position: string, type_: string, title: string, duration: string}} DiscogsTracklistItem
-	 * @typedef {{uri: string, title: string, description: string, duration: number, embed: boolean}} DiscogsVideo
-	 * @typedef {Object} DiscogsResource
-	 * @property {string} [artists_sort]
-	 * @property {{name: string}[]} [artists]
-	 * @property {string} title
-	 * @property {number} [year]
-	 * @property {string} [released_formatted]
-	 * @property {string} [country]
-	 * @property {string[]} [genres]
-	 * @property {string[]} [styles]
-	 * @property {{name: string, catno?: string}[]} [labels]
-	 * @property {{name: string, qty: string, descriptions?: string[]}[]} [formats]
-	 * @property {{have: number, want: number, rating: {count: number, average: number}} } [community]
-	 * @property {DiscogsTracklistItem[]} [tracklist]
-	 * @property {DiscogsVideo[]} [videos]
-	 * @property {string} [uri]
-	 * @property {string} [thumb]
+	 * @typedef {import('$lib/types').DiscogsResource} DiscogsResource
+	 * @typedef {import('$lib/types').DiscogsTracklistItem} DiscogsTracklistItem
+	 * @typedef {import('$lib/types').DiscogsVideo} DiscogsVideo
 	 */
 
 	/** @type {{
 	 *   url: string,
 	 *   full?: boolean,
 	 *   slug?: string,
-	 *   resourceData?: DiscogsResource | null,
+	 *   resourceData?: import('$lib/types').DiscogsResource | null,
 	 *   autoload?: boolean,
 	 *   suggestions?: boolean,
 	 *   preselected?: string[],
@@ -59,8 +44,7 @@
 		onSelectMedia
 	} = $props()
 
-	/** @type {DiscogsResource | null} */
-	let resource = $state(null)
+	let resource = $state(/** @type {DiscogsResource | null} */ (null))
 	let loading = $state(false)
 	let loadError = $state('')
 	let selectedTags = $state(/** @type {string[]} */ ([]))
@@ -120,7 +104,7 @@
 
 	$effect(() => {
 		if (resource && url !== initializedForUrl) {
-			const all = extractSuggestions(/** @type {DiscogsResource} */ (resource))
+			const all = extractSuggestions(resource)
 			const initial = preselected.filter((t) => all.includes(t))
 			selectedTags = initial
 			initializedForUrl = url
@@ -200,7 +184,7 @@
 	 * All items are included so the full release is in the playlist.
 	 */
 	const uniqueVideos = $derived.by(() => {
-		if (!resource?.videos?.length) return /** @type {DiscogsVideo[]} */ ([])
+		if (!resource?.videos?.length) return []
 		/** @type {Record<string, boolean>} */
 		const seen = {}
 		return resource.videos.filter((video) => {
@@ -290,9 +274,7 @@
 		return artistsDisplay ? `${artistsDisplay} - ${trackName}` : trackName
 	}
 
-	const suggestionsList = $derived(
-		resource ? extractSuggestions(/** @type {DiscogsResource} */ (resource)) : []
-	)
+	const suggestionsList = $derived(resource ? extractSuggestions(resource) : [])
 	const releaseStats = $derived.by(() => {
 		if (!trackRows.length) return ''
 		const total = trackRows.length
@@ -328,15 +310,9 @@
 		return items
 	})
 	const artistsDisplay = $derived(
-		/** @type {DiscogsResource | null} */ (resource)?.artists_sort ||
-			/** @type {DiscogsResource | null} */ (resource)?.artists?.map((a) => a.name).join(', ') ||
-			''
+		resource?.artists_sort || resource?.artists?.map((a) => a.name).join(', ') || ''
 	)
-	const tracklistItems = $derived(
-		/** @type {DiscogsResource | null} */ (resource)?.tracklist?.filter(
-			(t) => t.type_ !== 'heading'
-		) ?? []
-	)
+	const tracklistItems = $derived(resource?.tracklist?.filter((t) => t.type_ !== 'heading') ?? [])
 </script>
 
 {#if loading}

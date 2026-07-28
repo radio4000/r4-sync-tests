@@ -28,7 +28,9 @@ map-broadcast-layer.js is an independent WebGL layer, coupled only via map-color
 		/** @type {maplibregl.Map | null} */
 		let map = null
 		let debounce
+		/** @type {MutationObserver | null} */
 		let themeObserver = null
+		/** @type {ResizeObserver | null} */
 		let resizeObserver = null
 		let resizeFrame = 0
 

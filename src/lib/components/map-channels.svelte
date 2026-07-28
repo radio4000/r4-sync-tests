@@ -44,8 +44,11 @@
 	/** @type {BroadcastLayer | null} */
 	let broadcastLayer = null
 	let popupNavigationInFlight = false
+	/** @type {ReturnType<typeof setTimeout> | null} */
 	let pendingPopupLinkNavigationTimer = null
+	/** @type {string | null} */
 	let lastAutoOpenedToken = null
+	/** @type {ReturnType<typeof setTimeout> | null} */
 	let autoOpenRetryTimer = null
 	let stickyPopupSlug = null
 	let stickyPopupUntil = 0
@@ -188,6 +191,7 @@
 		const container = document.createElement('div')
 		container.className = 'map-popup'
 
+		/** @type {ReturnType<typeof mount> | null} */
 		let mountedCard = null
 		let keepPopupOpenUntil = 0
 

@@ -1268,6 +1268,7 @@ export class InfiniteCanvasOGL {
 		// Touch events
 		let lastTouches = []
 		let lastTouchDist = 0
+		/** @type {{x: number, y: number} | null} */
 		let touchStartPos = null
 		let touchDragDistance = 0
 
@@ -1530,8 +1531,9 @@ export class InfiniteCanvasOGL {
 		// Manual raycasting for planes
 		// Create ray from camera through mouse position
 		const ray = this.getRay(x, y)
+		if (!ray) return null
 
-		let closest = null
+		let closest
 		let closestDist = Infinity
 
 		for (const group of this.chunks.values()) {
@@ -1553,7 +1555,7 @@ export class InfiniteCanvasOGL {
 			}
 		}
 
-		return closest
+		return closest ?? null
 	}
 
 	getRay(x, y) {

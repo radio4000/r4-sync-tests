@@ -21,6 +21,7 @@
 	let broadcasting = $state(false)
 	let matchingTagCount = $state(0)
 	let rotateEnabled = $state(true)
+	/** @type {import('lil-gui').GUI | null} */
 	let gui = null
 	let guiChannelsKey = $state('')
 	let guiControllers = $state([])
