@@ -8,17 +8,12 @@
 	 *   tracks?: import('$lib/types').Track[],
 	 *   channel?: import('$lib/types').ChannelRef,
 	 *   canEdit?: boolean,
-	 *   discogsData?: object | null,
+	 *   discogsData?: import('$lib/types').DiscogsResource | null,
 	 *   autoload?: boolean
 	 * }} */
 	let {track, tracks = [], channel, canEdit = false, discogsData = null, autoload = true} = $props()
 
 	let saveError = $state('')
-
-	/** @param {object | null | undefined} value @returns {value is object & {title: string}} */
-	function isDiscogsResource(value) {
-		return Boolean(value && 'title' in value && typeof value.title === 'string')
-	}
 
 	/** Track has a media/URL we can play */
 	const trackHasMedia = $derived(!!(track?.url || track?.media_id))
@@ -38,7 +33,7 @@
 {#if track?.discogs_url}
 	<R4DiscogsResource
 		url={track.discogs_url}
-		resourceData={isDiscogsResource(discogsData) ? discogsData : null}
+		resourceData={discogsData}
 		{autoload}
 		full={true}
 		slug={channel?.slug}
