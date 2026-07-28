@@ -6,6 +6,7 @@
 	import {appState} from '$lib/app-state.svelte'
 	import {loadUserFollows} from '$lib/collections/follows'
 
+	/** @type {(() => void) | null} */
 	let unsubscribe = null
 
 	$effect(() => {

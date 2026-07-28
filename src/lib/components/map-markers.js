@@ -1,11 +1,29 @@
 // Channel marker styling + GeoJSON building for map-channels.svelte.
 import {channelsCollection} from '$lib/collections/channels'
 
+/**
+ * @typedef {{
+ *   favoriteIds: Set<string>,
+ *   broadcastingIds: Set<string>,
+ *   playingSlugs: Set<string>,
+ *   inDeckSlugs: Set<string>
+ * }} ChannelActivity
+ * @typedef {{
+ *   favoriteBroadcastFill: string,
+ *   broadcastingFill: string,
+ *   activeFill: string,
+ *   favoriteFill: string,
+ *   normalFill: string,
+ *   favoriteBroadcastStroke: string,
+ *   broadcastingStroke: string
+ * }} MarkerPalette
+ */
+
 export function getLatestChannel(channel) {
 	return channelsCollection.state.get(channel.id) || channel
 }
 
-/** @param {any} channel @param {{favoriteIds: Set<string>, broadcastingIds: Set<string>, playingSlugs: Set<string>, inDeckSlugs: Set<string>}} activity */
+/** @param {any} channel @param {ChannelActivity} activity */
 export function getChannelState(channel, activity) {
 	const current = getLatestChannel(channel)
 	const isFavorite = activity.favoriteIds.has(current.id)
@@ -20,7 +38,7 @@ export function getChannelState(channel, activity) {
  * 5-tier visual hierarchy: favorite+broadcasting > broadcasting > active > favorite > normal
  * mirrors channel card semantics while preserving favorite identity during live broadcast.
  * State is encoded by fill + radius; every marker shares the white ring / dark shadow outline.
- * @param {ReturnType<typeof getChannelState>} state @param {object} palette
+ * @param {ReturnType<typeof getChannelState>} state @param {MarkerPalette} palette
  */
 export function getMarkerStyle(state, palette) {
 	if (state.isFavorite && state.isBroadcasting) {
@@ -38,7 +56,7 @@ export function getMarkerStyle(state, palette) {
 	return {radius: 5, fillColor: palette.normalFill, strokeWidth: 1.5}
 }
 
-/** @param {any[]} channels @param {object} activity @param {object} palette @returns {GeoJSON.FeatureCollection} */
+/** @param {any[]} channels @param {ChannelActivity} activity @param {MarkerPalette} palette @returns {GeoJSON.FeatureCollection} */
 export function buildChannelsGeoJSON(channels, activity, palette) {
 	return {
 		type: 'FeatureCollection',

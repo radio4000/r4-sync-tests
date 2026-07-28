@@ -4,3 +4,7 @@ pnpm-lock.yaml
 yarn.lock
 static/*.json
 src/lib/paraglide/
+
+# Biome owns source JavaScript and TypeScript.
+src/**/*.js
+src/**/*.ts

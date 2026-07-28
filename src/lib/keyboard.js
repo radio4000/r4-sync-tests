@@ -156,6 +156,7 @@ export function shortcutHint(name) {
 }
 
 /** Single stable listener — swap the inner handler instead of add/remove */
+/** @type {EventListener | null} */
 let currentHandler = null
 let listenerAttached = false
 

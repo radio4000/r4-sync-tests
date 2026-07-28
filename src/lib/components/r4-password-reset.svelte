@@ -15,6 +15,7 @@
 		errorMessage = ''
 
 		let error = null
+		/** @type {Awaited<ReturnType<typeof sdk.supabase.auth.signInWithOtp>>['data'] | null} */
 		let data = null
 
 		try {

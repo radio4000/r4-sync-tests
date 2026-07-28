@@ -75,7 +75,7 @@ const musicTerms = [
 
 /**
  * Analyze a channel for spam indicators
- * @param {{name?: string | null, description?: string | null, created_at?: string | null}} channel
+ * @param {{name?: string | null, slug?: string | null, description?: string | null, created_at?: string | null}} channel
  * @param {Array<import('$lib/types').Track>} [tracks] - Optional track data for enhanced analysis
  * @returns {{isSpam: boolean, confidence: number, reasons: string[], evidence: {keywords: string[], phrases: string[], locations: string[], patterns: string[], musicTerms: string[], trackSignals: string[]}}}
  */
@@ -104,6 +104,7 @@ export function analyzeChannel(channel, tracks = []) {
 		return new RegExp(`\\b${escaped}\\b`).test(text)
 	})
 	evidence.musicTerms = foundMusicTerms
+	const musicTermBonus = Math.min(foundMusicTerms.length * 4, 8)
 
 	// Check for spam keywords (increased weight for multiple matches) - use word boundaries for short words
 	const matchedKeywords = spamKeywords.filter((keyword) => {
@@ -358,7 +359,7 @@ export function analyzeChannel(channel, tracks = []) {
 		legitimacyBonus = 1
 	}
 
-	spamScore = Math.max(0, spamScore - legitimacyBonus)
+	spamScore = Math.max(0, spamScore - legitimacyBonus - musicTermBonus)
 
 	// Structural track signals dominate — a channel's own words are easy to spoof,
 	// but where its tracks actually point to is not.

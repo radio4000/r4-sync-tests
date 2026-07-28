@@ -15,6 +15,11 @@
 
 	let saveError = $state('')
 
+	/** @param {object | null | undefined} value @returns {value is object & {title: string}} */
+	function isDiscogsResource(value) {
+		return Boolean(value && 'title' in value && typeof value.title === 'string')
+	}
+
 	/** Track has a media/URL we can play */
 	const trackHasMedia = $derived(!!(track?.url || track?.media_id))
 
@@ -33,7 +38,7 @@
 {#if track?.discogs_url}
 	<R4DiscogsResource
 		url={track.discogs_url}
-		resourceData={discogsData}
+		resourceData={isDiscogsResource(discogsData) ? discogsData : null}
 		{autoload}
 		full={true}
 		slug={channel?.slug}

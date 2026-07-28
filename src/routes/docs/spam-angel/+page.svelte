@@ -245,11 +245,11 @@
 	const focusedIndex = $derived(Math.min(requestedFocusedIndex, Math.max(undecided.length - 1, 0)))
 
 	// Keep the focused card in view instead of letting the selection drift off-screen.
-	let reviewList = $state(null)
+	let reviewList = $state(/** @type {HTMLUListElement | null} */ (null))
 	$effect(() => {
-		focusedIndex
-		undecided.length
-		reviewList?.querySelector('[aria-selected="true"]')?.scrollIntoView({block: 'nearest'})
+		if (undecided.length) {
+			reviewList?.children[focusedIndex]?.scrollIntoView({block: 'nearest'})
+		}
 	})
 
 	function escapeSqlString(str) {
@@ -323,7 +323,7 @@
 					{@const hasMusic = ev.musicTerms.length > 0}
 					{@const isExpanded = expanded.has(channel.id)}
 					<li
-						aria-selected={i === focusedIndex}
+						data-focused={i === focusedIndex}
 						data-confidence={confidenceLevel(channel.analysis.confidence)}
 					>
 						<article>
@@ -649,7 +649,7 @@
 		margin: 0;
 	}
 
-	.column[data-column='review'] li[aria-selected='true'] {
+	.column[data-column='review'] li[data-focused='true'] {
 		outline: 2px solid var(--accent-9);
 		outline-offset: 2px;
 	}

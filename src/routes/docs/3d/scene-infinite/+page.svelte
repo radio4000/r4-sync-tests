@@ -33,6 +33,7 @@
 	let lastClickId = $state(/** @type {string | null} */ (null))
 	let lastClickAt = $state(0)
 	const DOUBLE_CLICK_MS = 320
+	/** @type {import('lil-gui').GUI | null} */
 	let gui = null
 	let guiChannelsKey = $state('')
 	let guiControllers = $state([])
