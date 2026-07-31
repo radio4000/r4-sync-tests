@@ -31,7 +31,7 @@ Local only, in localStorage under `r5-capture-events`. No sync to remote — you
 
 ## History page
 
-`/history` filters `captureEventsCollection` for `player:track_play` events and pairs each with its `player:track_end` via `play_id`, to show duration and end reason. `/history/stats` aggregates the same data for listening statistics.
+`/history` filters `captureEventsCollection` for `player:track_play` events and pairs each with its `player:track_end` via `play_id`, to show duration and end reason. `/stats` aggregates the same data for listening statistics.
 
 ## Play count threshold
 

@@ -24,7 +24,7 @@
 				...(message && {message}),
 				...(error && {error})
 			}).toString()
-			goto(`/settings/account/email?${query}`)
+			goto(`/account/email?${query}`)
 		}
 	})
 

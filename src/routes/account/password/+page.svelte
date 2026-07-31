@@ -45,7 +45,7 @@
 
 <article class="focused constrained">
 	<header>
-		<BackLink href={resolve('/settings/account')} />
+		<BackLink href={resolve('/account')} />
 		<h1>{m.account_change_password()}</h1>
 	</header>
 

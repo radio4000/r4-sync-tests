@@ -36,7 +36,7 @@
 		providerLoading = provider
 		const {error} = await sdk.supabase.auth.linkIdentity({
 			provider,
-			options: {redirectTo: window.location.origin + '/settings/account'}
+			options: {redirectTo: window.location.origin + '/account'}
 		})
 		providerLoading = null
 		if (error) {
@@ -68,7 +68,7 @@
 
 <article class="focused constrained">
 	<header>
-		<BackLink href={resolve('/settings')} />
+		<BackLink href={resolve('/menu')} />
 		<h1>{m.settings_account()}</h1>
 	</header>
 
@@ -87,10 +87,10 @@
 						<small>{appState.user.email}</small>
 					</p>
 					<menu>
-						<a class="btn" href={resolve('/settings/account/password')}
+						<a class="btn" href={resolve('/account/password')}
 							>{m.account_change_password()}</a
 						>
-						<a class="btn" href={resolve('/settings/account/email')}>{m.account_change_email()}</a>
+						<a class="btn" href={resolve('/account/email')}>{m.account_change_email()}</a>
 					</menu>
 				</div>
 				{#each providers as provider (provider)}
@@ -149,7 +149,7 @@
 			<menu class="nav-vertical">
 				<div>
 					<p><span>{m.account_delete_title()}</span></p>
-					<a class="btn" href={resolve('/settings/account/delete')}
+					<a class="btn" href={resolve('/account/delete')}
 						>{m.account_delete_link({appName})}</a
 					>
 				</div>
@@ -160,7 +160,7 @@
 
 <style>
 	section {
-		margin-block: 1.5rem;
+		margin: 0 0 1rem;
 	}
 	section.danger-zone {
 		border: 1px solid var(--color-error);

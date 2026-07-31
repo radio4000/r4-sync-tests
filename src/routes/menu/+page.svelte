@@ -55,7 +55,7 @@
 			</a>
 		{/if}
 		{#if isSignedIn}
-			<a href={resolve('/settings/account')}>
+			<a href={resolve('/account')}>
 				<Icon icon="user" />
 				{m.settings_account()}
 				<small>{appState.user?.email}</small>
@@ -73,17 +73,17 @@
 	</menu>
 
 	<menu class="nav-vertical">
-		<a href={resolve('/history')}>
-			<Icon icon={conceptIcons.history} />
-			{m.nav_history()}
-		</a>
 		<a href={resolve('/settings')}>
 			<Icon icon="settings" />
 			{m.nav_settings()}
 		</a>
-		<a href={resolve('/about')}>
-			<Icon icon="circle-info" />
-			{m.nav_about()}
+		<a href={resolve('/history')}>
+			<Icon icon={conceptIcons.history} />
+			{m.nav_history()}
+		</a>
+		<a href={resolve('/stats')}>
+			<Icon icon="chart-scatter" />
+			{m.nav_stats()}
 		</a>
 		<a href={resolve('/apps')}>
 			<Icon icon="tv" />
@@ -93,9 +93,17 @@
 			<Icon icon="users" />
 			Community
 		</a>
+		<a href={resolve('/about')}>
+			<Icon icon="circle-info" />
+			{m.nav_about()}
+		</a>
 	</menu>
 
 	<menu class="nav-vertical">
+		<a href={resolve('/docs')}>
+			<Icon icon="document" />
+			Docs
+		</a>
 		<a href={changelogHref} target="_blank" rel="noreferrer">
 			<Icon icon="html" />
 			{m.settings_changelog()}
@@ -106,10 +114,6 @@
 				Code
 			</a>
 		{/if}
-		<a href={resolve('/docs')}>
-			<Icon icon="document" />
-			Docs
-		</a>
 	</menu>
 
 	<LanguageSwitcher />

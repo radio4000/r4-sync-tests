@@ -1,4 +1,5 @@
 <script lang="ts">
+	import {resolve} from '$app/paths'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {
 		captureEventsCollection,
@@ -17,6 +18,7 @@
 	import TrackCard from '$lib/components/track-card.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import DateTime from '$lib/components/date-time.svelte'
+	import BackLink from '$lib/components/back-link.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import Seo from '$lib/components/seo.svelte'
 	import type {Track, PlayStartReason} from '$lib/types'
@@ -130,17 +132,16 @@
 
 <Seo title={m.page_title_history()} plain />
 
-<article class="">
-	<header class="constrained">
+<article class="focused constrained">
+	<header>
+		<BackLink href={resolve('/menu')} />
 		<h1>{m.history_title()}</h1>
 	</header>
 
-	<div class="constrained">
-		<p>
-			{m.history_local_note()}
-			- <a href="/settings/analytics">analytics &rarr;</a>
-		</p>
-	</div>
+	<p>
+		{m.history_local_note()}
+		- <a href="/settings/analytics">analytics &rarr;</a>
+	</p>
 
 	{#if allEvents.length > 0}
 		<menu class="header-actions">
@@ -175,14 +176,16 @@
 			</menu>
 		</menu>
 	{/if}
+</article>
 
-	{#if eventsQuery.isLoading}
-		<p class="constrained">{m.common_loading()}</p>
-	{:else if allEvents.length === 0}
-		<p class="constrained">{m.history_empty()}</p>
-	{:else if filteredEvents.length === 0}
-		<p class="constrained">No {activeFilter} events yet.</p>
-	{:else}
+{#if eventsQuery.isLoading}
+	<p class="focused constrained">{m.common_loading()}</p>
+{:else if allEvents.length === 0}
+	<p class="focused constrained">{m.history_empty()}</p>
+{:else if filteredEvents.length === 0}
+	<p class="focused constrained">No {activeFilter} events yet.</p>
+{:else}
+	<article>
 		{#each days as day (day.key)}
 			<h2>{dayLabel(day.events[0].created_at, locale)}</h2>
 
@@ -255,8 +258,8 @@
 				</table>
 			{/if}
 		{/each}
-	{/if}
-</article>
+	</article>
+{/if}
 
 <style>
 	.header-actions {

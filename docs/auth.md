@@ -12,7 +12,7 @@ OAuth (Google, Facebook) or email. The email flow sends a magic link via `signIn
 
 ## Identity linking
 
-Users add/remove OAuth providers from `/settings/account`. Requires "Enable Manual Linking" in Supabase dashboard. Need 2+ identities to unlink one.
+Users add/remove OAuth providers from `/account`. Requires "Enable Manual Linking" in Supabase dashboard. Need 2+ identities to unlink one.
 
 ## Routes
 
@@ -21,10 +21,10 @@ Users add/remove OAuth providers from `/settings/account`. Requires "Enable Manu
 - `/auth/create-account` — magic link, OTP code, OAuth
 - `/auth/reset-password` — request reset email
 - `/auth/reset-password/confirm` — set new password
-- `/settings/account` — email, providers, logout, delete link
-- `/settings/account/password` — change password
-- `/settings/account/email` — change email
-- `/settings/account/delete` — delete account
+- `/account` — email, providers, logout, delete link
+- `/account/password` — change password
+- `/account/email` — change email
+- `/account/delete` — delete account
 
 ## Components
 

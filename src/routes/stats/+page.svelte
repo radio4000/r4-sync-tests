@@ -12,6 +12,7 @@
 	import {followsCollection} from '$lib/collections/follows'
 	import {queryClient} from '$lib/collections/query-client'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
+	import BackLink from '$lib/components/back-link.svelte'
 	import Seo from '$lib/components/seo.svelte'
 
 	// Reactive reads — updates live as you play tracks, follow channels, etc.
@@ -265,10 +266,11 @@
 
 <article class="focused constrained">
 	<header>
+		<BackLink href={resolve('/menu')} />
 		<h1>{m.stats_heading()}</h1>
-		<p>{m.stats_intro()}</p>
-		<p>This page is a work in progress :)</p>
 	</header>
+	<p>{m.stats_intro()}</p>
+	<p>This page is a work in progress :)</p>
 
 	<section>
 		<header>

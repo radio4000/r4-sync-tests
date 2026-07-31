@@ -60,7 +60,6 @@
 </script>
 
 <header>
-	<h2>{m.shortcuts_heading()}</h2>
 	{#if !editing}
 		<button onclick={() => (editing = true)}>{m.shortcuts_edit()}</button>
 	{:else}

@@ -1,13 +1,12 @@
 <script>
 	import {resolve} from '$app/paths'
-	import {appName} from '$lib/config'
+	import {appName, appUrl} from '$lib/config'
 	import * as m from '$lib/paraglide/messages'
 	import BackLink from '$lib/components/back-link.svelte'
-	import Icon from '$lib/components/icon.svelte'
 	import Seo from '$lib/components/seo.svelte'
 
-	const blogPostUrl =
-		'https://blog.radio4000.com/posts/use-radio4000-on-mobile-android-firefox-and-lock-the-screen/'
+	/** Domain without scheme — "radio4000.com" reads better than the full URL */
+	const appHost = new URL(appUrl).host
 </script>
 
 <Seo title={`${m.apps_title()} — ${appName}`} plain />
@@ -18,46 +17,27 @@
 		<h1>{m.apps_title()}</h1>
 	</header>
 
-	<p>{m.apps_install_intro({appName})}</p>
+	<p>{m.apps_intro({appHost})}</p>
+
+	<ul>
+		<li><strong>{m.apps_install_android_device()}</strong> — {m.apps_install_android()}</li>
+		<li><strong>{m.apps_install_ios_device()}</strong> — {m.apps_install_ios()}</li>
+		<li><strong>{m.apps_install_desktop_device()}</strong> — {m.apps_install_desktop({appName})}</li>
+	</ul>
 
 	<section>
-		<h2>{m.apps_install_title()}</h2>
-		<ul>
-			<li>{m.apps_install_android()}</li>
-			<li>{m.apps_install_android_firefox()}</li>
-			<li>{m.apps_install_ios()}</li>
-			<li>{m.apps_install_desktop({appName})}</li>
-		</ul>
-	</section>
-
-	<section>
-		<h2>{m.apps_lock_screen_title()}</h2>
-		<p>{m.apps_lock_screen_intro()}</p>
-	</section>
-
-	<section>
-		<h2>{m.apps_background_title()}</h2>
-		<p>{m.apps_background_intro()}</p>
+		<h2>{m.apps_playback_title()}</h2>
+		<p>{m.apps_playback_intro()}</p>
 		<ul>
 			<li>{m.apps_background_firefox_android()}</li>
 			<li>{m.apps_background_brave_ios()}</li>
 		</ul>
-		<a href={blogPostUrl} target="_blank" rel="noreferrer">
-			<Icon icon="circle-info" />
-			{m.apps_blog_post()}
-		</a>
 	</section>
 </article>
 
 <style>
-	section {
+	section,
+	article > ul {
 		margin-block: var(--space-3);
-	}
-
-	a {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-		margin-top: var(--space-3);
 	}
 </style>
