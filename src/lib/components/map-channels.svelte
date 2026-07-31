@@ -1,6 +1,6 @@
 <script>
 	import {goto} from '$app/navigation'
-	import maplibregl from 'maplibre-gl'
+	import * as maplibregl from 'maplibre-gl'
 	/** @import { GeoJSONSource } from 'maplibre-gl' */
 	import {mount, onDestroy, unmount} from 'svelte'
 	import MapComponent from './map.svelte'

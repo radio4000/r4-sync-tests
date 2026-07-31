@@ -6,7 +6,7 @@ map-broadcast-layer.js is an independent WebGL layer, coupled only via map-color
 -->
 <script>
 	import 'maplibre-gl/dist/maplibre-gl.css'
-	import maplibregl from 'maplibre-gl'
+	import * as maplibregl from 'maplibre-gl'
 	import {replaceState} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {page} from '$app/state'

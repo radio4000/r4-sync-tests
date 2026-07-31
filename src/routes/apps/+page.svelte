@@ -22,7 +22,9 @@
 	<ul>
 		<li><strong>{m.apps_install_android_device()}</strong> — {m.apps_install_android()}</li>
 		<li><strong>{m.apps_install_ios_device()}</strong> — {m.apps_install_ios()}</li>
-		<li><strong>{m.apps_install_desktop_device()}</strong> — {m.apps_install_desktop({appName})}</li>
+		<li>
+			<strong>{m.apps_install_desktop_device()}</strong> — {m.apps_install_desktop({appName})}
+		</li>
 	</ul>
 
 	<section>

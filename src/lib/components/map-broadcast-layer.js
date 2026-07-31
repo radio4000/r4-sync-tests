@@ -1,4 +1,4 @@
-import maplibregl from 'maplibre-gl'
+import * as maplibregl from 'maplibre-gl'
 import {resolveCssColorFloat} from './map-color.js'
 
 // 300 km radius → ~30px rings at zoom 2 (world view), scaling naturally with zoom

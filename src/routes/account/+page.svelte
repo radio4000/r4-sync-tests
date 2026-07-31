@@ -87,9 +87,7 @@
 						<small>{appState.user.email}</small>
 					</p>
 					<menu>
-						<a class="btn" href={resolve('/account/password')}
-							>{m.account_change_password()}</a
-						>
+						<a class="btn" href={resolve('/account/password')}>{m.account_change_password()}</a>
 						<a class="btn" href={resolve('/account/email')}>{m.account_change_email()}</a>
 					</menu>
 				</div>
@@ -149,9 +147,7 @@
 			<menu class="nav-vertical">
 				<div>
 					<p><span>{m.account_delete_title()}</span></p>
-					<a class="btn" href={resolve('/account/delete')}
-						>{m.account_delete_link({appName})}</a
-					>
+					<a class="btn" href={resolve('/account/delete')}>{m.account_delete_link({appName})}</a>
 				</div>
 			</menu>
 		</section>

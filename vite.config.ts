@@ -66,6 +66,10 @@ export default defineConfig({
 	worker: {
 		format: 'es'
 	},
+	optimizeDeps: {
+		// MapLibre 6 resolves its ESM worker via import.meta.url, which Vite's prebundler drops in dev.
+		exclude: ['maplibre-gl']
+	},
 	build: {
 		target: 'esnext',
 		reportCompressedSize: false
