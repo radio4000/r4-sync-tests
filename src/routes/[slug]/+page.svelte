@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {page} from '$app/state'
+	import {appUrl} from '$lib/config'
 	import {resolve} from '$app/paths'
 	import {goto} from '$app/navigation'
 	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
@@ -197,7 +198,7 @@
 	title={channel?.name || m.channel_page_fallback()}
 	description={channel?.description}
 	image={channel?.image ? channelAvatarUrl(channel.image) : undefined}
-	url={page.url.href}
+	url={appUrl + page.url.pathname}
 	type="music.radio_station"
 />
 

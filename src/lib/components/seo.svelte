@@ -4,6 +4,7 @@
 		title,
 		description = undefined,
 		image = undefined,
+		/** Absolute og:url + canonical. Build it from `appUrl`, never the request origin. */
 		url = undefined,
 		type = 'website',
 		plain = false
