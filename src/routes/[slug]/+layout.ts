@@ -34,9 +34,15 @@ export async function load({url, route, params}) {
 		}
 	}
 
-	// Fetched here rather than read from the collections, which are client-only.
-	// Both feed the first render; live queries take over once they've synced.
-	// A failed track list is not worth failing the page over.
+	// The load fetches only on the server; the browser reads through the
+	// collections (live queries in the layout), so client navs hit the cache.
+	// Hydration reuses the serialized server data — this branch runs on navs only.
+	if (browser) {
+		return {view: viewFromUrl(url), channel: null, tracks: []}
+	}
+
+	// Server data feeds the first render (SSR + hydration); live queries take
+	// over once synced. A failed track list is not worth failing the page over.
 	const [{data: channel, error: channelError}, {data: tracks}] = await Promise.all([
 		sdk.channels.readChannel(params.slug),
 		sdk.channels.readChannelTracks(params.slug, SECTION_TRACK_LIMIT)

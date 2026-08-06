@@ -84,7 +84,9 @@
 	let channelFromId = $derived(channelByIdQuery.data)
 	// `data.channel` comes from the server load. It carries the first render (SSR and
 	// client nav) until the local collection has synced this channel in.
-	let channel = $derived(pickRouteChannel(slug, channelFromSlug, channelFromId) ?? data.channel)
+	let channel = $derived(
+		pickRouteChannel(slug, channelFromSlug, channelFromId) ?? data.channel ?? undefined
+	)
 	let channelIsLoading = $derived(
 		!channel && (channelBySlugQuery.isLoading || (Boolean(channelId) && channelByIdQuery.isLoading))
 	)

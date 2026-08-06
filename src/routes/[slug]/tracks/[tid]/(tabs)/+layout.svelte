@@ -21,7 +21,9 @@
 	const channel = $derived(channelCtx.data)
 	const canEdit = $derived(canEditChannel(channel?.id))
 	// The live query only goes SECTION_TRACK_LIMIT deep, so older tracks come from `load`.
-	const track = $derived(tracksQuery.data?.find((t) => t.id === data.tid) ?? data.track ?? undefined)
+	const track = $derived(
+		tracksQuery.data?.find((t) => t.id === data.tid) ?? data.track ?? undefined
+	)
 	const isTrackPlaying = $derived(
 		Boolean(track?.id && Object.values(appState.decks).some((d) => d.playlist_track === track.id))
 	)
