@@ -1,10 +1,15 @@
 <script>
 	/* eslint svelte/no-at-html-tags: "off" */
+	import {onMount} from 'svelte'
 	import {tooltipState} from './tooltip-attachment.svelte.js'
 	import {uuid} from '$lib/utils'
 
 	const id = `tooltip-singleton-${uuid()}`
-	const supportsAnchorCss = 'anchorName' in document.documentElement.style
+	// After mount, not at init: no `document` on the server, and both sides must start false.
+	let supportsAnchorCss = $state(false)
+	onMount(() => {
+		supportsAnchorCss = 'anchorName' in document.documentElement.style
+	})
 
 	/** @type {HTMLElement | null} */
 	let tooltipElement = $state(null)

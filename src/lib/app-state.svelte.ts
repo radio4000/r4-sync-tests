@@ -149,7 +149,7 @@ export const defaultAppState: AppState = {
 function loadState(): AppState {
 	let state: AppState = {...defaultAppState, decks: {}}
 	try {
-		const storedState = localStorage.getItem(STATE_KEY)
+		const storedState = typeof localStorage !== 'undefined' ? localStorage.getItem(STATE_KEY) : null
 		if (storedState) {
 			const parsed = JSON.parse(storedState)
 			state = {...state, ...parsed}
@@ -158,7 +158,7 @@ function loadState(): AppState {
 			}
 		}
 		// Queue arrays are stored separately to avoid serializing them on every small state change
-		const storedQueue = localStorage.getItem(QUEUE_KEY)
+		const storedQueue = typeof localStorage !== 'undefined' ? localStorage.getItem(QUEUE_KEY) : null
 		if (storedQueue) {
 			const queues = JSON.parse(storedQueue) as Record<
 				string,

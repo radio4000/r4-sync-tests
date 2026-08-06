@@ -26,15 +26,16 @@
 	import {getAutoDecksForView} from '$lib/views.svelte'
 	import * as m from '$lib/paraglide/messages'
 	import Seo from '$lib/components/seo.svelte'
+	import {SECTION_TRACK_LIMIT} from '$lib/config'
 
-	const SECTION_TRACK_LIMIT = 50
 	const FEATURED_LIMIT = 10
 
 	const channelCtx = getChannelCtx()
 	const tracksQuery = getTracksQueryCtx()
 
 	let slug = $derived(page.params.slug as string)
-	let channel = $derived(channelCtx.data)
+	let {data} = $props()
+	let channel = $derived(channelCtx.data ?? data.channel)
 	let allTracks = $derived(tracksQuery.data || [])
 	let previewTracks = $derived(allTracks.slice(0, SECTION_TRACK_LIMIT))
 	let canEdit = $derived(canEditChannel(channel?.id))

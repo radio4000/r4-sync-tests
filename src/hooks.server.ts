@@ -1,5 +1,8 @@
 import type {Handle} from '@sveltejs/kit'
-import {appMode, EMBED_HOSTS} from '$lib/config'
+import {appMode, appName, appDescription, EMBED_HOSTS} from '$lib/config'
+
+/** For the two config strings injected below — env vars, not user text. */
+const escapeMarkup = (value: string) => value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 
 export const handle: Handle = async ({event, resolve}) => {
 	const isEmbedMode = !!(appMode === 'embed' || EMBED_HOSTS.includes(event.url.hostname))
@@ -12,5 +15,18 @@ export const handle: Handle = async ({event, resolve}) => {
 		}
 		return Response.redirect(embedUrl, 302)
 	}
-	return resolve(event)
+	// Pages that render on the server bring their own title via <Seo>. The rest ship an
+	// empty shell, so give them the default rather than letting the tab show a raw URL.
+	// Injected here instead of app.html, where it would become a duplicate <title>.
+	return resolve(event, {
+		transformPageChunk: ({html}) => {
+			// %sveltekit.head% sits just before </head>, so a page's own title is in this
+			// same chunk — checking both together is safe even if the response streams.
+			if (!html.includes('</head>') || html.includes('<title>')) return html
+			return html.replace(
+				'</head>',
+				`<title>${escapeMarkup(appName)}</title><meta name="description" content="${escapeMarkup(appDescription)}" /></head>`
+			)
+		}
+	})
 }

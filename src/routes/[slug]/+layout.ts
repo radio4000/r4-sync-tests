@@ -1,6 +1,11 @@
 import {viewFromUrl} from '$lib/views'
 import {redirect} from '@sveltejs/kit'
 import {sdk} from '@radio4000/sdk'
+import {normalizeTrackMedia} from '$lib/collections/tracks'
+import {SECTION_TRACK_LIMIT} from '$lib/config'
+import type {Channel, Track} from '$lib/types'
+
+export const ssr = true
 
 const PRIVATE_ROUTE_IDS = new Set([
 	'/[slug]/edit',
@@ -27,7 +32,16 @@ export async function load({url, route, params}) {
 		}
 	}
 
+	// Fetched here rather than read from the collections, which are client-only.
+	// Both feed the first render; live queries take over once they've synced.
+	const [{data: channel}, {data: tracks}] = await Promise.all([
+		sdk.channels.readChannel(params.slug),
+		sdk.channels.readChannelTracks(params.slug, SECTION_TRACK_LIMIT)
+	])
+
 	return {
-		view: viewFromUrl(url)
+		view: viewFromUrl(url),
+		channel: (channel as Channel) ?? null,
+		tracks: ((tracks ?? []) as Track[]).map(normalizeTrackMedia)
 	}
 }

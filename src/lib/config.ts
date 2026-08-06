@@ -65,6 +65,9 @@ export const conceptIcons = {
 /** Matches `@media (max-width: 768px)` in CSS — JS only; CSS literals stay as-is */
 export const MOBILE_BREAKPOINT = 768
 
+/** How many tracks the channel page previews — and how many its load fetches for SSR */
+export const SECTION_TRACK_LIMIT = 50
+
 /** The header logo opens the nav popover; set false to make it a plain home link */
 export const navPopoverOnLogo = false
 
