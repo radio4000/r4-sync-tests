@@ -14,11 +14,17 @@
 	const hasNextPage = $derived(totalPages > 0 ? currentPage < totalPages : resultCount >= pageSize)
 	const hasPrevPage = $derived(currentPage > 1)
 
-	function setPage(n) {
+	/** Real href for page `n`, so prev/next are crawlable links you can open in a new tab. */
+	function pageHref(n) {
 		const query = new URL(page.url).searchParams
 		if (n <= 1) query.delete('page')
 		else query.set('page', String(n))
-		goto(`?${query.toString()}`, {keepFocus: true, noScroll: true})
+		const q = query.toString()
+		return `${page.url.pathname}${q ? `?${q}` : ''}`
+	}
+
+	function setPage(n) {
+		goto(pageHref(n), {keepFocus: true, noScroll: true})
 	}
 
 	function setPageSize(n) {
@@ -33,11 +39,18 @@
 
 {#if hasPrevPage || hasNextPage || totalPages > 1}
 	<span class="pagination">
-		<button
-			onclick={() => setPage(currentPage - 1)}
-			disabled={!hasPrevPage}
-			aria-label="Previous page">←</button
-		>
+		{#if hasPrevPage}
+			<a
+				class="btn"
+				rel="prev"
+				href={pageHref(currentPage - 1)}
+				data-sveltekit-noscroll
+				data-sveltekit-keepfocus
+				aria-label="Previous page">←</a
+			>
+		{:else}
+			<span class="btn" aria-disabled="true" aria-label="Previous page">←</span>
+		{/if}
 		<button
 			class="page-label"
 			onclick={() => {
@@ -47,9 +60,18 @@
 			aria-label="Go to page"
 			>{currentPage}{#if totalPages > 0}/{totalPages}{/if}</button
 		>
-		<button onclick={() => setPage(currentPage + 1)} disabled={!hasNextPage} aria-label="Next page"
-			>→</button
-		>
+		{#if hasNextPage}
+			<a
+				class="btn"
+				rel="next"
+				href={pageHref(currentPage + 1)}
+				data-sveltekit-noscroll
+				data-sveltekit-keepfocus
+				aria-label="Next page">→</a
+			>
+		{:else}
+			<span class="btn" aria-disabled="true" aria-label="Next page">→</span>
+		{/if}
 	</span>
 	<Dialog bind:showModal={showDialog}>
 		<div class="pagination-dialog">
@@ -89,6 +111,17 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
+
+		/* Anchors can't be `:disabled`, so match what buttons.css does for them. */
+		[aria-disabled='true'] {
+			color: var(--gray-8);
+			cursor: default;
+
+			&:hover {
+				background: var(--button-bg);
+				border-color: transparent;
+			}
+		}
 
 		.page-label {
 			min-width: 2.6rem;
