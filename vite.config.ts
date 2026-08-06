@@ -5,7 +5,7 @@ import {execSync} from 'child_process'
 import {paraglideVitePlugin} from '@inlang/paraglide-js'
 import {visualizer} from 'rollup-plugin-visualizer'
 import {SvelteKitPWA} from '@vite-pwa/sveltekit'
-import pkg from './package.json'
+import pkg from './package.json' with { type: 'json' }
 
 // Get git info at build time
 function getGitInfo() {
