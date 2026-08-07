@@ -17,7 +17,8 @@ import {appState} from '$lib/app-state.svelte'
 import * as api from '$lib/api'
 import * as queue from '$lib/player/queue'
 
-// Disable SSR
+// Disable SSR — most pages are client-heavy. Individual pages/layouts
+// that need SSR (e.g. [slug] channel pages) override this to true.
 export const ssr = false
 
 const log = logger.ns('layout').seal()

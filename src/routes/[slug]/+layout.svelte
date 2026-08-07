@@ -36,7 +36,7 @@
 
 	// --- Props & route params ---
 
-	let {children} = $props()
+	let {children, data} = $props()
 	let channelNavControls = $state<Snippet | undefined>(undefined)
 	let channelStickyHeight = $state(0)
 	setChannelNavCtx({
@@ -82,7 +82,11 @@
 			: null
 	)
 	let channelFromId = $derived(channelByIdQuery.data)
-	let channel = $derived(pickRouteChannel(slug, channelFromSlug, channelFromId))
+	// `data.channel` comes from the server load. It carries the first render (SSR and
+	// client nav) until the local collection has synced this channel in.
+	let channel = $derived(
+		pickRouteChannel(slug, channelFromSlug, channelFromId) ?? data.channel ?? undefined
+	)
 	let channelIsLoading = $derived(
 		!channel && (channelBySlugQuery.isLoading || (Boolean(channelId) && channelByIdQuery.isLoading))
 	)
@@ -99,7 +103,7 @@
 			.where(({tracks}) => eq(tracks.slug, slug))
 			.orderBy(({tracks}) => tracks.created_at, 'desc')
 	)
-	let allChannelTracks = $derived(tracksQuery.data ?? [])
+	let allChannelTracks = $derived(tracksQuery.data?.length ? tracksQuery.data : (data.tracks ?? []))
 	// Keep the last resolved channel during the brief gap while switching channels,
 	// so the header doesn't flash "@unknown" / collapse. displayChannel === channel
 	// in steady state; only during the ~60ms resolution gap does it fall back to the
@@ -264,7 +268,18 @@
 			return channelIsLoading
 		}
 	})
-	setTracksQueryCtx(tracksQuery)
+	// Same fallback as `channel`: serve the load's tracks until the collection syncs.
+	setTracksQueryCtx({
+		get data() {
+			return allChannelTracks
+		},
+		get isReady() {
+			return tracksQuery.isReady
+		},
+		get isLoading() {
+			return tracksQuery.isLoading
+		}
+	})
 </script>
 
 <svelte:head>

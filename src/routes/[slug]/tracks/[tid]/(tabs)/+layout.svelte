@@ -9,6 +9,7 @@
 	import TrackCard from '$lib/components/track-card.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import {channelAvatarUrl, trackImageUrl} from '$lib/utils'
+	import {appUrl} from '$lib/config'
 	import * as m from '$lib/paraglide/messages'
 	import Seo from '$lib/components/seo.svelte'
 
@@ -19,7 +20,10 @@
 	const tracksQuery = getTracksQueryCtx()
 	const channel = $derived(channelCtx.data)
 	const canEdit = $derived(canEditChannel(channel?.id))
-	const track = $derived(tracksQuery.data?.find((t) => t.id === data.tid))
+	// The live query only goes SECTION_TRACK_LIMIT deep, so older tracks come from `load`.
+	const track = $derived(
+		tracksQuery.data?.find((t) => t.id === data.tid) ?? data.track ?? undefined
+	)
 	const isTrackPlaying = $derived(
 		Boolean(track?.id && Object.values(appState.decks).some((d) => d.playlist_track === track.id))
 	)
@@ -51,7 +55,8 @@
 				? channelAvatarUrl(channel.image)
 				: undefined
 	)
-	const isLoading = $derived(tracksQuery.isLoading)
+	// With a track in hand there's nothing to wait for — the server has one already.
+	const isLoading = $derived(tracksQuery.isLoading && !track)
 	const hasYoutubeInfo = $derived(
 		Boolean(meta?.youtube_data && Object.keys(meta.youtube_data).length > 0)
 	)
@@ -100,7 +105,7 @@
 	title={track?.title || m.track_page_fallback()}
 	description={track?.description}
 	image={ogImage}
-	url={page.url.href}
+	url={appUrl + pathname}
 	type="music.song"
 />
 

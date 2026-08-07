@@ -34,10 +34,10 @@ export async function fetchChannelCount(params: ChannelQueryParams = {}): Promis
 	let query = sdk.supabase.from(view).select('*', {count: 'exact', head: true})
 	if (params.idIn?.length) {
 		query = query.in('id', params.idIn)
-	} else if (params.imageNotNull && params.trackCountGte) {
-		query = query.not('image', 'is', null).gte('track_count', params.trackCountGte)
-	} else if (params.trackCountGte) {
-		query = query.gte('track_count', params.trackCountGte)
+	} else {
+		// Apply bounds independently so image-only and track-count-only filters each count correctly.
+		if (params.imageNotNull) query = query.not('image', 'is', null)
+		if (params.trackCountGte) query = query.gte('track_count', params.trackCountGte)
 	}
 	if (params.coordinatesNotNull) {
 		query = query.not('latitude', 'is', null).not('longitude', 'is', null)

@@ -1,10 +1,7 @@
 <script>
-	import {untrack} from 'svelte'
+	import {onMount, untrack} from 'svelte'
 	import {resolve} from '$app/paths'
 	import IconR4 from '$lib/components/icon-r4.svelte'
-	import 'media-chrome'
-	import '$lib/youtube-video-custom-element.js'
-	import '$lib/soundcloud-player-custom-element.js'
 	import {
 		next,
 		play,
@@ -56,6 +53,15 @@
 	/** @typedef {import('$lib/types').Channel} Channel */
 
 	const log = logger.ns('player').seal()
+
+	// Lazy: these define custom elements at module scope, which needs `HTMLElement`.
+	onMount(async () => {
+		await Promise.all([
+			import('media-chrome'),
+			import('$lib/youtube-video-custom-element.js'),
+			import('$lib/soundcloud-player-custom-element.js')
+		])
+	})
 
 	/** @type {{deckId: number, deckEl?: HTMLElement, children?: import('svelte').Snippet, scrollToActive?: (() => void) | undefined}} */
 	let {deckId, deckEl, children, scrollToActive} = $props()

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {page} from '$app/state'
+	import {appUrl} from '$lib/config'
 	import {resolve} from '$app/paths'
 	import {goto} from '$app/navigation'
 	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
@@ -26,15 +27,16 @@
 	import {getAutoDecksForView} from '$lib/views.svelte'
 	import * as m from '$lib/paraglide/messages'
 	import Seo from '$lib/components/seo.svelte'
+	import {SECTION_TRACK_LIMIT} from '$lib/config'
 
-	const SECTION_TRACK_LIMIT = 50
 	const FEATURED_LIMIT = 10
 
 	const channelCtx = getChannelCtx()
 	const tracksQuery = getTracksQueryCtx()
 
 	let slug = $derived(page.params.slug as string)
-	let channel = $derived(channelCtx.data)
+	let {data} = $props()
+	let channel = $derived(channelCtx.data ?? data.channel)
 	let allTracks = $derived(tracksQuery.data || [])
 	let previewTracks = $derived(allTracks.slice(0, SECTION_TRACK_LIMIT))
 	let canEdit = $derived(canEditChannel(channel?.id))
@@ -196,7 +198,7 @@
 	title={channel?.name || m.channel_page_fallback()}
 	description={channel?.description}
 	image={channel?.image ? channelAvatarUrl(channel.image) : undefined}
-	url={page.url.href}
+	url={appUrl + page.url.pathname}
 	type="music.radio_station"
 />
 

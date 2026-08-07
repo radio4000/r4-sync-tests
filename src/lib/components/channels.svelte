@@ -41,7 +41,11 @@
 		defaultFilter = 'featured',
 		filter: filterProp = undefined,
 		filterBasePath = undefined,
-		searchHref = undefined
+		searchHref = undefined,
+		// Collections are browser-only, so a server render has nothing to list. Pass a
+		// page of channels from `load` and it renders those until the live query syncs.
+		initialChannels = undefined,
+		initialCount = 0
 	} = $props()
 
 	let searchValue = $state('')
@@ -225,7 +229,9 @@
 
 	// Server-side total count for pagination (N/M display)
 	let serverCount = $state(0)
-	const totalCount = $derived(localIdFilters[filter]?.().length ?? serverCount)
+	// Without a total, `Pagination` can't tell there's a next page and renders nothing,
+	// so `initialCount` covers the server render and the gap before the count lands.
+	const totalCount = $derived(localIdFilters[filter]?.().length ?? (serverCount || initialCount))
 	const hasPaginatedMore = $derived(
 		isPaged &&
 			filter !== 'featured' &&
@@ -304,7 +310,10 @@
 		// Keep showing the previous page while the next one loads
 		if (!channelsQuery.isLoading && channels.length > 0) stableChannels = channels
 	})
-	const orderedChannels = $derived(isPaged ? stableChannels : channels)
+	const live = $derived(isPaged ? stableChannels : channels)
+	// `live` is empty on the server and on the first client render, before effects run,
+	// so the server's page fills in and the rendered list survives hydration.
+	const orderedChannels = $derived(live.length ? live : (initialChannels ?? []))
 
 	const canvasMedia = $derived(orderedChannels.map((c) => toChannelCardMedia(c, channelActivity)))
 
@@ -437,7 +446,7 @@
 				{currentPage}
 				{pageSize}
 				{totalCount}
-				resultCount={channels.length}
+				resultCount={orderedChannels.length}
 				defaultPageSize={12}
 			/>
 		{/if}

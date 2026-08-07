@@ -726,7 +726,10 @@
 		},
 		{"name": "HomeGlobe", "desc": "Lazy channels globe — loads map when scrolled into view."},
 
-		{"name": "Seo", "desc": "Page title and meta/OG tags. plain prop skips the app-name suffix."},
+		{
+			"name": "Seo",
+			"desc": "Page title, meta/OG tags and rel=canonical (when url is set). plain prop skips the app-name suffix."
+		},
 		{"name": "dialog.svelte", "desc": "Generic dialog wrapper with header/children snippets."},
 		{"name": "date-formal.svelte", "desc": "Localized formal date-time display."},
 		{"name": "Icon", "desc": "Iconify icon wrapper."},
