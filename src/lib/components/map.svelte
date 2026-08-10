@@ -7,11 +7,18 @@ map-broadcast-layer.js is an independent WebGL layer, coupled only via map-color
 <script>
 	import 'maplibre-gl/dist/maplibre-gl.css'
 	import * as maplibregl from 'maplibre-gl'
+	// MapLibre 6 is ESM-only and resolves its worker as `new URL('./maplibre-gl-worker.mjs',
+	// import.meta.url)`. Once Vite bundles maplibre into a hashed chunk that sibling file
+	// doesn't exist, the worker 404s and every GeoJSON source hangs forever (no markers, no
+	// overlays) without throwing. `?worker&url` makes Vite emit the worker as its own bundle.
+	import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 	import {replaceState} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {page} from '$app/state'
 	import {SvelteURLSearchParams} from 'svelte/reactivity'
 	import {buildCartoStyle, isDarkTheme} from './map-tile-styles.js'
+
+	maplibregl.setWorkerUrl(maplibreWorkerUrl)
 
 	let {
 		latitude = null,
