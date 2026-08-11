@@ -192,6 +192,9 @@
 			mediaElement.playbackRate = deck.speed ?? 1
 		}
 		if (mediaElement) recordSeekPosition(deckId, mediaElement.currentTime ?? 0)
+		// Re-assert right when real playback starts — this is exactly the moment
+		// YouTube's iframe is most likely to claim the Media Session for itself.
+		reassertMediaSession()
 
 		// Update track duration if missing (only for owned channels, once per track)
 		if (
@@ -346,16 +349,24 @@
 		}
 	})
 
-	// Media Session API — lock screen / notification controls
-	$effect(() => {
-		if (!('mediaSession' in navigator)) return
-		// With multiple decks, only the active one drives the OS media session
+	// Media Session API — lock screen / notification controls.
+	// With multiple decks, only the active one drives the OS media session.
+	function isActiveMediaSessionDeck() {
 		const deckCount = Object.keys(appState.decks).length
-		if (deckCount > 1 && appState.active_deck_id !== deckId) return
+		return deckCount <= 1 || appState.active_deck_id === deckId
+	}
+
+	/** (Re)apply Media Session metadata + action handlers from current state. Safe to
+	 *  call repeatedly — YouTube's iframe sets its own mediaSession metadata whenever
+	 *  its playback starts (and can reassert it again later), silently overwriting
+	 *  ours on Android. Callers reassert this from every real "playing" event
+	 *  (handlePlay) plus a light recurring interval while playing, rather than
+	 *  trusting a single one-shot re-assert to win the race for good. */
+	function reassertMediaSession() {
+		if (!('mediaSession' in navigator)) return
+		if (!isActiveMediaSessionDeck()) return
 
 		const t = displayTrack
-		const ch = displayChannel
-
 		if (!t) {
 			navigator.mediaSession.metadata = null
 			navigator.mediaSession.setActionHandler('play', null)
@@ -364,50 +375,67 @@
 			navigator.mediaSession.setActionHandler('nexttrack', null)
 			return
 		}
+		const ch = displayChannel
 
 		const artwork =
 			provider === 'youtube' && t.media_id
 				? [{src: trackImageUrl(t.media_id), sizes: '480x360', type: 'image/jpeg'}]
 				: []
 
-		const metadata = new MediaMetadata({
+		navigator.mediaSession.metadata = new MediaMetadata({
 			title: t.title ?? '',
 			artist: ch ? `${ch.name} (@${ch.slug})` : '',
 			album: t.description ?? '',
 			artwork
 		})
+		// Read outside the metadata/handlers effect's tracking — play/pause toggles
+		// shouldn't retrigger a full metadata + handler rebuild (see playbackState effect).
+		navigator.mediaSession.playbackState = untrack(() => deck?.is_playing) ? 'playing' : 'paused'
 
-		const applyMetadata = () => {
-			navigator.mediaSession.metadata = metadata
-			navigator.mediaSession.playbackState = deck?.is_playing ? 'playing' : 'paused'
-		}
-
-		applyMetadata()
-		// Re-assert after a short delay: YouTube's iframe sets its own mediaSession
-		// metadata when playback starts, which overwrites ours on Android.
-		const timer = setTimeout(applyMetadata, 800)
-
-		// Always register handlers — passing null removes the button on Android
+		// Always register play/pause — passing null removes the button on Android
 		navigator.mediaSession.setActionHandler('play', () => {
 			if (mediaElement) play(deckId, mediaElement)
 		})
 		navigator.mediaSession.setActionHandler('pause', () => {
 			if (mediaElement) pause(mediaElement)
 		})
-		navigator.mediaSession.setActionHandler('previoustrack', () => {
-			if (canPrevFromQueue) previous(deckId, 'user_prev')
-		})
-		navigator.mediaSession.setActionHandler('nexttrack', () => {
-			if (canNextFromQueue) next(deckId, 'user_next')
-		})
+		// Skipping only makes sense for a normal queue — the in-app UI hides prev/next
+		// the same way while listening to a broadcast (can't skip someone else's track)
+		// or in auto-radio (skipping breaks the deterministic-schedule contract).
+		const allowSkip = !isListeningToBroadcast && !deck?.auto_radio
+		navigator.mediaSession.setActionHandler(
+			'previoustrack',
+			allowSkip && canPrevFromQueue ? () => previous(deckId, 'user_prev') : null
+		)
+		navigator.mediaSession.setActionHandler(
+			'nexttrack',
+			allowSkip && canNextFromQueue ? () => next(deckId, 'user_next') : null
+		)
+	}
 
+	// Metadata + handlers — depends on track/channel/mode, not on is_playing (read via
+	// untrack() above) so a play/pause toggle doesn't tear down and rebuild everything.
+	$effect(() => {
+		reassertMediaSession()
 		return () => {
-			clearTimeout(timer)
+			if (!('mediaSession' in navigator)) return
 			navigator.mediaSession.setActionHandler('play', null)
 			navigator.mediaSession.setActionHandler('pause', null)
 			navigator.mediaSession.setActionHandler('previoustrack', null)
 			navigator.mediaSession.setActionHandler('nexttrack', null)
 		}
+	})
+
+	// playbackState flips on every play/pause without needing a full rebuild. Also
+	// keeps a light recurring reassert while playing — handlePlay() covers the moment
+	// playback starts; this covers YouTube's iframe reclaiming the session again later.
+	$effect(() => {
+		if (!('mediaSession' in navigator) || !displayTrack) return
+		if (!isActiveMediaSessionDeck()) return
+		navigator.mediaSession.playbackState = deck?.is_playing ? 'playing' : 'paused'
+		if (!deck?.is_playing) return
+		const interval = setInterval(reassertMediaSession, 4000)
+		return () => clearInterval(interval)
 	})
 
 	// Wake lock — keep the screen on while this deck is playing. Ref-counted across
@@ -417,6 +445,27 @@
 		if (!deck?.is_playing) return
 		requestPlaybackWakeLock(deckId)
 		return () => releasePlaybackWakeLock(deckId)
+	})
+
+	// Resume-on-stall — recover from platform playback bugs that silently drop
+	// playback while backgrounded/locked (notably iOS Safari: WebKit bug 173332 —
+	// play() can silently fail while the screen is locked, with no error to react
+	// to). If we still think this deck is playing but the media element disagrees,
+	// nudge it again the instant the app is foregrounded. Broadcast listeners
+	// already self-heal via broadcast.js's own visibility handling; auto-radio gets
+	// its own resync in api.ts — this covers plain queue playback.
+	$effect(() => {
+		if (isListeningToBroadcast || deck?.auto_radio) return
+		const resume = () => {
+			if (document.visibilityState !== 'visible') return
+			if (deck?.is_playing && mediaElement?.paused) play(deckId, mediaElement)
+		}
+		document.addEventListener('visibilitychange', resume)
+		window.addEventListener('pageshow', resume)
+		return () => {
+			document.removeEventListener('visibilitychange', resume)
+			window.removeEventListener('pageshow', resume)
+		}
 	})
 
 	// Auto-radio drift — re-evaluates on every timeupdate (~250ms while playing)
