@@ -18,6 +18,7 @@
 		toggleShuffle
 	} from '$lib/api'
 	import {requestPlaybackWakeLock, releasePlaybackWakeLock} from '$lib/wake-lock'
+	import {requestMediaSessionAnchor, releaseMediaSessionAnchor} from '$lib/media-session-anchor'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {sortedListeningDeckIds, sortedDeckIds, isGroupControlDeck} from '$lib/deck'
 	import {playbackState, toAutoTracks, AUTO_RADIO_SYNC_GRACE_MS} from '$lib/player/auto-radio'
@@ -447,18 +448,42 @@
 		return () => releasePlaybackWakeLock(deckId)
 	})
 
+	// Media Session anchor — experimental, see media-session-anchor.js for why.
+	// Only the deck actually driving the OS session needs it.
+	$effect(() => {
+		if (!deck?.is_playing || !isActiveMediaSessionDeck()) return
+		requestMediaSessionAnchor(deckId)
+		return () => releaseMediaSessionAnchor(deckId)
+	})
+
+	// Nudge a stalled media element back to life: re-seeking to its own current
+	// position forces the provider to re-buffer/reconnect, and play() covers the
+	// case where it actually paused. Harmless to call when nothing was actually
+	// stuck (same-position seek, no audible/visible jump).
+	function nudgeStalledPlayback() {
+		if (!deck?.is_playing || !mediaElement) return
+		const t = mediaElement.currentTime
+		if (typeof t === 'number' && Number.isFinite(t)) mediaElement.currentTime = t
+		play(deckId, mediaElement)
+	}
+
 	// Resume-on-stall — recover from platform playback bugs that silently drop
-	// playback while backgrounded/locked (notably iOS Safari: WebKit bug 173332 —
-	// play() can silently fail while the screen is locked, with no error to react
-	// to). If we still think this deck is playing but the media element disagrees,
-	// nudge it again the instant the app is foregrounded. Broadcast listeners
-	// already self-heal via broadcast.js's own visibility handling; auto-radio gets
-	// its own resync in api.ts — this covers plain queue playback.
+	// playback while backgrounded/locked: iOS Safari's WebKit bug 173332 (play()
+	// can silently fail while the screen is locked), and reports of YouTube
+	// simply stalling mid-buffer while locked with no error either — the deck
+	// still reads `is_playing` and the element may not even report `paused`, it's
+	// just not receiving data. Two lines of defense: nudge immediately the
+	// instant the app is foregrounded, and — since Chromium explicitly exempts
+	// audio-playing tabs from background timer throttling — also poll for a
+	// stalled `currentTime` on an interval so this can self-heal without
+	// requiring the user to unlock at all. Broadcast listeners already self-heal
+	// via broadcast.js's own visibility handling; auto-radio gets its own resync
+	// in api.ts — this covers plain queue playback.
 	$effect(() => {
 		if (isListeningToBroadcast || deck?.auto_radio) return
 		const resume = () => {
 			if (document.visibilityState !== 'visible') return
-			if (deck?.is_playing && mediaElement?.paused) play(deckId, mediaElement)
+			nudgeStalledPlayback()
 		}
 		document.addEventListener('visibilitychange', resume)
 		window.addEventListener('pageshow', resume)
@@ -466,6 +491,24 @@
 			document.removeEventListener('visibilitychange', resume)
 			window.removeEventListener('pageshow', resume)
 		}
+	})
+	$effect(() => {
+		if (isListeningToBroadcast || deck?.auto_radio || !deck?.is_playing) return
+		let lastTime = mediaElement?.currentTime ?? 0
+		const watchdog = setInterval(() => {
+			const t = mediaElement?.currentTime
+			if (typeof t === 'number' && Number.isFinite(t)) {
+				// Playing but hasn't moved in ~6s despite a full interval passing —
+				// stalled. A real 6s pause-at-exact-same-frame is not something
+				// normal playback does, so treat no movement as stuck.
+				if (Math.abs(t - lastTime) < 0.25) {
+					log.warn('stall_watchdog nudging', {deckId, t})
+					nudgeStalledPlayback()
+				}
+				lastTime = t
+			}
+		}, 6000)
+		return () => clearInterval(watchdog)
 	})
 
 	// Auto-radio drift — re-evaluates on every timeupdate (~250ms while playing)

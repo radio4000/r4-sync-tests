@@ -65,14 +65,36 @@ so this doesn't get re-diagnosed blind next time:
   keep reasserting ours: on every real "playing" event (`handlePlay`) and on a light
   recurring interval while playing (see `reassertMediaSession` in `player.svelte`),
   not just once at track start.
+- **Chrome may bind action-handling authority to the frame that owns the actual
+  playing media element, not whoever last called `setActionHandler`.** For a YouTube
+  track that's YouTube's own nested, cross-origin iframe — which we cannot reach into
+  to register handlers on, and which has no "next radio4000 track" concept of its own.
+  If this is the deciding factor (still unconfirmed — needs a real Android device to
+  verify, e.g. by comparing whether prev/next reliably show for SoundCloud/file tracks
+  vs YouTube ones), reasserting harder from our side can't fully fix it, since the OS
+  may simply not be listening to our frame for those two actions. `media-session-anchor.js`
+  is an experiment against this: keep a genuinely-playing (but silent) `<audio>` element
+  alive in our own top frame while a deck plays, on the bet that Chrome will then also
+  treat _our_ frame as a legitimate media owner. Unconfirmed — remove it if it turns out
+  not to matter.
 - **iOS Safari / WebKit**: on affected iOS versions, `.play()` can silently fail when
   called from a backgrounded/locked context — see
   [WebKit bug 173332](https://bugs.webkit.org/show_bug.cgi?id=173332) (a long-running,
   recurring bug — fixed in 2019, reintroduced in iOS 15+). No effective workaround is
-  known; the app's `visibilitychange` resume-on-stall handler in `player.svelte`
-  re-nudges `play()` the moment the app is foregrounded, which is the best available
-  mitigation. iOS Safari also has no Wake Lock API at all, so `wake-lock.js` is a
-  no-op there by design.
+  known. iOS Safari also has no Wake Lock API at all, so `wake-lock.js` is a no-op
+  there by design.
+- **Playback can stall mid-track while locked without the media element reporting
+  `paused`** — reported on Android/YouTube: video silently stops loading while locked,
+  and briefly unlocking is what kicks it back into motion. `player.svelte` now runs
+  two lines of defense, both calling the same `nudgeStalledPlayback()` (re-seek to the
+  element's own current position, which forces the provider to re-buffer/reconnect,
+  then `play()` again — harmless when nothing was actually stuck): a `visibilitychange`/
+  `pageshow` handler that fires the instant the app is foregrounded, and a `setInterval`
+  watchdog (not `requestAnimationFrame` — see above) that polls for stalled
+  `currentTime` progress every ~6s. The watchdog is the one that can self-heal without
+  the user unlocking at all — it relies on Chromium's documented exemption of
+  audio-playing tabs from background timer throttling, so in principle it should still
+  fire while locked. Unconfirmed on-device whether it actually does.
 - **Firefox** (desktop and Android) has historically not implemented the Media
   Session API — nothing to fix on our end; Firefox users get whatever minimal default
   the browser provides. Worth re-checking on new Firefox releases.
