@@ -20,6 +20,12 @@ export function isMobileViewport(): boolean {
 	)
 }
 
+const RE_ANDROID = /Android/i
+
+export function isAndroid(): boolean {
+	return typeof navigator !== 'undefined' && RE_ANDROID.test(navigator.userAgent)
+}
+
 const RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** Returns true if the string is a valid UUID (i.e. a real DB-persisted record ID, not an ephemeral one). */

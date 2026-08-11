@@ -134,6 +134,8 @@ export interface AppState {
 	modal_nav?: boolean
 	show_welcome_hint?: boolean
 	show_onboarding_hint?: boolean
+	/** User dismissed the "playback stalled while locked, check your battery settings" hint */
+	battery_hint_dismissed?: boolean
 	analytics_opt_in?: boolean
 	/** Hides navigation and external links; set by the server on embed domains. */
 	embed_mode?: boolean

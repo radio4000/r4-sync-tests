@@ -142,6 +142,7 @@ export const defaultAppState: AppState = {
 	modal_nav: false,
 	show_welcome_hint: true,
 	show_onboarding_hint: true,
+	battery_hint_dismissed: false,
 	analytics_opt_in: false
 }
 

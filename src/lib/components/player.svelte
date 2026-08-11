@@ -19,6 +19,7 @@
 	} from '$lib/api'
 	import {requestPlaybackWakeLock, releasePlaybackWakeLock} from '$lib/wake-lock'
 	import {requestMediaSessionAnchor, releaseMediaSessionAnchor} from '$lib/media-session-anchor'
+	import {reportBackgroundStall} from '$lib/background-stall.svelte'
 	import {getActiveQueue, canPlay, canPrev, canNext} from '$lib/player/queue'
 	import {sortedListeningDeckIds, sortedDeckIds, isGroupControlDeck} from '$lib/deck'
 	import {playbackState, toAutoTracks, AUTO_RADIO_SYNC_GRACE_MS} from '$lib/player/auto-radio'
@@ -465,6 +466,12 @@
 		const t = mediaElement.currentTime
 		if (typeof t === 'number' && Number.isFinite(t)) mediaElement.currentTime = t
 		play(deckId, mediaElement)
+		// YouTube is documented (see broadcast.js) to reset some media element state
+		// — playbackRate there — as a side effect of a reload/seek. Guard volume/mute
+		// the same way, including once more after a delay to win any race with an
+		// async reset on the provider's side.
+		applyInitialVolume()
+		setTimeout(applyInitialVolume, 1000)
 	}
 
 	// Resume-on-stall — recover from platform playback bugs that silently drop
@@ -503,6 +510,11 @@
 				// normal playback does, so treat no movement as stuck.
 				if (Math.abs(t - lastTime) < 0.25) {
 					log.warn('stall_watchdog nudging', {deckId, t})
+					// Correlate with backgrounding specifically — a stall while the
+					// page is actually visible is more likely a real network hiccup
+					// than the OS throttling us, and the battery-settings hint would
+					// be wrong advice for that case.
+					if (document.visibilityState === 'hidden') reportBackgroundStall()
 					nudgeStalledPlayback()
 				}
 				lastTime = t
