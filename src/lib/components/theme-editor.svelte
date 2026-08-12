@@ -156,11 +156,11 @@
 			{@render cssToggle('--media-radius', m.theme_artwork_label())}
 
 			<fieldset>
-				<label for={`${uid}-hide-artwork`}>{m.theme_hide_artwork_label()}</label>
+				<label for={`${uid}-show-artwork`}>{m.theme_show_artwork_label()}</label>
 				<input
 					type="checkbox"
-					bind:checked={appState.hide_track_artwork}
-					id={`${uid}-hide-artwork`}
+					bind:checked={appState.show_track_artwork}
+					id={`${uid}-show-artwork`}
 				/>
 			</fieldset>
 

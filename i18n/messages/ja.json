@@ -651,7 +651,6 @@
 	"theme_create_heading": "独自のテーマを作成",
 	"theme_font_label": "フォント",
 	"theme_heading": "外観",
-	"theme_hide_artwork_label": "トラックアートワークを非表示",
 	"theme_import_placeholder": "インポートするためのテーマ文字列を貼り付け",
 	"theme_override_button_bg_desc": "ボタン背景を上書き",
 	"theme_override_button_bg_label_dark": "ボタン背景",

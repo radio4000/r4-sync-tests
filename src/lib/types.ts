@@ -112,7 +112,7 @@ export interface AppState {
 	/** the user's primary channel (full object) */
 	channel?: Channel
 	shortcuts?: Record<string, string>
-	hide_track_artwork: boolean
+	show_track_artwork: boolean
 	/** Default volume for new decks: 0 (silent) or 1 (full) */
 	default_new_deck_volume: 0 | 1
 	/** Whether new decks auto-play when a track is loaded */

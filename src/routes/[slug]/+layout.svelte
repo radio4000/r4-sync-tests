@@ -371,6 +371,10 @@
 								<Icon icon="sidebar-fill-right" />
 								{m.track_card_play_in_deck()}
 							</button>
+							<button type="button" onclick={onShuffleAction} disabled={playLoading}>
+								<Icon icon="shuffle" />
+								{shuffleLabel}
+							</button>
 							<button
 								type="button"
 								onclick={() => (appState.modal_share = {channel: displayChannel})}
@@ -435,17 +439,6 @@
 							>
 								<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={14} />
 								<span>{playLabel}</span>
-							</button>
-
-							<button
-								type="button"
-								class={['mode-action', 'shuffle']}
-								onclick={onShuffleAction}
-								disabled={playLoading}
-								{@attach tooltip({content: m.channels_tooltip_shuffle()})}
-							>
-								<Icon icon="shuffle" size={14} />
-								<span>{shuffleLabel}</span>
 							</button>
 						</div>
 					</menu>

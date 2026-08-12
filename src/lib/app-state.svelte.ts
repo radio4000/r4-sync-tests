@@ -123,7 +123,7 @@ export const defaultAppState: AppState = {
 	channels_order_direction: 'desc',
 
 	theme: undefined,
-	hide_track_artwork: false,
+	show_track_artwork: true,
 	default_new_deck_volume: 1,
 	autoplay_new_deck: true,
 	show_speed_control: false,
