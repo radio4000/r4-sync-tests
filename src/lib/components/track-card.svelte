@@ -86,7 +86,7 @@
 		const targetDeck = appState.decks[matchedDeckId]
 		return Boolean(targetDeck?.playlist_track === track?.id && targetDeck?.is_playing)
 	})
-	const ytid = $derived(!showImage || appState.hide_track_artwork ? null : track.media_id)
+	const ytid = $derived(!showImage || !appState.show_track_artwork ? null : track.media_id)
 	// default, mqdefault, hqdefault, sddefault, maxresdefault
 	const imageSrc = $derived(ytid ? trackImageUrl(ytid) : null)
 
@@ -173,7 +173,7 @@
 			if (e.detail >= 2) e.preventDefault()
 		}}
 	>
-		{#if ytid && showImage && !appState.hide_track_artwork}
+		{#if ytid && showImage && appState.show_track_artwork}
 			<button
 				type="button"
 				class="artwork-trigger"
@@ -327,7 +327,7 @@
 			<p>{m.track_delete_confirm({title: track.title})}</p>
 			<article class="delete-track-preview">
 				<div class="card">
-					{#if ytid && showImage && !appState.hide_track_artwork}
+					{#if ytid && showImage && appState.show_track_artwork}
 						<img
 							src={imageSrc}
 							alt={track.title}

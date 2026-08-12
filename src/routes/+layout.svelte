@@ -227,6 +227,23 @@
 		}
 	})
 
+	// Apply floating UI preference — shell/deck panel padding, gaps, borders,
+	// backgrounds. Corner rounding stays governed separately by --border-radius.
+	$effect(() => {
+		const root = document.documentElement
+		if (appState.floating_ui !== false) {
+			root.style.removeProperty('--floating-padding')
+			root.style.removeProperty('--floating-gap')
+			root.style.removeProperty('--floating-bg')
+			root.style.removeProperty('--floating-border')
+		} else {
+			root.style.setProperty('--floating-padding', '0')
+			root.style.setProperty('--floating-gap', '0')
+			root.style.setProperty('--floating-bg', 'transparent')
+			root.style.setProperty('--floating-border', 'none')
+		}
+	})
+
 	// "Close" the database on page unload. I have not noticed any difference, but seems like a good thing to do.
 	$effect(() => {
 		const handler = async () => {
@@ -369,12 +386,17 @@
 		height: 100vh;
 		height: 100dvh;
 		overflow: hidden;
+		padding: var(--floating-padding);
+		gap: var(--floating-gap);
 	}
 
 	.layout > :global(header) {
 		position: sticky;
 		top: 0;
 		flex-shrink: 0;
+		border-radius: var(--border-radius);
+		background: var(--floating-bg);
+		border: var(--floating-border);
 	}
 
 	.deckExpanded > :global(header) {
@@ -400,13 +422,19 @@
 		flex: 1;
 		min-width: 0;
 		min-height: 0;
+		gap: var(--floating-gap);
 	}
 
+	/* Plain layout container — NOT bordered/backgrounded itself, so its border
+	   doesn't wrap the deck-strip too. Each of .scroll-area (the page) and each
+	   individual .deck card owns its own border, matching the rest of the
+	   floating-panel system. */
 	.content {
 		display: flex;
 		flex: 1;
 		min-width: 0;
 		min-height: 0;
+		gap: var(--floating-gap);
 	}
 
 	.scroll-area {
@@ -414,6 +442,8 @@
 		min-width: 0;
 		min-height: 0;
 		overflow-y: auto;
+		border-radius: var(--border-radius);
+		border: var(--floating-border);
 		scrollbar-width: thin;
 		overscroll-behavior: contain;
 		scrollbar-gutter: stable;
@@ -433,17 +463,12 @@
 		text-align: center;
 	}
 
+	/* Plain layout container — each stacked deck is its own floating card (see
+	   .compact-deck-item below), same principle as .content/.deck-strip. */
 	.compact-decks {
 		display: flex;
 		flex-direction: column;
-		gap: 0rem;
-		border-radius: 8px 8px 0 0;
-		overflow: hidden;
-		border-top: 1px solid var(--gray-4);
-		/*
-		margin: 0 var(--space-1) var(--space-1);
-		padding: 0.4rem 0.5rem;
-		 */
+		gap: var(--floating-gap);
 		position: sticky;
 		bottom: 0;
 		z-index: 30;
@@ -459,6 +484,13 @@
 
 	.compact-deck-item {
 		min-width: 0;
+	}
+
+	.compact-deck-item :global(.deck-compact-bar) {
+		border-radius: var(--border-radius);
+		overflow: hidden;
+		background: var(--floating-bg);
+		border: var(--floating-border);
 	}
 
 	.compact-listening-group {
@@ -518,10 +550,6 @@
 		min-width: 0;
 	}
 
-	.compact-deck-item:first-child :global(.deck-compact-bar) {
-		border-top: none;
-	}
-
 	@media (max-width: 768px) {
 		.layout {
 			flex-direction: column;
@@ -537,6 +565,12 @@
 			align-self: stretch;
 			order: 2;
 			z-index: 40;
+			/* Frosted, not solid — the compact player bar sits right above this in the
+			   stack, and a translucent/blurred nav reads as a distinct floating layer
+			   rather than a flat opaque strip. */
+			background: color-mix(in oklch, var(--floating-bg) 75%, transparent);
+			backdrop-filter: blur(12px);
+			-webkit-backdrop-filter: blur(12px);
 		}
 
 		.content-wrapper {

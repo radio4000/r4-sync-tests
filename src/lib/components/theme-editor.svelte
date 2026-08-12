@@ -156,11 +156,11 @@
 			{@render cssToggle('--media-radius', m.theme_artwork_label())}
 
 			<fieldset>
-				<label for={`${uid}-hide-artwork`}>{m.theme_hide_artwork_label()}</label>
+				<label for={`${uid}-show-artwork`}>{m.theme_show_artwork_label()}</label>
 				<input
 					type="checkbox"
-					bind:checked={appState.hide_track_artwork}
-					id={`${uid}-hide-artwork`}
+					bind:checked={appState.show_track_artwork}
+					id={`${uid}-show-artwork`}
 				/>
 			</fieldset>
 
@@ -171,6 +171,11 @@
 					bind:checked={appState.use_pointer_cursor}
 					id={`${uid}-pointer-cursor`}
 				/>
+			</fieldset>
+
+			<fieldset>
+				<label for={`${uid}-floating-ui`}>{m.theme_floating_ui_label()}</label>
+				<input type="checkbox" bind:checked={appState.floating_ui} id={`${uid}-floating-ui`} />
 			</fieldset>
 
 			<fieldset class="row">

@@ -8,6 +8,14 @@
 	--space-3: calc(1rem * var(--scaling));
 	--border-radius: 0.4rem;
 	--media-radius: var(--border-radius);
+	/* Floating UI — shell/deck panel padding, gaps, border, background. Toggled
+	   off (0 / none / transparent) via the "Floating panels" theme setting;
+	   see the $effect in +layout.svelte. Independent of --border-radius, which
+	   keeps governing corner rounding either way. */
+	--floating-padding: 0.35rem;
+	--floating-gap: 0.35rem;
+	--floating-bg: var(--color-interface-elevated);
+	--floating-border: 1px solid var(--color-interface-border);
 	--track-artwork-size: 2.5rem;
 	--shadow-modal: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
 	/* motion: --duration-1 for micro feedback (presses, hovers, exits),

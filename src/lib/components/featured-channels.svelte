@@ -1,7 +1,4 @@
 <script>
-	import {appState} from '$lib/app-state.svelte'
-	import {playChannel, togglePlayPause} from '$lib/api'
-	import {isChannelPlaying} from '$lib/deck'
 	import {pickFeatured, dailySeed} from '$lib/collections/featured'
 	import {shuffleSeed} from '$lib/utils'
 	import ChannelCard from './channel-card.svelte'
@@ -16,14 +13,6 @@
 	let seed = $state(dailySeed())
 
 	const channels = $derived(pickFeatured(pool, {count: pickCount, seed}))
-	const first = $derived(channels[0] ?? null)
-	const isPlaying = $derived(isChannelPlaying(appState.decks, first?.slug))
-
-	function togglePlay() {
-		if (!first) return
-		if (isPlaying) togglePlayPause(appState.active_deck_id)
-		else playChannel(appState.active_deck_id, first)
-	}
 
 	function reshuffle() {
 		if (pool.length) seed = shuffleSeed()
@@ -41,11 +30,6 @@
 				{/if}
 			</h2>
 			<menu>
-				{#if first}
-					<button type="button" onclick={togglePlay}>
-						<Icon icon={isPlaying ? 'pause' : 'play-fill'} />
-					</button>
-				{/if}
 				{#if pool.length > pickCount}
 					<button type="button" title={m.home_featured_refresh()} onclick={reshuffle}>
 						<Icon icon="switch-alt" />

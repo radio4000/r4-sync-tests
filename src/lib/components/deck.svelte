@@ -125,6 +125,8 @@
 		border-radius: var(--border-radius);
 		overflow: hidden;
 		position: relative;
+		background: var(--floating-bg);
+		border: var(--floating-border);
 	}
 
 	.deck:not(.expanded) {
@@ -265,14 +267,6 @@
 	/* In expanded + hide-queue, constrain so controls/footer stay visible */
 	.deck.expanded.hide-queue :global(.video) {
 		max-height: calc(100dvh - 10rem);
-	}
-
-	/* Broadcast listener / auto-radio: no queue, so use less space */
-	.deck.listening,
-	.deck.auto {
-		width: var(--deck-width, 280px);
-		min-width: 200px;
-		flex-shrink: 0;
 	}
 
 	/* Auto-radio: video fills available height (no queue competing for space) */

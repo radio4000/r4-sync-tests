@@ -14,7 +14,7 @@
 	import {tracksCollection, checkTracksFreshness, ensureTracksLoaded} from '$lib/collections/tracks'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
-	import {shufflePlayChannel, toggleChannelPlay} from '$lib/api'
+	import {shufflePlayChannel, toggleChannelPlay, playChannelInNewDeck} from '$lib/api'
 	import {shortcutHint} from '$lib/keyboard'
 	import {
 		findAutoDecksForChannel,
@@ -367,6 +367,14 @@
 								</a>
 								<hr />
 							{/if}
+							<button type="button" onclick={() => playChannelInNewDeck(displayChannel)}>
+								<Icon icon="sidebar-fill-right" />
+								{m.track_card_play_in_deck()}
+							</button>
+							<button type="button" onclick={onShuffleAction} disabled={playLoading}>
+								<Icon icon="shuffle" />
+								{shuffleLabel}
+							</button>
 							<button
 								type="button"
 								onclick={() => (appState.modal_share = {channel: displayChannel})}
@@ -432,17 +440,6 @@
 								<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={14} />
 								<span>{playLabel}</span>
 							</button>
-
-							<button
-								type="button"
-								class={['mode-action', 'shuffle']}
-								onclick={onShuffleAction}
-								disabled={playLoading}
-								{@attach tooltip({content: m.channels_tooltip_shuffle()})}
-							>
-								<Icon icon="shuffle" size={14} />
-								<span>{shuffleLabel}</span>
-							</button>
 						</div>
 					</menu>
 				</div>
@@ -504,11 +501,12 @@
 			'tabs tabs';
 		grid-template-columns: 1fr auto;
 		gap: var(--space-1);
-		padding: 2rem var(--space-3) 1rem;
+		padding: 1.25rem var(--space-3) 1rem;
 		min-width: 0;
 		align-items: center;
 		background: var(--gray-2);
 		border-bottom: 1px solid var(--color-interface-border);
+		border-radius: var(--border-radius);
 		overflow: hidden;
 	}
 
@@ -572,6 +570,11 @@
 		line-height: 1.1;
 		margin: 0;
 		transition: color 0.15s;
+	}
+
+	.info :global(.channel-page-title .title-link:hover),
+	.info :global(.channel-page-title .title-link:focus-visible) {
+		color: var(--accent-9);
 	}
 
 	.info :global(.meta-row) {

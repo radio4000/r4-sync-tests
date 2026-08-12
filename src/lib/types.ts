@@ -112,7 +112,7 @@ export interface AppState {
 	/** the user's primary channel (full object) */
 	channel?: Channel
 	shortcuts?: Record<string, string>
-	hide_track_artwork: boolean
+	show_track_artwork: boolean
 	/** Default volume for new decks: 0 (silent) or 1 (full) */
 	default_new_deck_volume: 0 | 1
 	/** Whether new decks auto-play when a track is loaded */
@@ -123,6 +123,8 @@ export interface AppState {
 	show_track_range_control?: boolean
 	/** Use pointer cursor on interactive elements instead of default arrow */
 	use_pointer_cursor?: boolean
+	/** Floating shell/deck panels — padding, gaps, borders, backgrounds. On by default. */
+	floating_ui?: boolean
 	font_family?: string
 	user?: User
 	language?: string
