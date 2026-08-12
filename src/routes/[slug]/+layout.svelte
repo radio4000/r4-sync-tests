@@ -575,6 +575,11 @@
 		transition: color 0.15s;
 	}
 
+	.info :global(.channel-page-title .title-link:hover),
+	.info :global(.channel-page-title .title-link:focus-visible) {
+		color: var(--accent-9);
+	}
+
 	.info :global(.meta-row) {
 		font-size: var(--font-3);
 	}
