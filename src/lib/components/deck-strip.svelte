@@ -135,8 +135,7 @@
 		flex-shrink: 0;
 		min-height: 0;
 		overflow: clip;
-		padding: var(--space-1);
-		gap: var(--space-1);
+		gap: var(--floating-gap);
 
 		&:empty {
 			display: none;
@@ -169,7 +168,7 @@
 			flex: 0 0 auto;
 			min-height: 0;
 			min-width: max-content;
-			gap: var(--space-1);
+			gap: var(--floating-gap);
 			border-radius: var(--border-radius);
 
 			&:has(:global(.deck.broadcasting)) {
@@ -185,7 +184,7 @@
 			overflow-y: auto;
 			flex: 1 1 auto;
 			min-width: min-content;
-			gap: var(--space-1);
+			gap: var(--floating-gap);
 
 			:global(.deck.listening),
 			:global(.deck.auto) {

@@ -258,10 +258,8 @@
 		display: flex;
 		flex-direction: row;
 		flex-wrap: wrap;
-		border-top: 1px solid var(--gray-6);
 		min-width: 0;
 		overflow: visible;
-		background-color: var(--gray-1);
 	}
 
 	.deck-compact-bar :global(.progress) {
@@ -333,7 +331,7 @@
 		display: flex;
 		align-items: center;
 		flex-wrap: nowrap;
-		gap: var(--space-1);
+		gap: var(--space-2);
 		min-width: 0;
 	}
 

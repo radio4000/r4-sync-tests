@@ -173,6 +173,11 @@
 				/>
 			</fieldset>
 
+			<fieldset>
+				<label for={`${uid}-floating-ui`}>{m.theme_floating_ui_label()}</label>
+				<input type="checkbox" bind:checked={appState.floating_ui} id={`${uid}-floating-ui`} />
+			</fieldset>
+
 			<fieldset class="row">
 				<label for={`${uid}-font-family`}>{m.theme_font_label()}</label>
 				<select

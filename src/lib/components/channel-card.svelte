@@ -239,6 +239,11 @@
 			color: white;
 		}
 
+		:global(img),
+		:global(.fallback) {
+			transition: transform var(--duration-2) var(--ease-out);
+		}
+
 		article:hover &,
 		article:focus-within & {
 			:global(button) {
@@ -246,8 +251,15 @@
 			}
 		}
 
-		article.playing & :global(button) {
-			opacity: 1;
+		article.playing & {
+			:global(button) {
+				opacity: 1;
+			}
+
+			:global(img),
+			:global(.fallback) {
+				transform: scale(1.08);
+			}
 		}
 
 		@media (pointer: coarse) {

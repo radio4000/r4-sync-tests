@@ -509,6 +509,7 @@
 		align-items: center;
 		background: var(--gray-2);
 		border-bottom: 1px solid var(--color-interface-border);
+		border-radius: var(--border-radius);
 		overflow: hidden;
 	}
 
