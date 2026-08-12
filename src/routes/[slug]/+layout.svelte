@@ -14,7 +14,7 @@
 	import {tracksCollection, checkTracksFreshness, ensureTracksLoaded} from '$lib/collections/tracks'
 	import {channelsCollection} from '$lib/collections/channels'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
-	import {shufflePlayChannel, toggleChannelPlay} from '$lib/api'
+	import {shufflePlayChannel, toggleChannelPlay, playChannelInNewDeck} from '$lib/api'
 	import {shortcutHint} from '$lib/keyboard'
 	import {
 		findAutoDecksForChannel,
@@ -367,6 +367,10 @@
 								</a>
 								<hr />
 							{/if}
+							<button type="button" onclick={() => playChannelInNewDeck(displayChannel)}>
+								<Icon icon="sidebar-fill-right" />
+								{m.track_card_play_in_deck()}
+							</button>
 							<button
 								type="button"
 								onclick={() => (appState.modal_share = {channel: displayChannel})}

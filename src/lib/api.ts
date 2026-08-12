@@ -373,6 +373,14 @@ export async function playTrackInNewDeck(trackId: string, slug?: string) {
 	await playTrack(deck.id, trackId, null, 'user_click_track')
 }
 
+/** Play a channel in a fresh deck rather than the active one (e.g. "open in new deck"). */
+export async function playChannelInNewDeck(channel: ChannelRef) {
+	const deck = addDeck()
+	deck.compact = true
+	appState.active_deck_id = deck.id
+	await playChannel(deck.id, channel)
+}
+
 /** Play channel starting from random track with shuffle enabled */
 export async function shufflePlayChannel(deckId: number, {id, slug}: ChannelRef) {
 	log.log('shuffle_play_channel', {deckId, id, slug})

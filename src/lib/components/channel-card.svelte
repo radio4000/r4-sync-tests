@@ -3,7 +3,7 @@
 	import {relativeDateDetailed} from '$lib/dates'
 	import * as m from '$lib/paraglide/messages'
 	import {trimWithEllipsis} from '$lib/utils'
-	import {toggleChannelPlay} from '$lib/api'
+	import {toggleChannelPlay, playChannelInNewDeck} from '$lib/api'
 	import {findChannelDeck} from '$lib/deck'
 	import {joinBroadcast} from '$lib/broadcast.js'
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
@@ -147,6 +147,10 @@
 								{m.channel_card_join_broadcast()}
 							</button>
 						{/if}
+						<button type="button" role="menuitem" onclick={() => playChannelInNewDeck(channel)}>
+							<Icon icon="sidebar-fill-right" />
+							{m.track_card_play_in_deck()}
+						</button>
 						<button type="button" role="menuitem" onclick={share}>
 							<Icon icon="share" />
 							{m.channel_card_share()}
