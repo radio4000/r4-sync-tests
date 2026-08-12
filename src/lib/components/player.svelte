@@ -5,7 +5,6 @@
 	import {
 		next,
 		play,
-		pause,
 		previous,
 		togglePlayPause,
 		toggleDeckCompact,
@@ -24,6 +23,8 @@
 	import {getBroadcastingChannelId, notifyBroadcastState} from '$lib/broadcast.js'
 	import {calculateSeekTime, DRIFT_TOLERANCE_SECONDS} from '$lib/broadcast-utils'
 	import {createDeckDisplay} from '$lib/player/deck-display.svelte'
+	import {createMediaSession} from '$lib/player/media-session.svelte'
+	import {createStallRecovery} from '$lib/player/stall-recovery.svelte'
 	import {appState, canEditChannel, deckAccent} from '$lib/app-state.svelte'
 	import ChannelMicroCard from '$lib/components/channel-micro-card.svelte'
 	import Icon from '$lib/components/icon.svelte'
@@ -38,7 +39,7 @@
 	import {parseUrl} from 'media-now/parse-url'
 	import {tracksCollection, updateTrack} from '$lib/collections/tracks'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {isDbId, trackImageUrl, extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
+	import {isDbId, extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
 	import Tag from '$lib/components/tag.svelte'
 	import TrackCard from '$lib/components/track-card.svelte'
@@ -103,6 +104,41 @@
 	let canPlayFromQueue = $derived(canPlay(activeQueue, track?.id))
 	let canPrevFromQueue = $derived(canPrev(activeQueue, track?.id))
 	let canNextFromQueue = $derived(canNext(activeQueue, track?.id))
+
+	// Lock-screen/notification controls and background-stall recovery. Pure
+	// stability workarounds — quarantined in their own modules, see docs/player.md.
+	const mediaSession = createMediaSession(
+		untrack(() => deckId),
+		{
+			get mediaElement() {
+				return mediaElement
+			},
+			get provider() {
+				return provider
+			},
+			get displayTrack() {
+				return displayTrack
+			},
+			get displayChannel() {
+				return displayChannel
+			},
+			get canPrev() {
+				return canPrevFromQueue
+			},
+			get canNext() {
+				return canNextFromQueue
+			}
+		}
+	)
+	createStallRecovery(
+		untrack(() => deckId),
+		{
+			get mediaElement() {
+				return mediaElement
+			},
+			restoreVolume: applyInitialVolume
+		}
+	)
 
 	// Track list for drift detection. Resolve each id via O(1) Map lookups on the
 	// collection; a direct-collection live query is the reactive bridge (reading
@@ -192,6 +228,9 @@
 			mediaElement.playbackRate = deck.speed ?? 1
 		}
 		if (mediaElement) recordSeekPosition(deckId, mediaElement.currentTime ?? 0)
+		// Re-assert right when real playback starts — this is exactly the moment
+		// YouTube's iframe is most likely to claim the Media Session for itself.
+		mediaSession.reassert()
 
 		// Update track duration if missing (only for owned channels, once per track)
 		if (
@@ -343,70 +382,6 @@
 		const speed = deck?.speed ?? 1
 		if (el && 'playbackRate' in el) {
 			el.playbackRate = speed
-		}
-	})
-
-	// Media Session API — lock screen / notification controls
-	$effect(() => {
-		if (!('mediaSession' in navigator)) return
-		// With multiple decks, only the active one drives the OS media session
-		const deckCount = Object.keys(appState.decks).length
-		if (deckCount > 1 && appState.active_deck_id !== deckId) return
-
-		const t = displayTrack
-		const ch = displayChannel
-
-		if (!t) {
-			navigator.mediaSession.metadata = null
-			navigator.mediaSession.setActionHandler('play', null)
-			navigator.mediaSession.setActionHandler('pause', null)
-			navigator.mediaSession.setActionHandler('previoustrack', null)
-			navigator.mediaSession.setActionHandler('nexttrack', null)
-			return
-		}
-
-		const artwork =
-			provider === 'youtube' && t.media_id
-				? [{src: trackImageUrl(t.media_id), sizes: '480x360', type: 'image/jpeg'}]
-				: []
-
-		const metadata = new MediaMetadata({
-			title: t.title ?? '',
-			artist: ch ? `${ch.name} (@${ch.slug})` : '',
-			album: t.description ?? '',
-			artwork
-		})
-
-		const applyMetadata = () => {
-			navigator.mediaSession.metadata = metadata
-			navigator.mediaSession.playbackState = deck?.is_playing ? 'playing' : 'paused'
-		}
-
-		applyMetadata()
-		// Re-assert after a short delay: YouTube's iframe sets its own mediaSession
-		// metadata when playback starts, which overwrites ours on Android.
-		const timer = setTimeout(applyMetadata, 800)
-
-		// Always register handlers — passing null removes the button on Android
-		navigator.mediaSession.setActionHandler('play', () => {
-			if (mediaElement) play(deckId, mediaElement)
-		})
-		navigator.mediaSession.setActionHandler('pause', () => {
-			if (mediaElement) pause(mediaElement)
-		})
-		navigator.mediaSession.setActionHandler('previoustrack', () => {
-			if (canPrevFromQueue) previous(deckId, 'user_prev')
-		})
-		navigator.mediaSession.setActionHandler('nexttrack', () => {
-			if (canNextFromQueue) next(deckId, 'user_next')
-		})
-
-		return () => {
-			clearTimeout(timer)
-			navigator.mediaSession.setActionHandler('play', null)
-			navigator.mediaSession.setActionHandler('pause', null)
-			navigator.mediaSession.setActionHandler('previoustrack', null)
-			navigator.mediaSession.setActionHandler('nexttrack', null)
 		}
 	})
 

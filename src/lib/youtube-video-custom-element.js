@@ -155,7 +155,7 @@ class YouTube2Element extends HTMLElement {
 	#isSwitchingVideo() {
 		const srcId = this.#extractVideoId(this.src)
 		const loadedId = this.api?.getVideoData?.()?.video_id
-		return Boolean(srcId && loadedId && srcId !== loadedId)
+		return Boolean(srcId && srcId !== loadedId)
 	}
 
 	#maybeDispatchDurationChange() {
@@ -283,6 +283,13 @@ class YouTube2Element extends HTMLElement {
 	get duration() {
 		if (this.#isSwitchingVideo()) return NaN
 		return this.api?.getDuration?.() ?? NaN
+	}
+
+	get readyState() {
+		// 0 = HAVE_NOTHING, 1 = HAVE_METADATA, 4 = HAVE_ENOUGH_DATA
+		if (!this.isLoaded || this.#isSwitchingVideo()) return 0
+		if (Number.isFinite(this.duration) && this.duration > 0) return 4
+		return 1
 	}
 
 	get error() {

@@ -118,7 +118,7 @@ export function clearUserInitiatedPlay(deckId: number) {
 	userInitiatedPlayMap.delete(deckId)
 }
 
-type MediaPlayer = HTMLElement & {
+export type MediaPlayer = HTMLElement & {
 	paused: boolean
 	play(): Promise<void> | void
 	pause(): void
@@ -137,13 +137,15 @@ export function getMediaPlayer(deckId: number): MediaPlayer | null {
 		)) as MediaPlayer | null
 }
 
-/** Wait until a media element exists for a deck. */
+/** Wait until a media element exists for a deck. Polls with setTimeout, not
+ *  requestAnimationFrame — rAF callbacks are fully suspended while the document is
+ *  hidden (backgrounded tab, locked mobile screen), which would hang this forever. */
 async function waitForMediaPlayer(deckId: number, timeoutMs = 3000): Promise<MediaPlayer | null> {
 	const deadline = performance.now() + timeoutMs
 	while (performance.now() < deadline) {
 		const player = getMediaPlayer(deckId)
 		if (player && 'paused' in player) return player as MediaPlayer
-		await new Promise((r) => requestAnimationFrame(r))
+		await new Promise((r) => setTimeout(r, 30))
 	}
 	return null
 }
@@ -917,6 +919,26 @@ export async function resyncAutoRadio(deckId: number) {
 	} else {
 		await seekToAutoRadioOffset(deckId, shuffled, totalDuration, rotationStartUnix)
 	}
+}
+
+// Resync drifted auto-radio decks on tab/screen foreground — mirrors broadcast.js's
+// resumeBroadcastState (same rationale: backgrounded mobile tabs stall local timers,
+// and platform bugs like iOS's background play() failures can silently stall
+// playback). Without this, a drifted deck sits out of sync until the user notices
+// the manual "resync" affordance and taps it.
+if (typeof document !== 'undefined') {
+	const resumeAutoRadio = () => {
+		if (document.visibilityState !== 'visible') return
+		for (const [id, deck] of Object.entries(appState.decks)) {
+			if (deck.auto_radio && deck.auto_radio_drifted) {
+				resyncAutoRadio(Number(id)).catch((error) =>
+					log.warn('resume_auto_radio_failed', (error as Error).message)
+				)
+			}
+		}
+	}
+	document.addEventListener('visibilitychange', resumeAutoRadio)
+	window.addEventListener('pageshow', resumeAutoRadio)
 }
 
 /** Exit auto-radio, keeping the queue and current track playing — the deck
