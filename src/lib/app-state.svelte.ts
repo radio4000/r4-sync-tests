@@ -128,7 +128,7 @@ export const defaultAppState: AppState = {
 	autoplay_new_deck: true,
 	show_speed_control: false,
 	show_track_range_control: true,
-	use_pointer_cursor: false,
+	use_pointer_cursor: true,
 	floating_ui: true,
 	font_family: undefined,
 
