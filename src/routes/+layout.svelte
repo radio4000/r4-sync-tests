@@ -16,7 +16,6 @@
 	import ShortcutsDialog from '$lib/components/shortcuts-dialog.svelte'
 	import AppBuildInfo from '$lib/components/app-build-info.svelte'
 	import AppUpdateBanner from '$lib/components/app-update-banner.svelte'
-	import BatteryOptimizationHint from '$lib/components/battery-optimization-hint.svelte'
 	import {toggleDeckCompact} from '$lib/api'
 	import {isMobileViewport} from '$lib/utils'
 	import {onMount} from 'svelte'
@@ -273,7 +272,6 @@
 			{/each}
 
 			<AppUpdateBanner />
-			<BatteryOptimizationHint />
 
 			<div
 				class="layout"

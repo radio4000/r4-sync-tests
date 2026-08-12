@@ -118,7 +118,7 @@ export function clearUserInitiatedPlay(deckId: number) {
 	userInitiatedPlayMap.delete(deckId)
 }
 
-type MediaPlayer = HTMLElement & {
+export type MediaPlayer = HTMLElement & {
 	paused: boolean
 	play(): Promise<void> | void
 	pause(): void

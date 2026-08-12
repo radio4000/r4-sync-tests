@@ -26,6 +26,8 @@ For any task or question:
 - [tone](docs/tone.md) - voice and tone for all copy (UI, docs, changelog)
 - [code-style](docs/code-style.md) - code conventions, HTML/CSS, Svelte, global styles
 
+Keep `docs/` brief — a few lines per topic, pointing at files. Deep detail (platform gotchas, workaround rationale) belongs in the module's header comment, next to the code it explains.
+
 ## Tips and debugging
 
 Name CSS classes by primitive/identity (`tabs`, `btn`, `chip`, `link`, etc.), not by location (`explore-section-menu`) — reusable vocabulary styled once in `src/styles/`.

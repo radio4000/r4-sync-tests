@@ -826,6 +826,20 @@
 		}
 	],
 
+	"src/lib/player/media-session.svelte.ts": [
+		{
+			"name": "createMediaSession(deckId, deps)",
+			"desc": "Rune factory: lock-screen controls (Media Session API), reasserted against YouTube's iframe stealing the session; owner-gated across decks. Returns {reassert} — the player calls it on every playing event."
+		}
+	],
+
+	"src/lib/player/stall-recovery.svelte.ts": [
+		{
+			"name": "createStallRecovery(deckId, deps)",
+			"desc": "Rune factory: nudges playback that stalled while backgrounded/locked (foreground resume handler + interval watchdog). Skips broadcast/auto-radio decks."
+		}
+	],
+
 	"src/lib/share.ts": [
 		{"name": "channelUrl(channel)", "desc": "Absolute URL for a channel page."},
 		{"name": "trackUrl(channel, track)", "desc": "Absolute URL for a track page."},
