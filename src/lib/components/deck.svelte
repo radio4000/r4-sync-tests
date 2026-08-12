@@ -125,6 +125,8 @@
 		border-radius: var(--border-radius);
 		overflow: hidden;
 		position: relative;
+		background: var(--color-interface-elevated);
+		border: 1px solid var(--color-interface-border);
 	}
 
 	.deck:not(.expanded) {

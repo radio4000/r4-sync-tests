@@ -135,10 +135,8 @@
 		flex-shrink: 0;
 		min-height: 0;
 		overflow: clip;
-		/* 
-		margin: var(--space-1);
-		border-radius: var(--border-radius); */
-		border-left: 1px solid var(--gray-4);
+		padding: var(--space-1);
+		gap: var(--space-1);
 
 		&:empty {
 			display: none;
@@ -171,6 +169,7 @@
 			flex: 0 0 auto;
 			min-height: 0;
 			min-width: max-content;
+			gap: var(--space-1);
 			border-radius: var(--border-radius);
 
 			&:has(:global(.deck.broadcasting)) {
@@ -186,6 +185,7 @@
 			overflow-y: auto;
 			flex: 1 1 auto;
 			min-width: min-content;
+			gap: var(--space-1);
 
 			:global(.deck.listening),
 			:global(.deck.auto) {

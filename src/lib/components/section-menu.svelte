@@ -57,6 +57,6 @@
 		flex-wrap: nowrap;
 		width: 100%;
 		-webkit-overflow-scrolling: touch;
-		padding-bottom: var(--space-1);
+		padding-bottom: var(--space-2);
 	}
 </style>

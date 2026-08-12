@@ -504,7 +504,7 @@
 			'tabs tabs';
 		grid-template-columns: 1fr auto;
 		gap: var(--space-1);
-		padding: 2rem var(--space-3) 1rem;
+		padding: 1.25rem var(--space-3) 1rem;
 		min-width: 0;
 		align-items: center;
 		background: var(--gray-2);

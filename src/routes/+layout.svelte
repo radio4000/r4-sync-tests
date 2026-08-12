@@ -369,12 +369,16 @@
 		height: 100vh;
 		height: 100dvh;
 		overflow: hidden;
+		padding: var(--space-1);
+		gap: var(--space-1);
 	}
 
 	.layout > :global(header) {
 		position: sticky;
 		top: 0;
 		flex-shrink: 0;
+		border-radius: var(--border-radius);
+		background: var(--color-interface-elevated);
 	}
 
 	.deckExpanded > :global(header) {
@@ -400,6 +404,7 @@
 		flex: 1;
 		min-width: 0;
 		min-height: 0;
+		gap: var(--space-1);
 	}
 
 	.content {
@@ -407,6 +412,9 @@
 		flex: 1;
 		min-width: 0;
 		min-height: 0;
+		border-radius: var(--border-radius);
+		overflow: hidden;
+		background: var(--color-interface-elevated);
 	}
 
 	.scroll-area {
@@ -437,13 +445,9 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0rem;
-		border-radius: 8px 8px 0 0;
+		border-radius: var(--border-radius);
 		overflow: hidden;
-		border-top: 1px solid var(--gray-4);
-		/*
-		margin: 0 var(--space-1) var(--space-1);
-		padding: 0.4rem 0.5rem;
-		 */
+		background: var(--color-interface-elevated);
 		position: sticky;
 		bottom: 0;
 		z-index: 30;
@@ -537,6 +541,12 @@
 			align-self: stretch;
 			order: 2;
 			z-index: 40;
+			/* Frosted, not solid — the compact player bar sits right above this in the
+			   stack, and a translucent/blurred nav reads as a distinct floating layer
+			   rather than a flat opaque strip. */
+			background: color-mix(in oklch, var(--color-interface-elevated) 75%, transparent);
+			backdrop-filter: blur(12px);
+			-webkit-backdrop-filter: blur(12px);
 		}
 
 		.content-wrapper {

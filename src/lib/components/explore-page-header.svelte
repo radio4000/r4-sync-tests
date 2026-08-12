@@ -72,6 +72,7 @@
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: thin;
+		padding-bottom: var(--space-2);
 	}
 
 	@media (max-width: 768px) {
