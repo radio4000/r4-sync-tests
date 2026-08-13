@@ -13,6 +13,8 @@ import {
 	parseTagsParam
 } from './views'
 import type {View} from './views'
+import {dedupeTracksById, filterSourceTracks, sortViewTracks} from './views.svelte'
+import type {Track} from './types'
 
 const channelPrefixRe = /^@ko002\?/
 
@@ -694,5 +696,139 @@ describe('parseTagsParam', () => {
 	})
 	test('null gives empty array', () => {
 		expect(parseTagsParam(null)).toEqual([])
+	})
+})
+
+// ─── Pure track helpers (views.svelte.ts) ──────────────────────
+
+const mkTrack = (id: string, extra: Partial<Track> = {}): Track =>
+	({id, title: id, ...extra}) as Track
+
+describe('dedupeTracksById', () => {
+	test('removes later duplicates, first occurrence wins', () => {
+		const a = mkTrack('a', {title: 'first'})
+		const b = mkTrack('b', {title: 'keep'})
+		const a2 = mkTrack('a', {title: 'second'})
+		const result = dedupeTracksById([a, b, a2])
+		expect(result.map((t) => t.id)).toEqual(['a', 'b'])
+		expect(result[0].title).toBe('first')
+	})
+	test('preserves ordering of unique tracks', () => {
+		const a = mkTrack('a')
+		const b = mkTrack('b')
+		const c = mkTrack('c')
+		expect(dedupeTracksById([c, a, b, a, c]).map((t) => t.id)).toEqual(['c', 'a', 'b'])
+	})
+	test('no duplicates returns same order', () => {
+		const a = mkTrack('a')
+		const b = mkTrack('b')
+		expect(dedupeTracksById([a, b])).toEqual([a, b])
+	})
+	test('empty input', () => {
+		expect(dedupeTracksById([])).toEqual([])
+	})
+})
+
+describe('filterSourceTracks', () => {
+	const tracks = [
+		mkTrack('a', {tags: ['jazz', 'dub'], title: 'miles davis'}),
+		mkTrack('b', {tags: ['jazz'], title: 'other'}),
+		mkTrack('c', {tags: ['dub'], title: 'dub track'}),
+		mkTrack('d', {tags: [], title: 'no tags'})
+	]
+	test('no source returns tracks unchanged', () => {
+		expect(filterSourceTracks(tracks, undefined)).toEqual(tracks)
+	})
+	test('empty source returns tracks unchanged', () => {
+		expect(filterSourceTracks(tracks, {})).toEqual(tracks)
+	})
+	test('tagsMode=all keeps only tracks with every tag', () => {
+		const result = filterSourceTracks(tracks, {tags: ['jazz', 'dub'], tagsMode: 'all'})
+		expect(result.map((t) => t.id)).toEqual(['a'])
+	})
+	test('tags with channels keeps tracks matching any tag', () => {
+		const result = filterSourceTracks(tracks, {channels: ['x'], tags: ['jazz']})
+		expect(result.map((t) => t.id)).toEqual(['a', 'b'])
+	})
+	test('search filters by fuzzy match on title', () => {
+		const result = filterSourceTracks(tracks, {search: 'miles'})
+		expect(result.map((t) => t.id)).toEqual(['a'])
+	})
+})
+
+describe('sortViewTracks', () => {
+	const tracks = [
+		mkTrack('a', {created_at: '2023-01-01', title: 'zeta'}),
+		mkTrack('b', {created_at: '2023-03-01', title: 'alpha'}),
+		mkTrack('c', {created_at: '2023-02-01', title: 'miles'})
+	]
+	test('default sorts created_at desc', () => {
+		const view: View = {sources: [{}]}
+		expect(sortViewTracks(tracks, view).map((t) => t.id)).toEqual(['b', 'c', 'a'])
+	})
+	test('order=name sorts by title desc by default', () => {
+		const view: View = {sources: [{}], order: 'name'}
+		expect(sortViewTracks(tracks, view).map((t) => t.id)).toEqual(['a', 'c', 'b'])
+	})
+	test('direction=asc reverses created_at', () => {
+		const view: View = {sources: [{}], direction: 'asc'}
+		expect(sortViewTracks(tracks, view).map((t) => t.id)).toEqual(['a', 'c', 'b'])
+	})
+	test('order=shuffle uses provided rand', () => {
+		const view: View = {sources: [{}], order: 'shuffle'}
+		// always return 0 → shuffleArray keeps original order with a deterministic rand
+		const result = sortViewTracks(tracks, view, {shuffleRand: () => 0})
+		expect(result.length).toBe(3)
+	})
+})
+
+describe('multi-source union semantics (pure composition)', () => {
+	// Simulate the multi pipeline: per-source filter → union in source order → dedupe
+	// → global sort → global slice, as queryView composes its pure helpers.
+	const union = (sources: {tracks: Track[]; source: View['sources'][number]}[]): Track[] => {
+		const all = sources.flatMap(({tracks, source}) => filterSourceTracks(tracks, source))
+		return dedupeTracksById(all)
+	}
+
+	test('union preserves source order', () => {
+		const srcA = {source: {channels: ['a']}, tracks: [mkTrack('a1'), mkTrack('a2')]}
+		const srcB = {source: {channels: ['b']}, tracks: [mkTrack('b1')]}
+		expect(union([srcA, srcB]).map((t) => t.id)).toEqual(['a1', 'a2', 'b1'])
+	})
+
+	test('dedupe first-wins across sources', () => {
+		const shared = mkTrack('x', {title: 'first'})
+		const dup = mkTrack('x', {title: 'second'})
+		const srcA = {source: {channels: ['a']}, tracks: [shared, mkTrack('a1')]}
+		const srcB = {source: {channels: ['b']}, tracks: [dup, mkTrack('b1')]}
+		const result = union([srcA, srcB])
+		expect(result.map((t) => t.id)).toEqual(['x', 'a1', 'b1'])
+		expect(result[0].title).toBe('first')
+	})
+
+	test('global sort applies after union+dedupe', () => {
+		const srcA = {source: {channels: ['a']}, tracks: [mkTrack('a1', {created_at: '2023-01-01'})]}
+		const srcB = {source: {channels: ['b']}, tracks: [mkTrack('b1', {created_at: '2023-03-01'})]}
+		const view: View = {sources: [srcA.source, srcB.source], direction: 'asc'}
+		const merged = union([srcA, srcB])
+		expect(sortViewTracks(merged, view).map((t) => t.id)).toEqual(['a1', 'b1'])
+	})
+
+	test('global limit/offset applies after sort', () => {
+		const srcA = {source: {channels: ['a']}, tracks: [mkTrack('a1', {created_at: '2023-01-01'})]}
+		const srcB = {source: {channels: ['b']}, tracks: [mkTrack('b1', {created_at: '2023-03-01'})]}
+		const srcC = {source: {channels: ['c']}, tracks: [mkTrack('c1', {created_at: '2023-02-01'})]}
+		const view: View = {sources: [srcA.source, srcB.source, srcC.source], limit: 2, offset: 0}
+		// default order = created_at desc → [b1, c1, a1] → limit 2 → [b1, c1]
+		const merged = union([srcA, srcB, srcC])
+		const sorted = sortViewTracks(merged, view)
+		expect(
+			sorted.slice(view.offset ?? 0, (view.offset ?? 0) + (view.limit ?? 50)).map((t) => t.id)
+		).toEqual(['b1', 'c1'])
+	})
+
+	test('empty sources that resolve to empty are skipped', () => {
+		const srcA = {source: {channels: ['a']}, tracks: [mkTrack('a1')]}
+		expect(union([srcA]).map((t) => t.id)).toEqual(['a1'])
 	})
 })

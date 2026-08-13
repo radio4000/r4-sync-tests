@@ -34,19 +34,20 @@ r4://@ko002 #jazz
 @alice;@bob;@coco?order=shuffle&limit=100
 ```
 
-Multi-source (experimental): `;`-separated sources parse and serialize correctly, but `queryView` reads only `sources[0]` at runtime.
+Multi-source: `;`-separated sources each resolve to their own track list independently, then the results are OR-unioned in source order and deduped by `track.id` (first occurrence wins). Global display options (`order`, `direction`, `limit`, `offset`, shuffle) apply after the union, never per source. Per-source `tags`/`search` filter within that source only. Sources that resolve to `empty` are skipped.
 
 ## Query strategies
 
 `resolveViewStrategy(source)` picks a fetch path based on the first ViewSource:
 
-| Strategy           | Condition                     | Fetch                                      | Post-filter        |
-| ------------------ | ----------------------------- | ------------------------------------------ | ------------------ |
-| `channel`          | channels only                 | local query by slug, server-paginated      | sort only          |
-| `channel-filtered` | channels + tags or search     | local query (all tracks), client-paginated | tags, fuzzy, sort  |
-| `tags-only`        | tags, no channels             | remote Supabase overlaps                   | tagsMode=all, sort |
-| `search-only`      | search text, no channels/tags | local FTS live query                       | fuzzy, sort        |
-| `empty`            | nothing specified             | no fetch                                   | —                  |
+| Strategy           | Condition                     | Fetch                                        | Post-filter        |
+| ------------------ | ----------------------------- | -------------------------------------------- | ------------------ |
+| `channel`          | channels only                 | local query by slug, server-paginated        | sort only          |
+| `channel-filtered` | channels + tags or search     | local query (all tracks), client-paginated   | tags, fuzzy, sort  |
+| `tags-only`        | tags, no channels             | remote Supabase overlaps                     | tagsMode=all, sort |
+| `search-only`      | search text, no channels/tags | local FTS live query                         | fuzzy, sort        |
+| `multi`            | two or more non-empty sources | per-source remote fetch, unioned client-side | sort after union   |
+| `empty`            | nothing specified             | no fetch                                     | —                  |
 
 All strategies that fetch broadly (everything except `channel`) paginate client-side via `processViewTracks` + slice. The `channel` strategy delegates pagination to the query layer.
 

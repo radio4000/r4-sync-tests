@@ -13,11 +13,9 @@
 	const search = new SearchUrl(basePath)
 
 	const view: View = $derived(viewFromUrl(page.url))
-	const primarySource = $derived(view.sources[0] ?? {})
 	const hasFilter = $derived(
-		!!primarySource.channels?.length || !!primarySource.tags?.length || !!primarySource.search
+		view.sources.some((s) => !!s.channels?.length || !!s.tags?.length || !!s.search)
 	)
-	const hasExtraSources = $derived(view.sources.length > 1)
 	const viewQuery = queryView(() => view)
 
 	function onViewsBarChange(v: View) {
@@ -60,15 +58,6 @@
 </svelte:head>
 
 <p>Track View playground. Reuses the same SearchUrl, ViewsBar, and queryView flow as the app.</p>
-{#if hasExtraSources}
-	<p>
-		<small
-			>Multi-source Views parse and serialize here, but queryView currently uses the first source
-			only.</small
-		>
-	</p>
-{/if}
-
 <form onsubmit={search.handleSubmit}>
 	<label for="{uid}-search" class="visually-hidden">View query</label>
 	<SearchInput

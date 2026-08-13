@@ -509,23 +509,35 @@
 	"src/lib/views.svelte.ts": [
 		{
 			"name": "ViewStrategy",
-			"desc": "Type: 'channel' | 'channel-filtered' | 'tags-only' | 'search-only' | 'empty'."
+			"desc": "Type: 'channel' | 'channel-filtered' | 'tags-only' | 'search-only' | 'multi' | 'empty'."
 		},
 		{
 			"name": "resolveViewStrategy(source?)",
-			"desc": "Pick fetch strategy from a ViewSource. Pure function, no reactivity."
+			"desc": "Pick fetch strategy from a single ViewSource. Pure function, no reactivity."
 		},
 		{
 			"name": "getAutoDecksForView(decks, view?)",
 			"desc": "Return auto-radio decks whose stored view matches the given view identity."
 		},
 		{
+			"name": "filterSourceTracks(tracks, source?)",
+			"desc": "Apply one ViewSource's tags/tagsMode/search filtering to a track list. Pure."
+		},
+		{
+			"name": "sortViewTracks(tracks, view, options?)",
+			"desc": "Apply a View's order/direction/shuffle to an already-filtered track list. Pure."
+		},
+		{
+			"name": "dedupeTracksById(tracks)",
+			"desc": "Dedupe tracks by id, first occurrence wins, preserving input order. Pure."
+		},
+		{
 			"name": "processViewTracks(tracks, view, options?)",
-			"desc": "Post-process tracks: tag post-filter, fuzzy search, sort/shuffle. options.inputOrder='created-desc' skips the default re-sort when input is already created_at desc."
+			"desc": "filterSourceTracks + sortViewTracks composed (single source). options.inputOrder='created-desc' skips the default re-sort when input is already created_at desc."
 		},
 		{
 			"name": "queryView(getView)",
-			"desc": "Reactive view query (component init). Returns {tracks, channels, loading, strategy} getters."
+			"desc": "Reactive view query (component init). Returns {tracks, channels, loading, strategy} getters. Uses 'multi' strategy for views with 2+ non-empty sources."
 		}
 	],
 
