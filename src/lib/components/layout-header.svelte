@@ -205,8 +205,8 @@
 		inline-size: clamp(min-content, var(--app-header-size), max-content);
 		min-inline-size: min-content;
 		max-inline-size: max-content;
-		background: var(--color-interface);
-		border-right: 1px solid var(--color-interface-border);
+		/* bg + section seam come from .layout > header via --floating-* tokens */
+		background: var(--floating-bg);
 		z-index: 50;
 		position: relative;
 		overflow: visible;

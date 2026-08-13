@@ -227,21 +227,24 @@
 		}
 	})
 
-	// Apply floating UI preference — shell/deck panel padding, gaps, borders,
-	// backgrounds. Corner rounding stays governed separately by --border-radius.
+	// Apply floating UI preference — padding/gap for the floating card look.
+	// When off, flush the shell but keep --floating-bg / --floating-border so
+	// header, decks, and section seams still use the same tokens (one-sided
+	// dividers via html.no-floating-ui). Corner rounding stays --border-radius.
 	$effect(() => {
 		const root = document.documentElement
-		if (appState.floating_ui !== false) {
+		const floating = appState.floating_ui !== false
+		root.classList.toggle('no-floating-ui', !floating)
+		if (floating) {
 			root.style.removeProperty('--floating-padding')
 			root.style.removeProperty('--floating-gap')
-			root.style.removeProperty('--floating-bg')
-			root.style.removeProperty('--floating-border')
 		} else {
 			root.style.setProperty('--floating-padding', '0')
 			root.style.setProperty('--floating-gap', '0')
-			root.style.setProperty('--floating-bg', 'transparent')
-			root.style.setProperty('--floating-border', 'none')
 		}
+		// Never override bg/border tokens — flush mode reuses them for seams.
+		root.style.removeProperty('--floating-bg')
+		root.style.removeProperty('--floating-border')
 	})
 
 	// "Close" the database on page unload. I have not noticed any difference, but seems like a good thing to do.
@@ -397,6 +400,22 @@
 		border-radius: var(--border-radius);
 		background: var(--floating-bg);
 		border: var(--floating-border);
+	}
+
+	/* Flush (floating off): elevated panels stay, but only section seams —
+	   not a full box around every region. Same --floating-border token. */
+	:global(html.no-floating-ui) .layout > :global(header) {
+		border: none;
+		border-inline-end: var(--floating-border);
+	}
+
+	:global(html.no-floating-ui) .scroll-area {
+		border: none;
+	}
+
+	:global(html.no-floating-ui) .compact-deck-item :global(.deck-compact-bar) {
+		border: none;
+		border-block-start: var(--floating-border);
 	}
 
 	.deckExpanded > :global(header) {
@@ -571,6 +590,11 @@
 			background: color-mix(in oklch, var(--floating-bg) 75%, transparent);
 			backdrop-filter: blur(12px);
 			-webkit-backdrop-filter: blur(12px);
+		}
+
+		:global(html.no-floating-ui) .layout > :global(header) {
+			border: none;
+			border-block-start: var(--floating-border);
 		}
 
 		.content-wrapper {

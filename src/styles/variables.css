@@ -8,10 +8,10 @@
 	--space-3: calc(1rem * var(--scaling));
 	--border-radius: 0.4rem;
 	--media-radius: var(--border-radius);
-	/* Floating UI — shell/deck panel padding, gaps, border, background. Toggled
-	   off (0 / none / transparent) via the "Floating panels" theme setting;
-	   see the $effect in +layout.svelte. Independent of --border-radius, which
-	   keeps governing corner rounding either way. */
+	/* Floating UI — shell/deck panel padding, gaps, border, background.
+	   "Floating panels" off zeros padding/gap (flush) but keeps bg + border;
+	   html.no-floating-ui switches full-box borders to one-sided section seams.
+	   See +layout.svelte. Independent of --border-radius. */
 	--floating-padding: 0.35rem;
 	--floating-gap: 0.35rem;
 	--floating-bg: var(--color-interface-elevated);

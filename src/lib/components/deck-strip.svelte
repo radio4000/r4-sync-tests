@@ -141,6 +141,24 @@
 			display: none;
 		}
 
+		/* Flush mode: main | decks, then decks from each other (reuse --floating-border).
+		   `&` keeps html.no-floating-ui as an ancestor, not a descendant of .deck-strip. */
+		:global(html.no-floating-ui) &:not(.all-compact) {
+			border-inline-start: var(--floating-border);
+		}
+
+		:global(html.no-floating-ui) & .local .deck-item + .deck-item :global(.deck:not(.expanded):not(.compact)) {
+			border-inline-start: var(--floating-border);
+		}
+
+		:global(html.no-floating-ui) & .broadcasts .deck-item + .deck-item :global(.deck:not(.expanded):not(.compact)) {
+			border-block-start: var(--floating-border);
+		}
+
+		:global(html.no-floating-ui) & .local + .broadcasts {
+			border-inline-start: var(--floating-border);
+		}
+
 		&.all-compact {
 			height: 0;
 			flex: 0 0 0;
@@ -414,6 +432,17 @@
 			& {
 				border-left: none;
 				/*border-top: 1px solid var(--gray-4);*/
+			}
+
+			:global(html.no-floating-ui) &:not(.all-compact) {
+				border-inline-start: none;
+				border-block-start: var(--floating-border);
+			}
+
+			:global(html.no-floating-ui) & .local .deck-item + .deck-item :global(.deck:not(.expanded):not(.compact)),
+			:global(html.no-floating-ui) & .local + .broadcasts {
+				border-inline-start: none;
+				border-block-start: var(--floating-border);
 			}
 
 			.deck-sections {
