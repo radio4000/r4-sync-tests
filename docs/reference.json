@@ -594,6 +594,13 @@
 		}
 	],
 
+	"src/lib/custom-element-props.js": [
+		{
+			"name": "upgradeProperties(el, props)",
+			"desc": "Custom element upgrade dance — re-apply own properties assigned before customElements.define() so they run through the class setters. Called first thing in the youtube-video / soundcloud-player connectedCallback."
+		}
+	],
+
 	"src/lib/metadata/discogs.js": [
 		{"name": "fetchDiscogs(url)", "desc": "Fetch Discogs release/master data from URL."},
 		{
