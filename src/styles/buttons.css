@@ -168,6 +168,26 @@ button.chip,
 	padding: 0 var(--space-2);
 }
 
+/* Chip content: icon + label, with an optional trailing count badge. Label and
+   count share a baseline so mismatched font-sizes still read as aligned; the
+   icon (a sibling, not part of this wrapper) centers against the text block
+   as a whole via the chip's own align-items:center. */
+.chip-label {
+	display: inline-flex;
+	align-items: baseline;
+	gap: var(--space-1);
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.chip-count {
+	font-size: var(--font-2);
+	font-weight: 400;
+	color: light-dark(var(--gray-9), var(--gray-8));
+}
+
 .chip-group > :not(button) {
 	display: inline-flex;
 	align-items: center;
