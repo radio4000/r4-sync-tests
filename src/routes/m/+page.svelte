@@ -13,6 +13,7 @@
 	const follows = getFollowedChannels()
 	const isSignedIn = $derived(!!appState.user)
 	const userChannel = $derived(appState.channel)
+	const userEmail = $derived(appState.user?.email ?? '')
 
 	let featuredPool = $state(/** @type {import('$lib/types').Channel[]} */ ([]))
 	let loaded = $state(false)
@@ -47,6 +48,10 @@
 				c.description?.toLowerCase().includes(q)
 		)
 	})
+
+	function closeMenu() {
+		menuOpen = false
+	}
 </script>
 
 <header class="m-bar">
@@ -79,7 +84,7 @@
 					<Icon icon="add" />
 				</span>
 			{/snippet}
-			<menu class="m-menu">
+			<menu class="m-plus-menu">
 				<a href={resolve('/add')}>Add a track</a>
 				<a href={resolve('/create-channel')}>Create a channel</a>
 				<a href={resolve('/explore')}>Explore</a>
@@ -129,37 +134,84 @@
 	{/if}
 </main>
 
-<Sheet open={menuOpen} title="Menu" onclose={() => (menuOpen = false)}>
-	<menu class="m-menu m-menu-sheet">
-		{#if userChannel}
-			<a href={resolve(`/${userChannel.slug}`)} onclick={() => (menuOpen = false)}>
-				@{userChannel.slug}
+<Sheet open={menuOpen} title="Menu" onclose={closeMenu}>
+	<div class="m-settings">
+		<section class="m-card">
+			{#if userChannel}
+				<a class="m-row identity" href={resolve('/m/[slug]', {slug: userChannel.slug})} onclick={closeMenu}>
+					<span class="m-row-avatar">
+						<ChannelAvatar id={userChannel.image} alt={userChannel.name} size={96} />
+					</span>
+					<span class="m-row-text">
+						<span class="m-row-label">{userChannel.name}</span>
+						<span class="m-row-sub">@{userChannel.slug}</span>
+					</span>
+					<span class="m-chevron" aria-hidden="true">›</span>
+				</a>
+			{:else if isSignedIn}
+				<a class="m-row" href={resolve('/create-channel')} onclick={closeMenu}>
+					<span class="m-row-text">
+						<span class="m-row-label">Create a channel</span>
+					</span>
+					<span class="m-chevron" aria-hidden="true">›</span>
+				</a>
+			{/if}
+
+			{#if isSignedIn}
+				<a class="m-row" href={resolve('/account')} onclick={closeMenu}>
+					<span class="m-row-text">
+						<span class="m-row-label">Account</span>
+						{#if userEmail}
+							<span class="m-row-sub">{userEmail}</span>
+						{/if}
+					</span>
+					<span class="m-chevron" aria-hidden="true">›</span>
+				</a>
+				<button
+					type="button"
+					class="m-row"
+					onclick={() => {
+						closeMenu()
+						void sdk.auth.signOut()
+					}}
+				>
+					<span class="m-row-text">
+						<span class="m-row-label">Log out</span>
+					</span>
+				</button>
+			{:else}
+				<a class="m-row" href={resolve('/auth')} onclick={closeMenu}>
+					<span class="m-row-text">
+						<span class="m-row-label">Sign in</span>
+					</span>
+					<span class="m-chevron" aria-hidden="true">›</span>
+				</a>
+			{/if}
+		</section>
+
+		<section class="m-card">
+			<a class="m-row" href={resolve('/settings')} onclick={closeMenu}>
+				<span class="m-row-text"><span class="m-row-label">Settings</span></span>
+				<span class="m-chevron" aria-hidden="true">›</span>
 			</a>
-		{:else if isSignedIn}
-			<a href={resolve('/create-channel')} onclick={() => (menuOpen = false)}>Create a channel</a>
-		{/if}
-		{#if isSignedIn}
-			<a href={resolve('/account')} onclick={() => (menuOpen = false)}>Account</a>
-			<button
-				type="button"
-				onclick={() => {
-					menuOpen = false
-					void sdk.auth.signOut()
-				}}
-			>
-				Log out
-			</button>
-		{:else}
-			<a href={resolve('/auth')} onclick={() => (menuOpen = false)}>Sign in</a>
-		{/if}
-		<a href={resolve('/settings')} onclick={() => (menuOpen = false)}>Settings</a>
-		<a href={resolve('/history')} onclick={() => (menuOpen = false)}>History</a>
-		<a href={resolve('/explore')} onclick={() => (menuOpen = false)}>Explore</a>
-		<a href={resolve('/stats')} onclick={() => (menuOpen = false)}>Stats</a>
-		<a href={resolve('/apps')} onclick={() => (menuOpen = false)}>Apps</a>
-		<a href={resolve('/about')} onclick={() => (menuOpen = false)}>About</a>
-		<a href={resolve('/')} onclick={() => (menuOpen = false)}>Main Radio4000</a>
-	</menu>
+			<a class="m-row" href={resolve('/history')} onclick={closeMenu}>
+				<span class="m-row-text"><span class="m-row-label">History</span></span>
+				<span class="m-chevron" aria-hidden="true">›</span>
+			</a>
+			<a class="m-row" href={resolve('/explore')} onclick={closeMenu}>
+				<span class="m-row-text"><span class="m-row-label">Explore</span></span>
+				<span class="m-chevron" aria-hidden="true">›</span>
+			</a>
+			<a class="m-row" href={resolve('/menu/community')} onclick={closeMenu}>
+				<span class="m-row-text"><span class="m-row-label">Community</span></span>
+				<span class="m-chevron" aria-hidden="true">›</span>
+			</a>
+			<a class="m-row" href={resolve('/about')} onclick={closeMenu}>
+				<span class="m-row-text"><span class="m-row-label">About</span></span>
+				<span class="m-chevron" aria-hidden="true">›</span>
+			</a>
+		</section>
+	</div>
 </Sheet>
 
 <style>
@@ -237,6 +289,31 @@
 		display: inline-flex;
 	}
 
+	.m-plus-menu {
+		display: grid;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.m-plus-menu a {
+		display: flex;
+		align-items: center;
+		min-height: 2.75rem;
+		padding: 0 var(--space-2);
+		border: 0;
+		border-radius: var(--border-radius);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: var(--font-4);
+		text-decoration: none;
+	}
+
+	.m-plus-menu a + a {
+		border-top: 1px solid var(--color-interface-border);
+	}
+
 	.m-search-field {
 		flex: 1;
 		display: flex;
@@ -281,44 +358,100 @@
 		font-size: var(--font-4);
 	}
 
-	.m-menu {
+	.m-settings {
 		display: grid;
+		gap: var(--space-3);
+		padding-top: var(--space-1);
+	}
+
+	.m-card {
 		margin: 0;
 		padding: 0;
 		list-style: none;
+		background: var(--color-interface-elevated);
+		border: 1px solid var(--color-interface-border);
+		border-radius: calc(var(--border-radius) * 2.5);
+		overflow: hidden;
 	}
 
-	.m-menu a,
-	.m-menu button {
+	.m-row {
+		position: relative;
 		display: flex;
 		align-items: center;
-		min-height: 2.75rem;
-		padding: 0 var(--space-2);
+		gap: var(--space-2);
+		width: 100%;
+		min-height: 3.25rem;
+		padding: var(--space-2) var(--space-3);
 		border: 0;
-		border-radius: var(--border-radius);
 		background: transparent;
 		color: inherit;
 		font: inherit;
-		font-size: var(--font-4);
 		text-align: start;
 		text-decoration: none;
 		cursor: pointer;
 	}
 
-	.m-menu a + a,
-	.m-menu a + button,
-	.m-menu button + a {
+	.m-row.identity {
+		min-height: 4rem;
+	}
+
+	.m-row + .m-row::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		right: 0;
+		left: var(--space-3);
 		border-top: 1px solid var(--color-interface-border);
 	}
 
-	.m-menu-sheet {
-		margin: calc(var(--space-2) * -1);
+	.m-row.identity + .m-row::before {
+		left: calc(2.75rem + var(--space-3) + var(--space-2));
 	}
 
-	.m-menu-sheet a,
-	.m-menu-sheet button {
-		min-height: 3rem;
-		padding-inline: var(--space-3);
-		border-radius: 0;
+	.m-row-avatar {
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: 999px;
+		overflow: hidden;
+		flex-shrink: 0;
+		background: var(--gray-3);
+	}
+
+	.m-row-avatar :global(img),
+	.m-row-avatar :global(.fallback) {
+		width: 100%;
+		height: 100%;
+		border-radius: 999px;
+		object-fit: cover;
+	}
+
+	.m-row-text {
+		display: grid;
+		gap: 0.1rem;
+		min-width: 0;
+		flex: 1;
+	}
+
+	.m-row-label {
+		font-size: var(--font-4);
+		font-weight: 650;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.m-row-sub {
+		font-size: var(--font-3);
+		color: var(--gray-10);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.m-chevron {
+		color: var(--gray-8);
+		font-size: var(--font-7);
+		line-height: 1;
+		flex-shrink: 0;
 	}
 </style>

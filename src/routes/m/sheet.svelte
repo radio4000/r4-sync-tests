@@ -1,5 +1,6 @@
 <script>
 	import {fly, fade} from 'svelte/transition'
+	import Icon from '$lib/components/icon.svelte'
 
 	/**
 	 * @typedef {Object} Props
@@ -10,7 +11,7 @@
 	 */
 
 	/** @type {Props} */
-	const {open = false, title = 'Sheet', onclose, children} = $props()
+	const {open = false, title = 'Menu', onclose, children} = $props()
 
 	function close() {
 		onclose?.()
@@ -37,16 +38,12 @@
 			role="dialog"
 			aria-modal="true"
 			aria-label={title}
-			transition:fly={{y: 40, duration: 220}}
+			transition:fly={{y: 28, duration: 240}}
 		>
 			<header class="m-sheet-head">
-				<div class="m-sheet-handle" aria-hidden="true"></div>
-				<div class="m-sheet-title-row">
-					<h2>{title}</h2>
-					<button type="button" class="m-circle" onclick={close} aria-label="Done">
-						Done
-					</button>
-				</div>
+				<button type="button" class="m-sheet-close" onclick={close} aria-label="Close">
+					<Icon icon="close" />
+				</button>
 			</header>
 			<div class="m-sheet-body">
 				{@render children?.()}
@@ -70,21 +67,22 @@
 		border: 0;
 		padding: 0;
 		margin: 0;
-		background: color-mix(in oklab, var(--gray-12) 35%, transparent);
+		background: color-mix(in oklab, var(--gray-12) 28%, transparent);
 		cursor: pointer;
 	}
 
 	.m-sheet {
 		position: relative;
 		z-index: 1;
-		width: min(100%, 32rem);
-		max-height: min(78dvh, 36rem);
-		margin-inline: auto;
+		width: 100%;
+		height: min(92dvh, 100%);
+		max-height: min(92dvh, 100%);
+		margin-inline: 0;
 		display: flex;
 		flex-direction: column;
-		background: var(--color-interface-elevated);
+		background: var(--gray-2);
 		color: var(--gray-12);
-		border-radius: 1.1rem 1.1rem 0 0;
+		border-radius: 1.25rem 1.25rem 0 0;
 		border: 1px solid var(--color-interface-border);
 		border-bottom: 0;
 		box-shadow: var(--shadow-modal);
@@ -92,46 +90,34 @@
 	}
 
 	.m-sheet-head {
-		padding: var(--space-2) var(--space-3) var(--space-2);
-		border-bottom: 1px solid var(--color-interface-border);
-	}
-
-	.m-sheet-handle {
-		width: 2.5rem;
-		height: 0.28rem;
-		margin: 0 auto var(--space-2);
-		border-radius: 999px;
-		background: var(--gray-6);
-	}
-
-	.m-sheet-title-row {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
+		min-height: 3.5rem;
+		padding: var(--space-2) var(--space-3);
+		flex-shrink: 0;
 	}
 
-	.m-sheet-title-row h2 {
-		margin: 0;
-		font-size: var(--font-6);
-		font-weight: 650;
-	}
-
-	.m-circle {
+	.m-sheet-close {
+		width: 2.5rem;
+		height: 2.5rem;
+		min-width: 2.5rem;
 		min-height: 2.5rem;
-		padding: 0 var(--space-3);
+		padding: 0;
 		border: 0;
 		border-radius: 999px;
 		background: var(--gray-3);
 		color: var(--gray-12);
-		font: inherit;
-		font-weight: 600;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		cursor: pointer;
 	}
 
 	.m-sheet-body {
-		padding: var(--space-3);
+		flex: 1;
+		min-height: 0;
 		overflow: auto;
 		overscroll-behavior: contain;
+		padding: 0 var(--space-3) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
 	}
 </style>
