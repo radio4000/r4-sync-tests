@@ -435,10 +435,10 @@
 								]}
 								onclick={onPlayAction}
 								disabled={playLoading}
+								aria-label={playLabel}
 								{@attach tooltip({content: playTooltip})}
 							>
-								<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={14} />
-								<span>{playLabel}</span>
+								<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={20} />
 							</button>
 						</div>
 					</menu>
@@ -450,6 +450,7 @@
 							items={channelSectionMenuItems({
 								slug,
 								trackCount: channelTrackCount,
+								followerCount: displayChannel?.followers?.length,
 								routeId: page.route.id
 							})}
 							label="Channel navigation"
@@ -501,13 +502,20 @@
 			'tabs tabs';
 		grid-template-columns: 1fr auto;
 		gap: var(--space-1);
-		padding: 1.25rem var(--space-3) 1rem;
+		padding: var(--space-2) var(--space-3) var(--space-1);
 		min-width: 0;
 		align-items: center;
 		background: var(--gray-2);
 		border-bottom: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		overflow: hidden;
+	}
+
+	/* When a page-owned search/filter bar follows, it takes over the bottom edge
+	   (rounding + border) so the two read as one header card, not two stacked blocks. */
+	header:has(+ .channel-nav) {
+		border-bottom: none;
+		border-radius: var(--border-radius) var(--border-radius) 0 0;
 	}
 
 	header > :not(.channel-canvas-bg) {
@@ -521,6 +529,21 @@
 				'main controls secondary'
 				'tabs tabs tabs';
 			grid-template-columns: auto 1fr auto;
+			padding: var(--space-3) var(--space-3) var(--space-2);
+		}
+
+		.avatar {
+			width: 6rem;
+		}
+
+		.channel-tabs {
+			margin-top: var(--space-3);
+		}
+
+		.channel-actions {
+			/* 'controls' shares a row with 'main'/'secondary' here — header's own
+			   align-items:center already centers it, no extra margin needed. */
+			margin-top: 0;
 		}
 	}
 
@@ -539,7 +562,7 @@
 	}
 
 	.avatar {
-		width: 6rem;
+		width: 4.5rem;
 		flex-shrink: 0;
 	}
 
@@ -590,7 +613,7 @@
 	}
 
 	.channel-actions {
-		margin-top: var(--space-2);
+		margin-top: var(--space-1);
 		align-items: stretch;
 		justify-content: center;
 		flex: 1 1 auto;
@@ -602,6 +625,14 @@
 		grid-auto-flow: column;
 		grid-auto-columns: 1fr;
 		gap: var(--space-1);
+		align-self: center;
+	}
+
+	.mode-action.play {
+		width: 2.75rem;
+		height: 2.75rem;
+		padding: 0;
+		justify-self: start;
 	}
 
 	.channel-secondary-actions {
@@ -624,8 +655,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-1);
-		background: var(--gray-1);
-		padding: 0.5rem;
+		background: var(--gray-2);
+		border-bottom: 1px solid var(--color-interface-border);
+		border-radius: 0 0 var(--border-radius) var(--border-radius);
+		padding: var(--space-1) var(--space-3);
 	}
 
 	.channel-nav-controls {
