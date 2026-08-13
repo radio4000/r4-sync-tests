@@ -43,7 +43,9 @@
 				<div class="m-sheet-handle" aria-hidden="true"></div>
 				<div class="m-sheet-title-row">
 					<h2>{title}</h2>
-					<button type="button" class="m-sheet-close" onclick={close}>Done</button>
+					<button type="button" class="m-circle" onclick={close} aria-label="Done">
+						Done
+					</button>
 				</div>
 			</header>
 			<div class="m-sheet-body">
@@ -68,7 +70,7 @@
 		border: 0;
 		padding: 0;
 		margin: 0;
-		background: color-mix(in oklab, #000 55%, transparent);
+		background: color-mix(in oklab, var(--gray-12) 35%, transparent);
 		cursor: pointer;
 	}
 
@@ -80,57 +82,55 @@
 		margin-inline: auto;
 		display: flex;
 		flex-direction: column;
-		background: var(--m-surface, #1a222c);
-		color: var(--m-ink, #f2efe8);
+		background: var(--color-interface-elevated);
+		color: var(--gray-12);
 		border-radius: 1.1rem 1.1rem 0 0;
-		border: 1px solid var(--m-line, color-mix(in oklab, #f2efe8 12%, transparent));
+		border: 1px solid var(--color-interface-border);
 		border-bottom: 0;
-		box-shadow: 0 -12px 40px color-mix(in oklab, #000 35%, transparent);
+		box-shadow: var(--shadow-modal);
 		overflow: hidden;
 	}
 
 	.m-sheet-head {
-		padding: 0.65rem 1rem 0.5rem;
-		border-bottom: 1px solid var(--m-line, color-mix(in oklab, #f2efe8 12%, transparent));
+		padding: var(--space-2) var(--space-3) var(--space-2);
+		border-bottom: 1px solid var(--color-interface-border);
 	}
 
 	.m-sheet-handle {
 		width: 2.5rem;
 		height: 0.28rem;
-		margin: 0 auto 0.65rem;
+		margin: 0 auto var(--space-2);
 		border-radius: 999px;
-		background: color-mix(in oklab, var(--m-ink, #f2efe8) 28%, transparent);
+		background: var(--gray-6);
 	}
 
 	.m-sheet-title-row {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.75rem;
+		gap: var(--space-2);
 	}
 
 	.m-sheet-title-row h2 {
 		margin: 0;
-		font-size: 1.05rem;
+		font-size: var(--font-6);
 		font-weight: 650;
-		letter-spacing: -0.02em;
 	}
 
-	.m-sheet-close {
-		min-height: var(--m-tap, 48px);
-		min-width: var(--m-tap, 48px);
-		padding: 0 0.85rem;
+	.m-circle {
+		min-height: 2.5rem;
+		padding: 0 var(--space-3);
 		border: 0;
-		border-radius: 0.65rem;
-		background: color-mix(in oklab, var(--m-accent, #3ecf8e) 18%, transparent);
-		color: var(--m-ink, #f2efe8);
+		border-radius: 999px;
+		background: var(--gray-3);
+		color: var(--gray-12);
 		font: inherit;
 		font-weight: 600;
 		cursor: pointer;
 	}
 
 	.m-sheet-body {
-		padding: 1rem;
+		padding: var(--space-3);
 		overflow: auto;
 		overscroll-behavior: contain;
 	}
