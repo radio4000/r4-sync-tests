@@ -469,15 +469,6 @@
 			margin: auto 0 0;
 			padding: 0.5rem;
 			text-align: center;
-			position: sticky;
-			bottom: 0;
-			background: var(--gray-1);
-			background: linear-gradient(0deg, #0000000f, transparent);
-			border: 0;
-			pointer-events: none;
-			a {
-				pointer-events: auto;
-			}
 		}
 	}
 
