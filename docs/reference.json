@@ -532,6 +532,10 @@
 			"desc": "Dedupe tracks by id, first occurrence wins, preserving input order. Pure."
 		},
 		{
+			"name": "interleaveShuffleTracks(groups, rand?)",
+			"desc": "Fair shuffle for multi-source views: shuffle each group, then draw from a uniformly-random non-exhausted group. Dedupes by id. Pure."
+		},
+		{
 			"name": "processViewTracks(tracks, view, options?)",
 			"desc": "filterSourceTracks + sortViewTracks composed (single source). options.inputOrder='created-desc' skips the default re-sort when input is already created_at desc."
 		},

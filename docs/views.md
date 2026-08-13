@@ -34,7 +34,7 @@ r4://@ko002 #jazz
 @alice;@bob;@coco?order=shuffle&limit=100
 ```
 
-Multi-source: `;`-separated sources each resolve to their own track list independently, then the results are OR-unioned in source order and deduped by `track.id` (first occurrence wins). Global display options (`order`, `direction`, `limit`, `offset`, shuffle) apply after the union, never per source. Per-source `tags`/`search` filter within that source only. Sources that resolve to `empty` are skipped.
+Multi-source: `;`-separated sources each resolve to their own track list independently, then the results are OR-unioned in source order and deduped by `track.id` (first occurrence wins). Shuffled multi-source views interleave fairly across sources rather than shuffling the raw union. Global display options (`order`, `direction`, `limit`, `offset`, shuffle) apply after the union, never per source. Per-source `tags`/`search` filter within that source only. Sources that resolve to `empty` are skipped.
 
 ## Query strategies
 

@@ -118,6 +118,26 @@ export function sortViewTracks(
 	return data
 }
 
+/** Shuffle each group, then interleave by drawing from a uniformly-random non-exhausted group. Dedupes by id. */
+export function interleaveShuffleTracks(
+	groups: Track[][],
+	rand: () => number = Math.random
+): Track[] {
+	const pools = groups.map((g) => shuffleArray(g, rand)).filter((g) => g.length)
+	const seen = new SvelteSet<string>()
+	const out: Track[] = []
+	while (pools.length) {
+		const i = Math.floor(rand() * pools.length)
+		const track = pools[i].pop()
+		if (track && !seen.has(track.id)) {
+			seen.add(track.id)
+			out.push(track)
+		}
+		if (!pools[i].length) pools.splice(i, 1)
+	}
+	return out
+}
+
 /** Dedupe tracks by id, keeping first occurrence. Preserves input order. */
 export function dedupeTracksById(tracks: Track[]): Track[] {
 	const seen = new SvelteSet<string>()
@@ -240,7 +260,7 @@ export function queryView(getView: () => View) {
 				const keySources = parseView(String(queryKey[2])).sources.filter(
 					(s) => resolveViewStrategy(s) !== 'empty'
 				)
-				const results: Track[] = []
+				const results: Track[][] = []
 				for (const source of keySources) {
 					const strategy = resolveViewStrategy(source)
 					let fetched: Track[] = []
@@ -278,9 +298,9 @@ export function queryView(getView: () => View) {
 						const {tracks} = await searchTracks(source.search ?? '', {limit: PER_SOURCE_CAP})
 						fetched = filterSourceTracks(hydrateTracksFromRemote(tracks), source)
 					}
-					results.push(...fetched)
+					if (fetched.length) results.push(fetched)
 				}
-				return dedupeTracksById(results)
+				return {groups: results}
 			},
 			enabled: strategy === 'multi',
 			staleTime: 24 * 60 * 60 * 1000
@@ -298,10 +318,16 @@ export function queryView(getView: () => View) {
 			case 'search-only':
 				return (searchQuery.data?.tracks ?? []) as Track[]
 			case 'multi':
-				return (multiQuery.data ?? []) as Track[]
+				return dedupeTracksById(multiGroups().flat())
 			default:
 				return []
 		}
+	}
+
+	/** Safely read the multi query's group shape, tolerating stale flat-array cache entries. */
+	function multiGroups(): Track[][] {
+		const d = multiQuery.data
+		return d && 'groups' in (d as object) ? (d as {groups: Track[][]}).groups : []
 	}
 
 	return {
@@ -310,6 +336,9 @@ export function queryView(getView: () => View) {
 		},
 		get tracks() {
 			if (strategy === 'multi') {
+				if (getView().order === 'shuffle') {
+					return interleaveShuffleTracks(multiGroups()).slice(offset, offset + limit)
+				}
 				const sorted = sortViewTracks(rawTracks(), getView())
 				return sorted.slice(offset, offset + limit)
 			}

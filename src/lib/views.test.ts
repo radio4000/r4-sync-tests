@@ -13,7 +13,12 @@ import {
 	parseTagsParam
 } from './views'
 import type {View} from './views'
-import {dedupeTracksById, filterSourceTracks, sortViewTracks} from './views.svelte'
+import {
+	dedupeTracksById,
+	filterSourceTracks,
+	interleaveShuffleTracks,
+	sortViewTracks
+} from './views.svelte'
 import type {Track} from './types'
 
 const channelPrefixRe = /^@ko002\?/
@@ -830,5 +835,62 @@ describe('multi-source union semantics (pure composition)', () => {
 	test('empty sources that resolve to empty are skipped', () => {
 		const srcA = {source: {channels: ['a']}, tracks: [mkTrack('a1')]}
 		expect(union([srcA]).map((t) => t.id)).toEqual(['a1'])
+	})
+})
+
+describe('interleaveShuffleTracks', () => {
+	// Tiny deterministic LCG: returns numbers in [0, 1) from a seed, no Math.random.
+	const lcg = (seed: number) => {
+		let s = seed >>> 0
+		return () => {
+			s = (s * 1664525 + 1013904223) >>> 0
+			return s / 2 ** 32
+		}
+	}
+	const ids = (tracks: Track[]) => tracks.map((t) => t.id)
+
+	test('determinism: same groups + same seed → same order', () => {
+		const a = Array.from({length: 10}, (_, i) => mkTrack(`a${i}`))
+		const b = Array.from({length: 10}, (_, i) => mkTrack(`b${i}`))
+		const r1 = interleaveShuffleTracks([a, b], lcg(42))
+		const r2 = interleaveShuffleTracks([a, b], lcg(42))
+		expect(ids(r1)).toEqual(ids(r2))
+	})
+
+	test('fairness: small source is well represented in the early queue', () => {
+		const big = Array.from({length: 100}, (_, i) => mkTrack(`big${i}`))
+		const small = Array.from({length: 10}, (_, i) => mkTrack(`small${i}`))
+		const result = interleaveShuffleTracks([big, small], lcg(7))
+		const first20 = ids(result).slice(0, 20)
+		const smallCount = first20.filter((id) => id.startsWith('small')).length
+		expect(smallCount).toBeGreaterThanOrEqual(3)
+	})
+
+	test('dedupe: a track id present in two groups appears exactly once', () => {
+		const shared = mkTrack('dup')
+		const a = [shared, mkTrack('a1'), mkTrack('a2')]
+		const b = [shared, mkTrack('b1')]
+		const result = interleaveShuffleTracks([a, b], lcg(99))
+		expect(ids(result).filter((id) => id === 'dup')).toHaveLength(1)
+		expect(ids(result)).toHaveLength(4)
+	})
+
+	test('degenerate: empty groups array yields []', () => {
+		expect(interleaveShuffleTracks([], lcg(1))).toEqual([])
+	})
+
+	test('single group: plain shuffle of that group, all tracks present', () => {
+		const group = Array.from({length: 5}, (_, i) => mkTrack(`t${i}`))
+		const result = interleaveShuffleTracks([group], lcg(123))
+		expect(ids(result).sort()).toEqual(['t0', 't1', 't2', 't3', 't4'])
+		expect(ids(result)).toHaveLength(5)
+	})
+
+	test('empty groups among non-empty ones are skipped', () => {
+		const a = [mkTrack('a0'), mkTrack('a1')]
+		const b = [mkTrack('b0')]
+		const result = interleaveShuffleTracks([[], a, [], b], lcg(5))
+		const sortedIds = ids(result).sort()
+		expect(sortedIds).toEqual(['a0', 'a1', 'b0'])
 	})
 })
