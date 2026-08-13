@@ -260,6 +260,7 @@
 		flex-wrap: wrap;
 		min-width: 0;
 		overflow: visible;
+		user-select: none;
 	}
 
 	.deck-compact-bar :global(.progress) {

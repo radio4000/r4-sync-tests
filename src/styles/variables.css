@@ -12,8 +12,8 @@
 	   off (0 / none / transparent) via the "Floating panels" theme setting;
 	   see the $effect in +layout.svelte. Independent of --border-radius, which
 	   keeps governing corner rounding either way. */
-	--floating-padding: 0.35rem;
-	--floating-gap: 0.35rem;
+	--floating-padding: var(--space-1);
+	--floating-gap: var(--space-1);
 	--floating-bg: var(--color-interface-elevated);
 	--floating-border: 1px solid var(--color-interface-border);
 	--track-artwork-size: 2.5rem;

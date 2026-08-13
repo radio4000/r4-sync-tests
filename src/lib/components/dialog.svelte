@@ -83,7 +83,8 @@
 		}
 	}
 	dialog::backdrop {
-		background: oklch(0 0 0 / 0.7);
+		background: oklch(0 0 0 / 0.8);
+		backdrop-filter: blur(6px);
 		opacity: 1;
 		transition:
 			opacity var(--duration) var(--ease-out),

@@ -55,7 +55,6 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 50dvh;
-		margin-top: -0.75rem;
 		background: transparent;
 		border-radius: var(--border-radius);
 		overflow: hidden;
