@@ -2,36 +2,31 @@
 	import {resolve} from '$app/paths'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {import('$lib/types').Channel} channel
-	 */
-
-	/** @type {Props} */
+	/** @type {{channel: import('$lib/types').Channel}} */
 	const {channel} = $props()
 </script>
 
-<a class="m-row" href={resolve('/m/[slug]', {slug: channel.slug})}>
-	<span class="m-row-avatar">
+<a class="m-channel" href={resolve('/m/[slug]', {slug: channel.slug})}>
+	<span class="m-avatar-clip m-channel-avatar">
 		<ChannelAvatar id={channel.image} alt={channel.name} size={96} />
 	</span>
-	<span class="m-row-body">
-		<span class="m-row-top">
-			<span class="m-row-name">{channel.name}</span>
+	<span class="m-channel-body">
+		<span class="m-channel-top">
+			<span class="m-channel-name">{channel.name}</span>
 			{#if channel.slug}
-				<span class="m-row-pill">@{channel.slug}</span>
+				<span class="m-channel-pill">@{channel.slug}</span>
 			{/if}
 		</span>
 		{#if channel.description}
-			<span class="m-row-sub">{channel.description}</span>
+			<span class="m-channel-sub">{channel.description}</span>
 		{:else if channel.track_count != null}
-			<span class="m-row-sub">{channel.track_count} tracks</span>
+			<span class="m-channel-sub">{channel.track_count} tracks</span>
 		{/if}
 	</span>
 </a>
 
 <style>
-	.m-row {
+	.m-channel {
 		display: grid;
 		grid-template-columns: 3.25rem 1fr;
 		gap: var(--space-2);
@@ -42,24 +37,12 @@
 		min-height: 4.25rem;
 	}
 
-	.m-row-avatar {
+	.m-channel-avatar {
 		width: 3.25rem;
 		height: 3.25rem;
-		border-radius: 999px;
-		overflow: hidden;
-		flex-shrink: 0;
-		background: var(--gray-3);
 	}
 
-	.m-row-avatar :global(img),
-	.m-row-avatar :global(.fallback) {
-		width: 100%;
-		height: 100%;
-		border-radius: 999px;
-		object-fit: cover;
-	}
-
-	.m-row-body {
+	.m-channel-body {
 		display: grid;
 		gap: 0.15rem;
 		min-width: 0;
@@ -69,18 +52,18 @@
 		align-content: center;
 	}
 
-	.m-row:last-child .m-row-body {
+	:global(li:last-child) .m-channel-body {
 		border-bottom: 0;
 	}
 
-	.m-row-top {
+	.m-channel-top {
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
 		min-width: 0;
 	}
 
-	.m-row-name {
+	.m-channel-name {
 		font-size: var(--font-5);
 		font-weight: 650;
 		overflow: hidden;
@@ -88,7 +71,7 @@
 		white-space: nowrap;
 	}
 
-	.m-row-pill {
+	.m-channel-pill {
 		flex-shrink: 0;
 		padding: 0.1rem 0.45rem;
 		border-radius: 999px;
@@ -98,7 +81,7 @@
 		font-weight: 500;
 	}
 
-	.m-row-sub {
+	.m-channel-sub {
 		color: var(--gray-10);
 		font-size: var(--font-3);
 		overflow: hidden;

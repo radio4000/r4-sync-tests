@@ -7,7 +7,7 @@
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import Icon from '$lib/components/icon.svelte'
 
-	/** @type {{slug: string, channel?: import('$lib/types').Channel, tracks: import('$lib/types').Track[], isLoading: boolean}} */
+	/** @type {{slug: string, channel?: import('$lib/types').Channel, isLoading: boolean}} */
 	const ctx = getContext('m-channel')
 
 	const channel = $derived(ctx.channel)
@@ -25,7 +25,7 @@
 	}
 </script>
 
-<header class="m-bar">
+<header class="m-bar m-bar-radio">
 	<div class="m-bar-start">
 		<a class="m-ctrl" href={resolve('/m')} aria-label="Back">
 			<Icon icon="arrow-left" />
@@ -33,7 +33,7 @@
 
 		{#if channel}
 			<span class="m-chip">
-				<span class="m-chip-avatar">
+				<span class="m-avatar-clip m-chip-avatar">
 					<ChannelAvatar id={channel.image} alt={channel.name} size={64} />
 				</span>
 				<span class="m-chip-name">{channel.name}</span>
@@ -48,7 +48,7 @@
 	</a>
 </header>
 
-<main class="m-scroll">
+<main class="m-scroll m-radio-body">
 	{#if channel}
 		<button
 			type="button"
@@ -71,16 +71,8 @@
 </main>
 
 <style>
-	.m-bar {
-		display: flex;
-		align-items: center;
+	.m-bar-radio {
 		justify-content: space-between;
-		gap: var(--space-2);
-		min-height: 3.5rem;
-		padding: var(--space-2) var(--space-3);
-		background: var(--color-interface);
-		border-bottom: 1px solid var(--color-interface-border);
-		flex-shrink: 0;
 	}
 
 	.m-bar-start {
@@ -91,37 +83,18 @@
 		flex: 1;
 	}
 
-	.m-ctrl,
-	.m-chip {
-		height: 2.5rem;
-		min-height: 2.5rem;
-		box-sizing: border-box;
-	}
-
-	.m-ctrl {
-		width: 2.5rem;
-		min-width: 2.5rem;
-		padding: 0;
-		border: 0;
-		border-radius: 999px;
-		background: var(--gray-3);
-		color: var(--gray-12);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		text-decoration: none;
-		flex-shrink: 0;
-	}
-
 	.m-chip {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-1);
+		height: 2.5rem;
+		min-height: 2.5rem;
 		max-width: 100%;
 		padding: 0 var(--space-2) 0 0.2rem;
 		border-radius: 999px;
 		background: var(--gray-3);
 		overflow: hidden;
+		box-sizing: border-box;
 	}
 
 	.m-chip.muted {
@@ -133,17 +106,6 @@
 	.m-chip-avatar {
 		width: 2.1rem;
 		height: 2.1rem;
-		border-radius: 999px;
-		overflow: hidden;
-		flex-shrink: 0;
-	}
-
-	.m-chip-avatar :global(img),
-	.m-chip-avatar :global(.fallback) {
-		width: 100%;
-		height: 100%;
-		border-radius: 999px;
-		object-fit: cover;
 	}
 
 	.m-chip-name {
@@ -155,13 +117,8 @@
 		padding-inline-end: var(--space-1);
 	}
 
-	.m-scroll {
-		flex: 1;
-		min-height: 0;
-		overflow: auto;
-		overscroll-behavior: contain;
+	.m-radio-body {
 		padding: var(--space-3);
-		background: var(--color-interface);
 		display: grid;
 		gap: var(--space-3);
 		align-content: start;
@@ -194,9 +151,7 @@
 		max-width: 36rem;
 	}
 
-	.m-empty {
+	.m-radio-body :global(.m-empty) {
 		margin: 0;
-		color: var(--gray-10);
-		font-size: var(--font-4);
 	}
 </style>

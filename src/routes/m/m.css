@@ -1,0 +1,61 @@
+/* Shared chrome for the throwaway /m prototype. Delete with this folder. */
+
+.m-bar {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	min-height: 3.5rem;
+	padding: var(--space-2) var(--space-3);
+	background: var(--color-interface);
+	border-bottom: 1px solid var(--color-interface-border);
+	flex-shrink: 0;
+}
+
+.m-ctrl {
+	width: 2.5rem;
+	height: 2.5rem;
+	min-width: 2.5rem;
+	min-height: 2.5rem;
+	padding: 0;
+	border: 0;
+	border-radius: 999px;
+	background: var(--gray-3);
+	color: var(--gray-12);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-decoration: none;
+	cursor: pointer;
+	flex-shrink: 0;
+	box-sizing: border-box;
+}
+
+.m-scroll {
+	flex: 1;
+	min-height: 0;
+	overflow: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+	background: var(--color-interface);
+}
+
+.m-empty {
+	margin: var(--space-3);
+	color: var(--gray-10);
+	font-size: var(--font-4);
+}
+
+.m-avatar-clip {
+	border-radius: 999px;
+	overflow: hidden;
+	flex-shrink: 0;
+	background: var(--gray-3);
+}
+
+.m-avatar-clip img,
+.m-avatar-clip .fallback {
+	width: 100%;
+	height: 100%;
+	border-radius: 999px;
+	object-fit: cover;
+}

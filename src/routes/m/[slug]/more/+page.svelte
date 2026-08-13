@@ -41,47 +41,15 @@
 			{/each}
 		</ul>
 	{:else if isLoading || !channel}
-		<p class="m-empty">{channel ? 'Loading tracks…' : isLoading ? 'Loading…' : 'Channel not found.'}</p>
+		<p class="m-empty">
+			{channel ? 'Loading tracks…' : isLoading ? 'Loading…' : 'Channel not found.'}
+		</p>
 	{:else}
 		<p class="m-empty">No tracks yet.</p>
 	{/if}
 </main>
 
 <style>
-	.m-bar {
-		display: flex;
-		align-items: center;
-		min-height: 3.5rem;
-		padding: var(--space-2) var(--space-3);
-		background: var(--color-interface);
-		border-bottom: 1px solid var(--color-interface-border);
-		flex-shrink: 0;
-	}
-
-	.m-ctrl {
-		width: 2.5rem;
-		height: 2.5rem;
-		min-width: 2.5rem;
-		min-height: 2.5rem;
-		padding: 0;
-		border: 0;
-		border-radius: 999px;
-		background: var(--gray-3);
-		color: var(--gray-12);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		text-decoration: none;
-	}
-
-	.m-scroll {
-		flex: 1;
-		min-height: 0;
-		overflow: auto;
-		overscroll-behavior: contain;
-		background: var(--color-interface);
-	}
-
 	.m-tracks {
 		list-style: none;
 		margin: 0;
@@ -117,11 +85,5 @@
 	.m-track-date {
 		color: var(--gray-10);
 		font-size: var(--font-2);
-	}
-
-	.m-empty {
-		margin: var(--space-3);
-		color: var(--gray-10);
-		font-size: var(--font-4);
 	}
 </style>

@@ -4,6 +4,8 @@
 	 * Covers/hides the root Radio4000 chrome without editing files outside this folder.
 	 * Delete `src/routes/m/` to remove the experiment.
 	 */
+	import './m.css'
+
 	/** @type {{children: import('svelte').Snippet}} */
 	const {children} = $props()
 
@@ -21,7 +23,6 @@
 </div>
 
 <style>
-	/* Hide root shell chrome only while this layout is mounted. */
 	:global(html.m-proto .layout > header),
 	:global(html.m-proto .deck-strip),
 	:global(html.m-proto .compact-decks) {
