@@ -129,6 +129,11 @@
 		border: var(--floating-border);
 	}
 
+	/* Flush mode: drop the card box; deck-strip adds one-sided seams between decks. */
+	:global(html.no-floating-ui) .deck:not(.expanded):not(.compact) {
+		border: none;
+	}
+
 	.deck:not(.expanded) {
 		transition: border-color var(--duration-2) var(--ease-out);
 	}

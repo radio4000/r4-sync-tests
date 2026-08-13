@@ -123,7 +123,7 @@ export interface AppState {
 	show_track_range_control?: boolean
 	/** Use pointer cursor on interactive elements instead of default arrow */
 	use_pointer_cursor?: boolean
-	/** Floating shell/deck panels — padding, gaps, borders, backgrounds. On by default. */
+	/** Floating shell/deck panels (padding/gap). Off = flush with section seams. On by default. */
 	floating_ui?: boolean
 	font_family?: string
 	user?: User
