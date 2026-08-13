@@ -6,6 +6,8 @@
 	import {getFeaturedPool} from '$lib/collections/featured'
 	import {fetchRecentTracks} from '$lib/collections/tracks'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
+	import {tagsCollection} from '$lib/collections/tags'
+	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {searchChannelsCombined} from '$lib/search'
 	import {searchTracks} from '$lib/search-fts'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
@@ -36,6 +38,14 @@
 	let allChannelsLoaded = $state(false)
 	let recentTracksLoaded = $state(false)
 	let exploreLoading = $state(false)
+
+	const tagsQuery = useLiveQuery((q) => q.from({tags: tagsCollection}))
+	const popularTags = $derived(
+		(tagsQuery.data ?? [])
+			.toSorted((a, b) => b.count - a.count)
+			.slice(0, 12)
+			.map((t) => t.tag)
+	)
 
 	$effect(() => {
 		if (loaded) return
@@ -116,18 +126,6 @@
 	function closeMenu() {
 		menuOpen = false
 	}
-
-	// Fantasy tags for the bag prototype — real ones would come from track data
-	const fantasyTags = [
-		'ambient',
-		'dub',
-		'kosmische',
-		'jazz',
-		'techno',
-		'disco',
-		'italo',
-		'field-recording'
-	]
 </script>
 
 <header class="m-bar m-bar-home">
@@ -227,7 +225,7 @@
 					+ “{searchQuery.trim()}”
 				</button>
 			{/if}
-			{#each fantasyTags as tag (tag)}
+			{#each popularTags as tag (tag)}
 				<button
 					class="btn chip m-bag-chip"
 					class:active={inBag('tag', tag)}
