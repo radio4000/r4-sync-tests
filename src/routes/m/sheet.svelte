@@ -53,14 +53,17 @@
 		align-items: end;
 	}
 
-	.m-sheet-backdrop {
+	.m-sheet-backdrop,
+	.m-sheet-backdrop:is(:hover, :focus, :active) {
 		position: absolute;
 		inset: 0;
 		border: 0;
 		padding: 0;
 		margin: 0;
-		background: color-mix(in oklab, var(--gray-12) 28%, transparent);
+		background: oklch(0 0 0 / 0.45);
+		-webkit-tap-highlight-color: transparent;
 		cursor: pointer;
+		scale: 1;
 	}
 
 	.m-sheet {
@@ -77,6 +80,11 @@
 		border-bottom: 0;
 		box-shadow: var(--shadow-modal);
 		overflow: hidden;
+	}
+
+	.m-sheet > .m-bar {
+		background: transparent;
+		border-bottom: 0;
 	}
 
 	.m-sheet-body {

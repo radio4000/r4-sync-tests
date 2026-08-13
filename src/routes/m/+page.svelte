@@ -2,13 +2,20 @@
 	import {resolve} from '$app/paths'
 	import {sdk} from '@radio4000/sdk'
 	import {appState} from '$lib/app-state.svelte'
+	import {channelsCollection} from '$lib/collections/channels'
 	import {getFeaturedPool} from '$lib/collections/featured'
+	import {fetchRecentTracks} from '$lib/collections/tracks'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
+	import {searchChannelsCombined} from '$lib/search'
+	import {searchTracks} from '$lib/search-fts'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
+	import ChannelCard from '$lib/components/channel-card.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
-	import ChannelRow from './channel-row.svelte'
+	import SearchInput from '$lib/components/search-input.svelte'
+	import TrackCard from '$lib/components/track-card.svelte'
 	import Sheet from './sheet.svelte'
+	import {inBag, toggleChannel, toggleTag, toggleSearch} from './bag.svelte.js'
 
 	const follows = getFollowedChannels()
 	const isSignedIn = $derived(!!appState.user)
@@ -20,6 +27,15 @@
 	let menuOpen = $state(false)
 	let searchOpen = $state(false)
 	let searchQuery = $state('')
+	let searchKind = $state(/** @type {'channels' | 'tracks'} */ ('channels'))
+	let channelFilter = $state(/** @type {'featured' | 'all'} */ ('featured'))
+	let allChannels = $state(/** @type {import('$lib/types').Channel[]} */ ([]))
+	let recentTracks = $state(/** @type {import('$lib/types').Track[]} */ ([]))
+	let channelResults = $state(/** @type {import('$lib/types').Channel[]} */ ([]))
+	let trackResults = $state(/** @type {import('$lib/types').Track[]} */ ([]))
+	let allChannelsLoaded = $state(false)
+	let recentTracksLoaded = $state(false)
+	let exploreLoading = $state(false)
 
 	$effect(() => {
 		if (loaded) return
@@ -38,20 +54,80 @@
 		return featuredPool
 	})
 
-	const filtered = $derived.by(() => {
-		const q = searchQuery.trim().toLowerCase()
-		if (!q) return channels
-		return channels.filter(
-			(c) =>
-				c.name?.toLowerCase().includes(q) ||
-				c.slug?.toLowerCase().includes(q) ||
-				c.description?.toLowerCase().includes(q)
-		)
+	const exploreChannels = $derived(
+		searchQuery.trim() ? channelResults : channelFilter === 'featured' ? featuredPool : allChannels
+	)
+	const exploreTracks = $derived(searchQuery.trim() ? trackResults : recentTracks)
+
+	$effect(() => {
+		if (!searchOpen) return
+		const kind = searchKind
+		const query = searchQuery.trim()
+		const filter = channelFilter
+		let stale = false
+
+		async function loadExplore() {
+			if (kind === 'channels') {
+				if (query) {
+					exploreLoading = true
+					const results = await searchChannelsCombined({
+						query,
+						localChannels: [...channelsCollection.state.values()]
+					})
+					if (!stale) channelResults = results
+				} else if (filter === 'all' && !allChannelsLoaded) {
+					exploreLoading = true
+					const {data} = await sdk.channels.readChannels(50)
+					if (!stale) {
+						allChannels = data ?? []
+						allChannelsLoaded = true
+					}
+				}
+			} else if (query) {
+				exploreLoading = true
+				const result = await searchTracks(query, {limit: 50})
+				if (!stale) trackResults = result.tracks
+			} else if (!recentTracksLoaded) {
+				exploreLoading = true
+				const results = await fetchRecentTracks({limit: 50})
+				if (!stale) {
+					recentTracks = results
+					recentTracksLoaded = true
+				}
+			}
+		}
+
+		void loadExplore()
+			.catch(() => {
+				if (!stale) {
+					if (kind === 'channels') channelResults = []
+					else trackResults = []
+				}
+			})
+			.finally(() => {
+				if (!stale) exploreLoading = false
+			})
+
+		return () => {
+			stale = true
+		}
 	})
 
 	function closeMenu() {
 		menuOpen = false
 	}
+
+	// Fantasy tags for the bag prototype — real ones would come from track data
+	const fantasyTags = [
+		'ambient',
+		'dub',
+		'kosmische',
+		'jazz',
+		'techno',
+		'disco',
+		'italo',
+		'field-recording'
+	]
 </script>
 
 <header class="m-bar m-bar-home">
@@ -82,60 +158,146 @@
 			{#snippet trigger()}
 				<span aria-label="Add"><Icon icon="add" /></span>
 			{/snippet}
-			<menu class="m-plus-menu">
-				<a href={resolve('/add')}>Add a track</a>
-				<a href={resolve('/create-channel')}>Create a channel</a>
-				<a href={resolve('/explore')}>Explore</a>
+			<menu class="nav-vertical">
+				<a href={resolve('/add')}><Icon icon="add" /> Add a track</a>
+				{#if !userChannel}
+					<a href={resolve('/create-channel')}><Icon icon="radio" /> Create a channel</a>
+				{/if}
 			</menu>
 		</PopoverMenu>
 	</div>
 </header>
 
 {#if searchOpen}
-	<div class="m-bar m-search-bar">
-		<button
-			type="button"
-			class="m-ctrl"
-			aria-label="Close search"
-			onclick={() => {
-				searchOpen = false
-				searchQuery = ''
-			}}
-		>
-			<Icon icon="close" />
-		</button>
-		<label class="m-search-field">
-			<Icon icon="search" />
-			<input
-				type="search"
-				placeholder="Search channels"
+	<section class="m-explore-panel">
+		<div class="m-search-row">
+			<button
+				type="button"
+				class="m-ctrl"
+				aria-label="Close search"
+				onclick={() => {
+					searchOpen = false
+					searchQuery = ''
+				}}
+			>
+				<Icon icon="close" />
+			</button>
+			<SearchInput
 				bind:value={searchQuery}
+				debounce={300}
+				placeholder={`Search ${searchKind}`}
+				autofocus
 				autocomplete="off"
 			/>
-		</label>
-	</div>
+		</div>
+		<menu class="m-explore-chips">
+			<button
+				class="btn chip"
+				class:active={searchKind === 'channels'}
+				onclick={() => (searchKind = 'channels')}>Channels</button
+			>
+			<button
+				class="btn chip"
+				class:active={searchKind === 'tracks'}
+				onclick={() => (searchKind = 'tracks')}>Tracks</button
+			>
+			<hr />
+			{#if searchKind === 'channels'}
+				<button
+					class="btn chip"
+					class:active={channelFilter === 'featured'}
+					onclick={() => (channelFilter = 'featured')}>Featured</button
+				>
+				<button
+					class="btn chip"
+					class:active={channelFilter === 'all'}
+					onclick={() => (channelFilter = 'all')}>All</button
+				>
+			{:else}
+				<button class="btn chip active">Recent</button>
+			{/if}
+		</menu>
+		<menu class="m-explore-chips">
+			{#if searchQuery.trim()}
+				<button
+					class="btn chip m-bag-chip"
+					class:active={inBag('search', searchQuery)}
+					onclick={() => toggleSearch(searchQuery)}
+				>
+					+ “{searchQuery.trim()}”
+				</button>
+			{/if}
+			{#each fantasyTags as tag (tag)}
+				<button
+					class="btn chip m-bag-chip"
+					class:active={inBag('tag', tag)}
+					onclick={() => toggleTag(tag)}
+				>
+					#{tag}
+				</button>
+			{/each}
+		</menu>
+	</section>
 {/if}
 
 <main class="m-scroll">
-	{#if !loaded && !channels.length}
+	{#if searchOpen}
+		{#if exploreLoading}
+			<p class="m-empty">Searching…</p>
+		{:else if searchKind === 'channels' && exploreChannels.length}
+			<ul class="m-list list">
+				{#each exploreChannels as channel (channel.id)}
+					<li class="m-grab-row">
+						<ChannelCard {channel} href={resolve('/m/[slug]', {slug: channel.slug})} />
+						<button
+							type="button"
+							class="m-ctrl m-grab"
+							class:added={inBag('channel', channel.slug)}
+							aria-label="Add {channel.name} to bag"
+							onclick={() => toggleChannel(channel)}
+						>
+							<Icon icon="add" />
+						</button>
+					</li>
+				{/each}
+			</ul>
+		{:else if searchKind === 'tracks' && exploreTracks.length}
+			<ul class="m-list list">
+				{#each exploreTracks as track, index (track.id)}
+					<li><TrackCard {track} {index} showSlug /></li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="m-empty">No {searchKind} found.</p>
+		{/if}
+	{:else if !loaded && !channels.length}
 		<p class="m-empty">Loading channels…</p>
-	{:else if filtered.length}
-		<ul class="m-list">
-			{#each filtered as channel (channel.id)}
-				<li>
-					<ChannelRow {channel} />
+	{:else if channels.length}
+		<ul class="m-list list">
+			{#each channels as channel (channel.id)}
+				<li class="m-grab-row">
+					<ChannelCard {channel} href={resolve('/m/[slug]', {slug: channel.slug})} />
+					<button
+						type="button"
+						class="m-ctrl m-grab"
+						class:added={inBag('channel', channel.slug)}
+						aria-label="Add {channel.name} to bag"
+						onclick={() => toggleChannel(channel)}
+					>
+						<Icon icon="add" />
+					</button>
 				</li>
 			{/each}
 		</ul>
 	{:else}
-		<p class="m-empty">No channels match.</p>
+		<p class="m-empty">No channels found.</p>
 	{/if}
 </main>
 
 <Sheet open={menuOpen} title="Menu" onclose={closeMenu}>
 	<div class="m-settings">
-		<section class="m-card">
-			{#if userChannel}
+		{#if userChannel}
+			<nav class="nav-vertical">
 				<a
 					class="m-set-row identity"
 					href={resolve('/m/[slug]', {slug: userChannel.slug})}
@@ -150,13 +312,10 @@
 					</span>
 					<span class="m-chevron" aria-hidden="true">›</span>
 				</a>
-			{:else if isSignedIn}
-				<a class="m-set-row" href={resolve('/create-channel')} onclick={closeMenu}>
-					<span class="m-set-text"><span class="m-set-label">Create a channel</span></span>
-					<span class="m-chevron" aria-hidden="true">›</span>
-				</a>
-			{/if}
+			</nav>
+		{/if}
 
+		<nav class="nav-vertical">
 			{#if isSignedIn}
 				<a class="m-set-row" href={resolve('/account')} onclick={closeMenu}>
 					<span class="m-set-text">
@@ -167,35 +326,21 @@
 					</span>
 					<span class="m-chevron" aria-hidden="true">›</span>
 				</a>
-				<button
-					type="button"
-					class="m-set-row"
-					onclick={() => {
-						closeMenu()
-						void sdk.auth.signOut()
-					}}
-				>
-					<span class="m-set-text"><span class="m-set-label">Log out</span></span>
-				</button>
 			{:else}
 				<a class="m-set-row" href={resolve('/auth')} onclick={closeMenu}>
 					<span class="m-set-text"><span class="m-set-label">Sign in</span></span>
 					<span class="m-chevron" aria-hidden="true">›</span>
 				</a>
 			{/if}
-		</section>
-
-		<section class="m-card">
 			<a class="m-set-row" href={resolve('/settings')} onclick={closeMenu}>
 				<span class="m-set-text"><span class="m-set-label">Settings</span></span>
 				<span class="m-chevron" aria-hidden="true">›</span>
 			</a>
+		</nav>
+
+		<nav class="nav-vertical">
 			<a class="m-set-row" href={resolve('/history')} onclick={closeMenu}>
 				<span class="m-set-text"><span class="m-set-label">History</span></span>
-				<span class="m-chevron" aria-hidden="true">›</span>
-			</a>
-			<a class="m-set-row" href={resolve('/explore')} onclick={closeMenu}>
-				<span class="m-set-text"><span class="m-set-label">Explore</span></span>
 				<span class="m-chevron" aria-hidden="true">›</span>
 			</a>
 			<a class="m-set-row" href={resolve('/menu/community')} onclick={closeMenu}>
@@ -206,7 +351,7 @@
 				<span class="m-set-text"><span class="m-set-label">About</span></span>
 				<span class="m-chevron" aria-hidden="true">›</span>
 			</a>
-		</section>
+		</nav>
 	</div>
 </Sheet>
 
@@ -227,31 +372,29 @@
 		display: block;
 	}
 
-	.m-search-bar {
-		justify-content: flex-start;
+	.m-explore-panel {
+		display: grid;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		background: var(--color-interface);
+		border-bottom: 1px solid var(--color-interface-border);
+		flex-shrink: 0;
 	}
 
-	.m-search-field {
-		flex: 1;
+	.m-search-row {
 		display: flex;
 		align-items: center;
-		gap: var(--space-1);
-		min-height: 2.5rem;
-		padding: 0 var(--space-2);
-		border-radius: 999px;
-		background: var(--gray-3);
-		color: var(--gray-10);
+		gap: var(--space-2);
 	}
 
-	.m-search-field input {
-		flex: 1;
-		min-width: 0;
-		border: 0;
-		background: transparent;
-		color: var(--gray-12);
-		font: inherit;
-		font-size: var(--font-4);
-		outline: none;
+	.m-explore-chips {
+		overflow-x: auto;
+		flex-wrap: nowrap;
+		scrollbar-width: none;
+	}
+
+	.m-explore-chips::-webkit-scrollbar {
+		display: none;
 	}
 
 	.m-list {
@@ -260,25 +403,7 @@
 		padding: 0;
 	}
 
-	.m-plus-menu {
-		display: grid;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.m-plus-menu a {
-		display: flex;
-		align-items: center;
-		min-height: 2.75rem;
-		padding: 0 var(--space-2);
-		color: inherit;
-		font: inherit;
-		font-size: var(--font-4);
-		text-decoration: none;
-	}
-
-	.m-plus-menu a + a {
+	.m-list > .m-grab-row + .m-grab-row {
 		border-top: 1px solid var(--color-interface-border);
 	}
 
@@ -286,31 +411,21 @@
 		display: grid;
 		gap: var(--space-3);
 		padding-top: var(--space-1);
+		--border-radius: 4px;
 	}
 
-	.m-card {
-		margin: 0;
-		padding: 0;
-		background: var(--color-interface-elevated);
-		border: 1px solid var(--color-interface-border);
+	.m-settings .nav-vertical {
 		border-radius: calc(var(--border-radius) * 2.5);
 		overflow: hidden;
 	}
 
 	.m-set-row {
-		position: relative;
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
 		width: 100%;
-		min-height: 3.25rem;
-		padding: var(--space-2) var(--space-3);
 		border: 0;
 		background: transparent;
 		color: inherit;
 		font: inherit;
 		text-align: start;
-		text-decoration: none;
 		cursor: pointer;
 	}
 
@@ -318,17 +433,8 @@
 		min-height: 4rem;
 	}
 
-	.m-set-row + .m-set-row::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		right: 0;
-		left: var(--space-3);
-		border-top: 1px solid var(--color-interface-border);
-	}
-
-	.m-set-row.identity + .m-set-row::before {
-		left: calc(2.75rem + var(--space-3) + var(--space-2));
+	.m-set-row:has(.m-set-sub) {
+		min-height: 3rem;
 	}
 
 	.m-set-avatar {

@@ -6,6 +6,7 @@
 	import {findChannelDeck} from '$lib/deck'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import Icon from '$lib/components/icon.svelte'
+	import {inBag, toggleChannel} from '../bag.svelte.js'
 
 	/** @type {{slug: string, channel?: import('$lib/types').Channel, isLoading: boolean}} */
 	const ctx = getContext('m-channel')
@@ -32,30 +33,37 @@
 		</a>
 
 		{#if channel}
-			<span class="m-chip">
+			<a class="m-chip" href={resolve('/m/[slug]/more', {slug})}>
 				<span class="m-avatar-clip m-chip-avatar">
 					<ChannelAvatar id={channel.image} alt={channel.name} size={64} />
 				</span>
 				<span class="m-chip-name">{channel.name}</span>
-			</span>
+			</a>
 		{:else}
-			<span class="m-chip muted">{isLoading ? 'Loading…' : `@${slug}`}</span>
+			<a class="m-chip muted" href={resolve('/m/[slug]/more', {slug})}
+				>{isLoading ? 'Loading…' : `@${slug}`}</a
+			>
 		{/if}
 	</div>
 
-	<a class="m-ctrl" href={resolve('/m/[slug]/more', {slug})} aria-label="More">
-		<Icon icon="options-horizontal" />
-	</a>
+	<div class="m-bar-end">
+		{#if channel}
+			<button
+				type="button"
+				class="m-ctrl m-grab"
+				class:added={inBag('channel', channel.slug)}
+				aria-label="Add {channel.name} to bag"
+				onclick={() => toggleChannel(channel)}
+			>
+				<Icon icon="add" />
+			</button>
+		{/if}
+	</div>
 </header>
 
 <main class="m-scroll m-radio-body">
 	{#if channel}
-		<button
-			type="button"
-			class="m-play"
-			aria-label={isPlaying ? 'Pause' : 'Play'}
-			onclick={onPlay}
-		>
+		<button type="button" class="m-play" aria-label={isPlaying ? 'Pause' : 'Play'} onclick={onPlay}>
 			<Icon icon={isPlaying ? 'pause' : 'play-fill'} size={28} />
 			<span>{isPlaying ? 'Pause' : 'Play'}</span>
 		</button>
@@ -83,38 +91,11 @@
 		flex: 1;
 	}
 
-	.m-chip {
-		display: inline-flex;
+	.m-bar-end {
+		display: flex;
 		align-items: center;
 		gap: var(--space-1);
-		height: 2.5rem;
-		min-height: 2.5rem;
-		max-width: 100%;
-		padding: 0 var(--space-2) 0 0.2rem;
-		border-radius: 999px;
-		background: var(--gray-3);
-		overflow: hidden;
-		box-sizing: border-box;
-	}
-
-	.m-chip.muted {
-		padding-inline: var(--space-2);
-		color: var(--gray-10);
-		font-size: var(--font-4);
-	}
-
-	.m-chip-avatar {
-		width: 2.1rem;
-		height: 2.1rem;
-	}
-
-	.m-chip-name {
-		font-size: var(--font-4);
-		font-weight: 650;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		padding-inline-end: var(--space-1);
+		flex-shrink: 0;
 	}
 
 	.m-radio-body {

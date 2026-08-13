@@ -5,6 +5,7 @@
 	 * Delete `src/routes/m/` to remove the experiment.
 	 */
 	import './m.css'
+	import BagPocket from './bag-pocket.svelte'
 
 	/** @type {{children: import('svelte').Snippet}} */
 	const {children} = $props()
@@ -19,6 +20,7 @@
 <div class="m-shell">
 	<div class="m-page">
 		{@render children()}
+		<BagPocket />
 	</div>
 </div>
 
@@ -58,6 +60,7 @@
 	}
 
 	.m-page {
+		position: relative;
 		flex: 1;
 		min-height: 0;
 		display: flex;
