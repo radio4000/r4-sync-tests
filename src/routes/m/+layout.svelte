@@ -25,9 +25,7 @@
 </div>
 
 <style>
-	:global(html.m-proto .layout > header),
-	:global(html.m-proto .deck-strip),
-	:global(html.m-proto .compact-decks) {
+	:global(html.m-proto .layout > header) {
 		display: none !important;
 	}
 
@@ -43,15 +41,21 @@
 		overflow: hidden;
 	}
 
+	/* Keep the page <main> capped to the scroll-area height so the /m shell
+	   drives its own internal scroll and the deck strip sits flush below. */
+	:global(html.m-proto main) {
+		min-height: 0;
+	}
+
 	:global(html.m-proto .content),
 	:global(html.m-proto .content-wrapper) {
 		gap: 0;
 	}
 
 	.m-shell {
-		position: fixed;
-		inset: 0;
-		z-index: 1000;
+		position: relative;
+		flex: 1;
+		min-height: 0;
 		display: flex;
 		flex-direction: column;
 		background: var(--color-interface);
