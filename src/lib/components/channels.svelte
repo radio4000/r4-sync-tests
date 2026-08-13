@@ -409,7 +409,11 @@
 			{/if}
 		{/snippet}
 		{#if searchHref}
-			<SearchInput bind:value={searchValue} debounce={300} placeholder={m.search_placeholder()} />
+			<SearchInput
+				bind:value={searchValue}
+				debounce={300}
+				placeholder={m.channels_search_placeholder()}
+			/>
 		{/if}
 
 		{#if filter === 'featured'}

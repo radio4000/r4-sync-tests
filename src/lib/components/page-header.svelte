@@ -17,7 +17,8 @@
 		padding-inline: 0.5rem;
 		padding-block: 0.5rem;
 		z-index: 20;
-		background: var(--color-interface);
+		background: var(--gray-2);
+		border-bottom: 1px solid var(--color-interface-border);
 	}
 
 	.page-header--wrap {
