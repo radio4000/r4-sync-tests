@@ -630,7 +630,11 @@
 		align-items: center;
 		gap: 0.5rem;
 		color: var(--accent-9);
-		border-color: var(--accent-6);
+		border-color: color-mix(
+			in oklch,
+			var(--accent-6) calc(var(--border-opacity) * 100%),
+			transparent
+		);
 		background: var(--accent-2);
 
 		strong {

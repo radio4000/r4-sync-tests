@@ -92,7 +92,8 @@
 		gap: var(--space-2);
 		padding: var(--space-3);
 		background: var(--accent-3);
-		border: 1px solid var(--accent-6);
+		border: 1px solid
+			color-mix(in oklch, var(--accent-6) calc(var(--border-opacity) * 100%), transparent);
 		border-radius: var(--border-radius);
 	}
 </style>

@@ -141,7 +141,7 @@
 		justify-content: center;
 		font-size: var(--font-0);
 		background: var(--gray-1);
-		border: 1px solid var(--gray-6);
+		border: 1px solid var(--color-interface-border);
 		color: var(--gray-6);
 	}
 

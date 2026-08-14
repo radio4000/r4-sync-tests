@@ -964,7 +964,11 @@
 
 	.stat-card--accent {
 		background: var(--accent-2);
-		border-color: var(--accent-5);
+		border-color: color-mix(
+			in oklch,
+			var(--accent-5) calc(var(--border-opacity) * 100%),
+			transparent
+		);
 	}
 
 	.stat-value {
@@ -1115,7 +1119,8 @@
 
 	.party-split-item--pending .party-split-dot {
 		background: var(--accent-4);
-		border: 1px solid var(--accent-7);
+		border: 1px solid
+			color-mix(in oklch, var(--accent-7) calc(var(--border-opacity) * 100%), transparent);
 	}
 
 	/* ─── Muted explanatory paragraph ─── */
@@ -1218,7 +1223,11 @@
 
 	.proj-card--accent {
 		background: var(--accent-2);
-		border-color: var(--accent-5);
+		border-color: color-mix(
+			in oklch,
+			var(--accent-5) calc(var(--border-opacity) * 100%),
+			transparent
+		);
 	}
 
 	.proj-value {
@@ -1362,7 +1371,11 @@
 	}
 
 	.channel-pick-btn.selected {
-		border-color: var(--accent-7);
+		border-color: color-mix(
+			in oklch,
+			var(--accent-7) calc(var(--border-opacity) * 100%),
+			transparent
+		);
 		background: var(--accent-2);
 	}
 
@@ -1495,7 +1508,8 @@
 
 	.earning-highlight--artist {
 		background: var(--accent-2);
-		border: 1px solid var(--accent-5);
+		border: 1px solid
+			color-mix(in oklch, var(--accent-5) calc(var(--border-opacity) * 100%), transparent);
 	}
 
 	.earning-value {
@@ -1559,7 +1573,11 @@
 
 	.comparison-row--selected {
 		color: var(--gray-12);
-		border-color: var(--accent-6);
+		border-color: color-mix(
+			in oklch,
+			var(--accent-6) calc(var(--border-opacity) * 100%),
+			transparent
+		);
 		background: var(--accent-1);
 		font-weight: 500;
 	}

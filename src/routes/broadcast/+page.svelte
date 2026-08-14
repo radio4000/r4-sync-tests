@@ -113,7 +113,8 @@
 		gap: var(--space-1);
 		color: var(--accent-11);
 		background: var(--accent-3);
-		border: 1px solid var(--accent-6);
+		border: 1px solid
+			color-mix(in oklch, var(--accent-6) calc(var(--border-opacity) * 100%), transparent);
 		border-radius: var(--border-radius);
 		padding: 0.1rem var(--space-2);
 	}

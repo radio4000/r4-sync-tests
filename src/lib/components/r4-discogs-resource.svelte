@@ -581,7 +581,7 @@
 
 		&:hover {
 			color: var(--gray-12);
-			border-color: var(--gray-7);
+			border-color: var(--color-control-border-hover);
 		}
 	}
 
@@ -653,7 +653,11 @@
 	}
 
 	.state--real {
-		border-color: var(--accent-7);
+		border-color: color-mix(
+			in oklch,
+			var(--accent-7) calc(var(--border-opacity) * 100%),
+			transparent
+		);
 		color: var(--accent-11);
 	}
 
