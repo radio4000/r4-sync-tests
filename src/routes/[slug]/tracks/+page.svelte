@@ -568,14 +568,6 @@
 		color: var(--gray-9);
 	}
 
-	/* ...and the actions to the chips they act on */
-	:global(.filter-chips) + .results-actions::before,
-	:global(.filter-chips) + .filter-actions::before {
-		content: '→';
-		align-self: center;
-		color: var(--gray-9);
-	}
-
 	.modal-header {
 		display: flex;
 		align-items: center;
