@@ -425,7 +425,7 @@
 	"home_stats_tracks": "{count} tracks",
 	"home_tab_feed": "Feed",
 	"home_tab_home": "Home",
-	"home_title": "{appName}",
+	"home_title": "Home of {appName}",
 	"home_welcome_dismiss": "dismiss",
 	"home_welcome_hint": "Welcome.",
 	"home_welcome_learn": "Learn more",

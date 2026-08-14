@@ -171,7 +171,8 @@
 		display: flex;
 		flex-flow: column nowrap;
 		gap: var(--space-1);
-		border: 1px solid transparent;
+		background: var(--color-interface-elevated);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		padding: var(--space-1);
 		user-select: none;
@@ -181,8 +182,8 @@
 			border-color 0.1s;
 
 		&:hover {
-			background: var(--gray-2);
-			border-color: var(--color-interface-border);
+			background: var(--gray-3);
+			border-color: var(--color-control-border-hover);
 			--tag-bg: var(--accent-4);
 			--tag-bg-hover: var(--accent-5);
 			--tag-bg-active: var(--accent-6);
@@ -191,7 +192,7 @@
 
 		&:focus,
 		&:focus-within {
-			background: var(--gray-2);
+			background: var(--gray-3);
 			border-color: var(--accent-7);
 			outline: none;
 			--tag-bg: var(--accent-4);
@@ -200,13 +201,24 @@
 			--tag-color: var(--accent-11);
 		}
 
+		/* Same restraint as the active site menu item: flatten the card itself
+		   — no border, no fill — and let the accent channel name be the only cue.
+		   Still picks up the normal hover/focus feedback (below), since those
+		   are about "you can interact with this," not "this is playing". */
 		&.playing {
-			background: var(--gray-2);
-			border-color: var(--color-interface-border);
-			--tag-bg: var(--accent-4);
-			--tag-bg-hover: var(--accent-5);
-			--tag-bg-active: var(--accent-6);
-			--tag-color: var(--accent-11);
+			background: transparent;
+			border-color: transparent;
+		}
+
+		&.playing h3 a {
+			color: var(--accent-9);
+		}
+
+		&.playing:hover,
+		&.playing:focus,
+		&.playing:focus-within {
+			background: var(--gray-3);
+			border-color: var(--color-control-border-hover);
 		}
 
 		:global(.list) & {
@@ -215,6 +227,9 @@
 			align-items: stretch;
 			padding: 0.5rem;
 			gap: 0 0.75rem;
+			/* Rows now carry their own border — a little breathing room keeps
+			   adjacent borders from reading as one merged line. */
+			margin-bottom: 2px;
 		}
 	}
 

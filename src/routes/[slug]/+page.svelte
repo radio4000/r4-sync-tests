@@ -335,7 +335,7 @@
 					playContext={true}
 				/>
 				<footer>
-					<a href={resolve('/[slug]/tracks', {slug})} class="btn ghost see-all-link"
+					<a href={resolve('/[slug]/tracks', {slug})} class="btn chip"
 						>{m.channel_see_all_tracks({count: allTracks.length})}
 						<Icon icon="arrow-right" size={12} /></a
 					>
@@ -369,7 +369,7 @@
 		min-height: 3.5rem;
 		min-width: 12rem;
 		padding-inline: 2rem;
-		border-radius: 999px;
+		border-radius: calc(var(--border-radius) * 999);
 		font-size: var(--font-6);
 		gap: var(--space-2);
 		box-shadow:
@@ -378,7 +378,7 @@
 	}
 
 	.live-action {
-		border-radius: 999px;
+		border-radius: calc(var(--border-radius) * 999);
 	}
 
 	.channel-meta {
@@ -426,11 +426,6 @@
 			padding: 0.5rem;
 			text-align: center;
 		}
-	}
-
-	.see-all-link {
-		color: var(--accent-9);
-		font-weight: 500;
 	}
 
 	.common-follows {

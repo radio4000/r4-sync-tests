@@ -178,8 +178,21 @@ button:has(svg, i),
 
 button.chip,
 .btn.chip {
-	border-radius: 1rem;
+	border-radius: calc(var(--border-radius) * 999);
 	padding: 0 var(--space-2);
+}
+
+/* Same restraint as the active site menu item: no solid fill, just an
+   accent cue on the content itself. Overrides the louder generic
+   button.active/.btn.active treatment for pill-shaped tabs/filters. */
+button.chip.active,
+.btn.chip.active {
+	background: var(--color-interface-elevated);
+	color: var(--accent-9);
+
+	svg {
+		color: var(--accent-9);
+	}
 }
 
 /* Chip content: icon + label, with an optional trailing count badge. Label and
@@ -210,7 +223,7 @@ button.chip,
 	border: 1px solid
 		color-mix(in oklch, var(--accent-6) calc(var(--border-opacity) * 100%), transparent);
 	border-right: 0;
-	border-radius: 1rem 0 0 1rem;
+	border-radius: calc(var(--border-radius) * 999) 0 0 calc(var(--border-radius) * 999);
 
 	&.active {
 		background: var(--accent-8);
@@ -242,7 +255,7 @@ button.chip,
 
 .chip-delete {
 	padding: 0 0.5rem 0 var(--space-1);
-	border-radius: 0 1rem 1rem 0;
+	border-radius: 0 calc(var(--border-radius) * 999) calc(var(--border-radius) * 999) 0;
 	background: var(--accent-4);
 	border: 1px solid
 		color-mix(in oklch, var(--accent-6) calc(var(--border-opacity) * 100%), transparent);

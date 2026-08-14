@@ -458,7 +458,6 @@
 
 <style>
 	header {
-		padding-inline: 0.5rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
@@ -470,6 +469,7 @@
 		flex: 1;
 		min-height: 0;
 		padding-top: var(--space-2);
+		padding-inline: 0.5rem;
 	}
 
 	.filter-toggle {

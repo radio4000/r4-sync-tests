@@ -2,19 +2,22 @@
 	import {appState} from '$lib/app-state.svelte'
 	import {page} from '$app/state'
 
-	/** @type {{href?: string, onclick?: () => void, value?: string, playing?: boolean, filtered?: boolean, children: import('svelte').Snippet}} */
-	const {href, onclick, value, playing, filtered, children} = $props()
+	/** @type {{href?: string, onclick?: () => void, value?: string, playing?: boolean, filtered?: boolean, deckId?: number, children: import('svelte').Snippet}} */
+	const {href, onclick, value, playing, filtered, deckId, children} = $props()
 
 	const splitRe = /\s+/
 
+	const matchesTitle = (title) =>
+		Boolean(value && title?.toLowerCase().split(splitRe).includes(value.toLowerCase()))
+
+	// A deck-scoped tag (rendered inside a specific deck's header/queue) only
+	// reflects that deck's own theme — otherwise a tag playing in one open
+	// deck would also light up the same tag shown in every other deck.
 	const isPlaying = $derived(
 		playing ??
-			Boolean(
-				value &&
-				Object.values(appState.decks).some((d) =>
-					d.playlist_title?.toLowerCase().split(splitRe).includes(value.toLowerCase())
-				)
-			)
+			(deckId != null
+				? matchesTitle(appState.decks[deckId]?.playlist_title)
+				: Object.values(appState.decks).some((d) => matchesTitle(d.playlist_title)))
 	)
 
 	const isFiltered = $derived.by(() => {
@@ -34,6 +37,13 @@
 {/if}
 
 <style>
+	/* One quiet default look everywhere, and exactly two ways to stand out —
+	   text color for "playing" (matches the active-track-title treatment
+	   elsewhere), a soft background tint for "filtered". They're separate
+	   visual channels on purpose: a tag that's both playing and filtered
+	   shows both cues at once instead of one state hiding the other, and
+	   neither depends on a border/ring to read (works with "Show borders"
+	   off, and in light/dark). */
 	a,
 	button {
 		display: inline;
@@ -48,12 +58,10 @@
 		font-stretch: 90%;
 		color: var(--tag-color, inherit);
 		background: var(--tag-bg, var(--gray-2));
-		box-shadow: 0 0 0 1px var(--tag-border, transparent);
 		white-space: nowrap;
 		transition:
 			background 0.15s,
-			color 0.15s,
-			box-shadow 0.15s;
+			color 0.15s;
 	}
 
 	button {
@@ -62,52 +70,35 @@
 
 	a.playing,
 	button.playing {
-		background: var(--accent-9);
-		color: var(--gray-1);
+		color: var(--accent-9);
+		font-weight: 600;
 	}
 
-	a.filtered {
-		background: var(--accent-3);
-		box-shadow: 0 0 0 1px
-			color-mix(in oklch, var(--gray-12) calc(var(--border-opacity) * 100%), transparent);
-		color: var(--accent-11);
-	}
-
+	a.filtered,
 	button.filtered {
 		background: var(--accent-3);
-		box-shadow: 0 0 0 1px
-			color-mix(in oklch, var(--accent-9) calc(var(--border-opacity) * 100%), transparent);
 		color: var(--accent-11);
 	}
 
 	a:hover,
 	button:hover {
-		--tag-border: var(--color-interface-border);
-		background: var(--tag-bg-hover, var(--gray-2));
-		box-shadow: 0 0 0 1px var(--tag-border);
+		background: var(--tag-bg-hover, var(--gray-3));
 		text-decoration: none;
 	}
 
 	a:active,
 	button:active {
 		background: var(--tag-bg-active, var(--gray-4));
-		box-shadow: 0 0 0 1px var(--color-interface-border);
 		text-decoration: underline;
 	}
 
 	a.playing:hover,
 	button.playing:hover {
-		background: var(--accent-10);
-		color: var(--gray-1);
-		box-shadow: 0 0 0 1px
-			color-mix(in oklch, var(--accent-11) calc(var(--border-opacity) * 100%), transparent);
+		background: var(--tag-bg-hover, var(--gray-3));
 	}
 
 	a.filtered:hover,
 	button.filtered:hover {
 		background: var(--accent-4);
-		color: var(--accent-11);
-		box-shadow: 0 0 0 1px
-			color-mix(in oklch, var(--accent-9) calc(var(--border-opacity) * 100%), transparent);
 	}
 </style>

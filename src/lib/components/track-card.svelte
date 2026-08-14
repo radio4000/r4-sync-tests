@@ -212,7 +212,12 @@
 				<p class="description">{@render description()}</p>
 			{:else if track.description}
 				<p class="description">
-					<LinkEntities slug={track.slug} text={track.description} {onTagClick} />
+					<LinkEntities
+						slug={track.slug}
+						text={track.description}
+						{onTagClick}
+						deckId={matchedDeckId}
+					/>
 				</p>
 			{/if}
 		</div>
@@ -350,7 +355,7 @@
 						<h3 class="title">{track.title}</h3>
 						{#if track.description}
 							<p class="description">
-								<LinkEntities slug={track.slug} text={track.description} />
+								<LinkEntities slug={track.slug} text={track.description} deckId={matchedDeckId} />
 							</p>
 						{/if}
 					</div>
@@ -445,13 +450,13 @@
 		}
 	}
 
+	/* Same restraint as the active site menu item: flatten the row itself —
+	   no border, no fill — and let the accent title be the only cue. */
 	.active {
-		background: var(--gray-2);
-		border-color: var(--gray-5);
+		background: transparent;
+		border-color: transparent;
 	}
 
-	/* The now-playing track reads the same way in the list as it does in the
-	   player — accent text, not just a faint background tint. */
 	.active .title {
 		color: var(--accent-9);
 	}
@@ -460,9 +465,11 @@
 		color: inherit;
 	}
 
+	/* Keyboard-current row (roving tabindex) — same weight as :hover/.active,
+	   distinguished from them by the accent border instead of a gray one. */
 	.selected {
-		background: var(--gray-2);
-		border-color: var(--gray-5);
+		background: var(--gray-3);
+		border-color: var(--accent-7);
 		--tag-bg: var(--gray-4);
 		--tag-bg-hover: var(--gray-5);
 		--tag-bg-active: var(--gray-6);
@@ -520,6 +527,21 @@
 	article {
 		display: flex;
 		align-items: center;
+		background: var(--color-interface-elevated);
+		border: 1px solid var(--color-interface-border);
+		border-radius: var(--border-radius);
+		transition:
+			background 0.15s,
+			border-color 0.15s;
+
+		/* The row now paints its own opaque background, so the list's own
+		   :hover background (layout.css) no longer shows through it. */
+		:global(.list > li:hover) &,
+		:global(.list > div:hover) & {
+			background: var(--gray-3);
+			border-color: var(--color-control-border-hover);
+		}
+
 		:global(.popover-menu) {
 			padding: 0.2em;
 		}
@@ -528,14 +550,6 @@
 	.discogs {
 		display: flex;
 		align-items: center;
-		color: var(--gray-10);
-	}
-
-	:global(.trackcard-contextBtn) {
-		color: var(--gray-9);
-		article:hover & {
-			color: inherit;
-		}
 	}
 
 	.delete-track-preview {
