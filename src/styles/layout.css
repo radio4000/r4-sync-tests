@@ -69,14 +69,6 @@
 .virtual-item.track-item {
 	&:hover {
 		background: light-dark(var(--gray-2), var(--gray-2));
-		--tag-border: var(--gray-7);
-		/* --tag-border: var(--accent-6); */
-	}
-
-	&[aria-selected='true'] {
-		&:hover {
-			--tag-border: var(--accent-6);
-		}
 	}
 
 	/* when inside panel, raise the level 1 step */

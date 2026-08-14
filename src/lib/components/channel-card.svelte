@@ -171,7 +171,7 @@
 		display: flex;
 		flex-flow: column nowrap;
 		gap: var(--space-1);
-		border: 1px solid transparent;
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		padding: var(--space-1);
 		user-select: none;
@@ -215,6 +215,9 @@
 			align-items: stretch;
 			padding: 0.5rem;
 			gap: 0 0.75rem;
+			/* Rows now carry their own border — a little breathing room keeps
+			   adjacent borders from reading as one merged line. */
+			margin-bottom: 2px;
 		}
 	}
 

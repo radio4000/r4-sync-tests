@@ -337,6 +337,9 @@
 	.cv-row {
 		content-visibility: auto;
 		contain-intrinsic-size: auto 58px;
+		/* Rows now carry their own border — a little breathing room keeps
+		   adjacent borders from reading as one merged line. */
+		margin-bottom: 2px;
 	}
 
 	.track-with-channel {

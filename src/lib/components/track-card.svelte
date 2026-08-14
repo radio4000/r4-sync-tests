@@ -452,7 +452,7 @@
 
 	.active {
 		background: var(--gray-2);
-		border-color: var(--gray-5);
+		border-color: var(--color-control-border-hover);
 	}
 
 	/* The now-playing track reads the same way in the list as it does in the
@@ -465,9 +465,11 @@
 		color: inherit;
 	}
 
+	/* Keyboard-current row (roving tabindex) — same weight as :hover/.active,
+	   distinguished from them by the accent border instead of a gray one. */
 	.selected {
 		background: var(--gray-2);
-		border-color: var(--gray-5);
+		border-color: var(--accent-7);
 		--tag-bg: var(--gray-4);
 		--tag-bg-hover: var(--gray-5);
 		--tag-bg-active: var(--gray-6);
@@ -525,6 +527,11 @@
 	article {
 		display: flex;
 		align-items: center;
+		border: 1px solid var(--color-interface-border);
+		border-radius: var(--border-radius);
+		transition:
+			background 0.15s,
+			border-color 0.15s;
 		:global(.popover-menu) {
 			padding: 0.2em;
 		}
