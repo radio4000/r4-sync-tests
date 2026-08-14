@@ -1,5 +1,6 @@
 // SC Widget API: https://developers.soundcloud.com/docs/api/html5-widget
 import {logger} from '$lib/logger'
+import {upgradeProperties} from '$lib/custom-element-props'
 
 const log = logger.ns('soundcloud-player').seal()
 let soundcloudApiReadyPromise
@@ -55,6 +56,9 @@ class SoundCloudPlayerElement extends HTMLElement {
 	}
 
 	async connectedCallback() {
+		// Must run before anything else — see custom-element-props.js.
+		upgradeProperties(this, ['src', 'volume', 'muted', 'currentTime'])
+
 		if (!this.shadowRoot) return
 
 		// Create iframe with SoundCloud embed

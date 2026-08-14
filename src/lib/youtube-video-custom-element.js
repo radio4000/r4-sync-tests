@@ -1,4 +1,5 @@
 import {logger} from '$lib/logger'
+import {upgradeProperties} from '$lib/custom-element-props'
 
 const log = logger.ns('youtube-video').seal()
 const YOUTUBE_IFRAME_ALLOW =
@@ -33,6 +34,9 @@ class YouTube2Element extends HTMLElement {
 	}
 
 	async connectedCallback() {
+		// Must run before anything else — see custom-element-props.js.
+		upgradeProperties(this, ['src', 'volume', 'muted', 'playbackRate', 'currentTime'])
+
 		// Use light DOM for better fullscreen compatibility in embedded YouTube controls.
 		this.style.display = 'block'
 		this.style.width = '100%'
