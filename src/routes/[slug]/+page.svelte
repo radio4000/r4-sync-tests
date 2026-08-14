@@ -2,34 +2,31 @@
 	import {page} from '$app/state'
 	import {appUrl} from '$lib/config'
 	import {resolve} from '$app/paths'
-	import {goto} from '$app/navigation'
 	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
-	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
-	import PopoverMenu from '$lib/components/popover-menu.svelte'
 	import {appState, canEditChannel} from '$lib/app-state.svelte'
 	import {tracksCollection} from '$lib/collections/tracks'
 	import {eq} from '@tanstack/db'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {getChannelConnections, getFollowedChannels} from '$lib/followed-channels.svelte'
 	import {computeChannelMatchScore} from '$lib/channel-match-score'
+	import {findChannelDeck, isListeningToChannel as isListeningToChannelDeck} from '$lib/deck'
+	import {toggleChannelPlay} from '$lib/api'
+	import {joinBroadcast, leaveBroadcast, startChannelBroadcast, stopBroadcast} from '$lib/broadcast'
+	import {broadcastsCollection} from '$lib/collections/broadcasts'
+	import {channelPresence} from '$lib/presence.svelte'
+	import {shortcutHint} from '$lib/keyboard'
 	import Tracklist from '$lib/components/tracklist.svelte'
-	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 	import LinkEntities from '$lib/components/link-entities.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
-	import SearchInput from '$lib/components/search-input.svelte'
-	import FilterChips from '$lib/components/filter-chips.svelte'
+	import PresenceCount from '$lib/components/presence-count.svelte'
+	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import {relativeDate} from '$lib/dates'
-	import {extractHashtags, channelAvatarUrl, getChannelTags} from '$lib/utils'
-	import {getTagFilter} from './tag-filter.svelte'
-	import {addToPlaylist, joinAutoRadio, playTrack, setPlaylist, togglePlayPause} from '$lib/api'
-	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
-	import {getAutoDecksForView} from '$lib/views.svelte'
+	import {channelAvatarUrl} from '$lib/utils'
 	import * as m from '$lib/paraglide/messages'
 	import Seo from '$lib/components/seo.svelte'
-	import {SECTION_TRACK_LIMIT} from '$lib/config'
 
-	const FEATURED_LIMIT = 10
+	const HOME_TRACK_PREVIEW_LIMIT = 5
 
 	const channelCtx = getChannelCtx()
 	const tracksQuery = getTracksQueryCtx()
@@ -38,71 +35,80 @@
 	let {data} = $props()
 	let channel = $derived(channelCtx.data ?? data.channel)
 	let allTracks = $derived(tracksQuery.data || [])
-	let previewTracks = $derived(allTracks.slice(0, SECTION_TRACK_LIMIT))
+	let previewTracks = $derived(allTracks.slice(0, HOME_TRACK_PREVIEW_LIMIT))
 	let canEdit = $derived(canEditChannel(channel?.id))
 
-	// Featured tags parsed from description
-	let featuredTags = $derived(
-		extractHashtags(channel?.description ?? '')
-			.map((t) => t.slice(1))
-			.slice(0, FEATURED_LIMIT) // strip #
+	// Play button — same decision tree the header used to drive, now living on the
+	// page itself since the header no longer has room/need for a play control.
+	let channelDeck = $derived(
+		findChannelDeck(appState.decks, appState.active_deck_id, channel?.slug)
 	)
-
-	// One pass over all tracks → tag→count map, instead of an O(n) filter per tag.
-	let tagCounts = $derived.by(() => {
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local lookup rebuilt by $derived, not reactive state
-		const map = new Map<string, number>()
-		for (const {value, count} of getChannelTags(allTracks)) map.set(value, count)
-		return map
-	})
-
-	// Only featured tags that actually have tracks, with their counts.
-	let availableTagSections = $derived(
-		featuredTags.map((tag) => ({tag, count: tagCounts.get(tag) ?? 0})).filter((s) => s.count > 0)
+	let isChannelPlaying = $derived(Boolean(channelDeck?.is_playing))
+	let isAutoEnabled = $derived(Boolean(channelDeck?.auto_radio))
+	let activeAutoDrifted = $derived(Boolean(isAutoEnabled && channelDeck?.auto_radio_drifted))
+	let playLoading = $state(false)
+	let playTooltip = $derived(
+		activeAutoDrifted
+			? m.auto_radio_resync()
+			: (isChannelPlaying ? m.player_tooltip_pause() : m.player_tooltip_play()) +
+					shortcutHint('togglePlayPause')
 	)
+	let playLabel = $derived(isChannelPlaying ? m.player_tooltip_pause() : m.player_tooltip_play())
 
-	// Tags active in any deck's playlist
-	const deckPlaylistTags = $derived([
-		...new Set(
-			Object.values(appState.decks).flatMap((d) =>
-				extractHashtags(d.playlist_title ?? '').map((t) => t.slice(1))
-			)
-		)
-	])
+	async function onPlayAction() {
+		if (!channel || playLoading) return
+		playLoading = true
+		try {
+			await toggleChannelPlay(channel)
+		} finally {
+			playLoading = false
+		}
+	}
 
-	// Deck tags NOT already in featuredTags (avoids duplicate tabs), with their counts.
-	let deckOnlyTagSections = $derived(
-		deckPlaylistTags
-			.filter((tag) => !featuredTags.includes(tag))
-			.map((tag) => ({tag, count: tagCounts.get(tag) ?? 0}))
-			.filter((s) => s.count > 0)
+	// Live/broadcast — same decision tree the header used to drive.
+	const channelBroadcastQuery = useLiveQuery((q) =>
+		channel?.id
+			? q
+					.from({b: broadcastsCollection})
+					.where(({b}) => eq(b.channel_id, channel.id))
+					.findOne()
+			: q
+					.from({b: broadcastsCollection})
+					.orderBy(({b}) => b.channel_id, 'asc')
+					.limit(0)
 	)
-
-	let searchInput = $state('')
-	$effect(() => {
-		const q = searchInput.trim()
-		if (!q) return
-		goto(`/${slug}/tracks?q=${encodeURIComponent(q)}`, {state: {focus: true}})
-	})
-
-	// Tag multi-selection — empty means "Latest". URL-backed (?tags=) so the
-	// selection shows the same everywhere: chips row, description tags, tracks page.
-	const tagFilter = getTagFilter()
-	let selectedTags = $derived(tagFilter.selectedTags)
-	const {toggleTag, clearTags} = tagFilter
-
-	// Tracks for the current selection
-	let tagFilteredTracks = $derived(
-		selectedTags.length === 0
-			? allTracks
-			: allTracks.filter((t) => selectedTags.every((tag) => t.tags?.includes(tag)))
+	let isChannelLive = $derived(Boolean(channelBroadcastQuery.data))
+	let isListeningToChannel = $derived(isListeningToChannelDeck(appState.decks, channel?.id))
+	let livePresenceCount = $derived(
+		channel?.slug ? (channelPresence[channel.slug]?.broadcast ?? 0) : 0
 	)
-	let displayTracks = $derived(
-		selectedTags.length === 0 ? previewTracks : tagFilteredTracks.slice(0, SECTION_TRACK_LIMIT)
-	)
-	let selectedPlaylistTitle = $derived(
-		selectedTags.length > 0 ? selectedTags.map((t) => `#${t}`).join(' ') : undefined
-	)
+	let liveLoading = $state(false)
+
+	async function onLiveAction() {
+		if (!channel || liveLoading) return
+		liveLoading = true
+		try {
+			if (canEdit) {
+				if (isChannelLive) {
+					await stopBroadcast(channel.id)
+				} else {
+					await startChannelBroadcast(channel)
+				}
+				return
+			}
+			if (isListeningToChannel) {
+				leaveBroadcast(appState.active_deck_id)
+				return
+			}
+			if (isChannelLive) {
+				await joinBroadcast(appState.active_deck_id, channel.id)
+				return
+			}
+		} finally {
+			liveLoading = false
+		}
+	}
+
 	const follows = getFollowedChannels()
 	// Follow-graph ids only — the channel objects shown come from the user's
 	// already-loaded followed channels.
@@ -177,21 +183,6 @@
 		const lng = Number(channel?.longitude)
 		return `${formatCoordinate(lat, 'N', 'S')} ${formatCoordinate(lng, 'E', 'W')}`
 	})
-
-	const activeDeck = $derived(appState.decks[appState.active_deck_id])
-
-	async function playTracks(tracks: {id: string}[], title?: string) {
-		const ids = tracks.map((t) => t.id)
-		await playTrack(appState.active_deck_id, ids[0], null, 'play_search')
-		setPlaylist(appState.active_deck_id, ids, title ? {title} : undefined)
-	}
-
-	function queueTracks(tracks: {id: string}[]) {
-		addToPlaylist(
-			appState.active_deck_id,
-			tracks.map((t) => t.id)
-		)
-	}
 </script>
 
 <Seo
@@ -202,87 +193,55 @@
 	type="music.radio_station"
 />
 
-<ChannelNavControlsPortal controls={navControls} />
-
-{#snippet navControls()}
-	{#if deckOnlyTagSections.length > 0 || availableTagSections.length > 0}
-		<PopoverMenu closeOnClick={false}>
-			{#snippet trigger()}
-				<Icon icon="hash" />{selectedTags.length > 0 ? `(${selectedTags.length})` : ''}
-			{/snippet}
-			<menu class="nav-vertical tags-menu">
-				<button type="button" class:active={selectedTags.length === 0} onclick={clearTags}>
-					{m.channel_section_latest()}
-					<span class="tag-count">({Math.min(allTracks.length, SECTION_TRACK_LIMIT)})</span>
-				</button>
-				{#each deckOnlyTagSections as { tag, count } (tag)}
-					<button
-						type="button"
-						data-deck-active
-						class:active={selectedTags.includes(tag)}
-						onclick={() => toggleTag(tag)}
-					>
-						#{tag} <span class="tag-count">({count})</span>
-					</button>
-				{/each}
-				{#each availableTagSections as { tag, count } (tag)}
-					<button
-						type="button"
-						data-deck-active={deckPlaylistTags.includes(tag) || undefined}
-						class:active={selectedTags.includes(tag)}
-						onclick={() => toggleTag(tag)}
-					>
-						#{tag} <span class="tag-count">({count})</span>
-					</button>
-				{/each}
-			</menu>
-		</PopoverMenu>
-	{/if}
-	<SearchInput
-		bind:value={searchInput}
-		placeholder={m.channel_tracks_search_placeholder()}
-		debounce={300}
-	/>
-	{#if selectedTags.length > 0 && tracksQuery.isReady && displayTracks.length > 0}
-		{@const autoView = slug ? {sources: [{channels: [slug], tags: selectedTags}]} : undefined}
-		{@const autoDecks = getAutoDecksForView(Object.values(appState.decks), autoView)}
-		{@const isAutoActive = autoDecks.length > 0}
-		{@const isAutoPlaying = autoDecks.some((d) => d.is_playing)}
-		{@const isAutoDrifted = autoDecks.some((d) => d.auto_radio_drifted)}
-		<div class="play-actions-group">
-			<button
-				type="button"
-				onclick={() =>
-					activeDeck?.is_playing
-						? togglePlayPause(appState.active_deck_id)
-						: playTracks(tagFilteredTracks, selectedPlaylistTitle)}
-				title={activeDeck?.is_playing ? m.common_pause() : m.channel_play_latest()}
-			>
-				<Icon icon={activeDeck?.is_playing ? 'pause' : 'play-fill'} />
-			</button>
-			<button
-				type="button"
-				onclick={() => queueTracks(tagFilteredTracks)}
-				title={m.search_queue_all()}
-			>
-				<Icon icon="next-fill" />
-			</button>
-			{#if hasAutoRadioCoverage(tagFilteredTracks)}
-				<AutoRadioButton
-					live={isAutoActive && isAutoPlaying}
-					drifted={isAutoDrifted}
-					title={isAutoDrifted ? m.auto_radio_resync() : m.auto_radio_join()}
-					onclick={() =>
-						autoView &&
-						joinAutoRadio(appState.active_deck_id, toAutoTracks(tagFilteredTracks), autoView)}
-				/>
-			{/if}
-		</div>
-	{/if}
-{/snippet}
-
 {#if channel}
 	<article>
+		<div class="channel-hero">
+			<button
+				type="button"
+				class={[
+					'btn',
+					'primary',
+					'play-hero',
+					{active: isChannelPlaying, drifted: activeAutoDrifted}
+				]}
+				onclick={onPlayAction}
+				disabled={playLoading}
+				{@attach tooltip({content: playTooltip})}
+			>
+				<Icon icon={isChannelPlaying ? 'pause' : 'play-fill'} size={22} />
+				<span>{playLabel}</span>
+			</button>
+			{#if isChannelLive || isListeningToChannel}
+				<button
+					type="button"
+					class={['btn', 'live-action', {active: canEdit ? isChannelLive : isListeningToChannel}]}
+					onclick={onLiveAction}
+					disabled={liveLoading}
+					aria-label={canEdit
+						? isChannelLive
+							? m.broadcast_stop_button()
+							: m.broadcast_start_button()
+						: isListeningToChannel
+							? m.broadcasts_leave()
+							: m.broadcasts_join()}
+				>
+					<Icon icon="signal" size={14} />
+					<span>
+						{#if canEdit}
+							{isChannelLive ? m.broadcast_stop_button() : m.broadcast_start_button()}
+						{:else if isListeningToChannel}
+							{m.status_live_short()}
+						{:else}
+							{m.broadcasts_join()}
+						{/if}
+					</span>
+					{#if livePresenceCount > 0}
+						<PresenceCount count={livePresenceCount} />
+					{/if}
+				</button>
+			{/if}
+		</div>
+
 		<div class="channel-meta">
 			{#if channel.url}
 				<small class="url"
@@ -314,15 +273,15 @@
 					{#if followsYou || hasMatchInfo}
 						<div class="compact-row match-score-row">
 							{#if followsYou}
-								<span><Icon icon="favorite-fill" size={14} /> {m.channel_follows_you()}</span>
+								<span><Icon icon="favorite-fill" size={12} /> {m.channel_follows_you()}</span>
 							{/if}
 							{#if hasMatchInfo}
-								<span><Icon icon="flower-alt" size={14} /> {matchScore.total}% match</span>
+								<span><Icon icon="flower-alt" size={12} /> {matchScore.total}% match</span>
 								<a
 									href={resolve('/[slug]/tracks', {slug}) +
 										`?matching=${encodeURIComponent(matchingSourceSlug)}`}
 								>
-									<Icon icon="play-fill" size={14} />
+									<Icon icon="play-fill" size={12} />
 									{matchScore.url.overlap}
 									{m.channel_match_tracks()}
 								</a>
@@ -330,7 +289,7 @@
 									href={resolve('/[slug]/tags', {slug}) +
 										`?matching=${encodeURIComponent(matchingSourceSlug)}`}
 								>
-									<Icon icon="hashtag" size={14} />
+									<Icon icon="hashtag" size={12} />
 									{matchScore.tag.overlap}
 									{m.channel_match_tags()}
 								</a>
@@ -366,41 +325,23 @@
 		{/if}
 
 		<section class="track-section">
-			{#if selectedTags.length > 0}
-				<div class="track-filters">
-					<FilterChips tags={selectedTags} onRemoveTag={toggleTag} />
-				</div>
-			{/if}
-			{#if tracksQuery.isReady && displayTracks.length > 0}
+			{#if tracksQuery.isReady && previewTracks.length > 0}
 				<Tracklist
-					tracks={displayTracks}
-					playlistTracks={tagFilteredTracks}
-					playlistTitle={selectedPlaylistTitle}
+					tracks={previewTracks}
+					playlistTracks={allTracks}
 					{canEdit}
 					grouped={false}
 					virtual={false}
 					playContext={true}
 				/>
 				<footer>
-					{#if selectedTags.length === 0}
-						<a href={resolve('/[slug]/tracks', {slug})} class="btn"
-							>{m.channel_see_all_tracks({count: allTracks.length})}</a
-						>
-					{:else if selectedTags.length === 1}
-						<a href={resolve('/[slug]/tracks', {slug}) + '?tags=' + selectedTags[0]} class="btn"
-							>{m.channel_see_all_tag({count: tagFilteredTracks.length, tag: selectedTags[0]})}</a
-						>
-					{:else}
-						<a
-							href={resolve('/[slug]/tracks', {slug}) + '?tags=' + selectedTags.join(',')}
-							class="btn">{m.channel_see_all_tracks({count: tagFilteredTracks.length})}</a
-						>
-					{/if}
+					<a href={resolve('/[slug]/tracks', {slug})} class="btn ghost see-all-link"
+						>{m.channel_see_all_tracks({count: allTracks.length})}
+						<Icon icon="arrow-right" size={12} /></a
+					>
 				</footer>
 			{:else if tracksQuery.isLoading && (channel.track_count ?? 0) > 0}
 				<p class="empty">{m.channel_loading_tracks()}</p>
-			{:else if tracksQuery.isReady && selectedTags.length > 0 && displayTracks.length === 0}
-				<p class="empty">{m.tracks_empty_filter()}</p>
 			{:else if tracksQuery.isReady && allTracks.length === 0}
 				<p class="empty">{m.channel_no_tracks()}</p>
 			{/if}
@@ -412,6 +353,32 @@
 	article {
 		display: flex;
 		flex-direction: column;
+		min-height: 100%;
+		justify-content: center;
+	}
+
+	.channel-hero {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-3) 0.5rem 1rem;
+	}
+
+	.play-hero {
+		min-height: 3.5rem;
+		min-width: 12rem;
+		padding-inline: 2rem;
+		border-radius: 999px;
+		font-size: var(--font-6);
+		gap: var(--space-2);
+		box-shadow:
+			0 8px 24px -8px color-mix(in oklch, var(--accent-9) 55%, transparent),
+			0 1px 2px color-mix(in oklch, var(--accent-9) 40%, transparent);
+	}
+
+	.live-action {
+		border-radius: 999px;
 	}
 
 	.channel-meta {
@@ -450,36 +417,30 @@
 		color: inherit;
 	}
 
-	article:has(.track-section) {
-		display: flex;
-		flex-flow: column;
-		height: 100%;
-	}
-
-	.track-filters {
-		padding: 0 0.5rem var(--space-1);
-	}
-
 	.track-section {
 		display: flex;
 		flex-flow: column;
-		height: 100%;
 		padding-top: 0.5rem;
 		footer {
-			margin: auto 0 0;
+			margin: 0;
 			padding: 0.5rem;
 			text-align: center;
 		}
 	}
 
+	.see-all-link {
+		color: var(--accent-9);
+		font-weight: 500;
+	}
+
 	.common-follows {
-		padding: 0.5rem;
+		padding: 0.25rem 0.5rem;
 		display: grid;
 	}
 
 	.common-follows.compact {
-		font-size: var(--font-3);
-		color: var(--gray-10);
+		font-size: var(--font-2);
+		color: var(--gray-9);
 	}
 
 	.match-score-row {
@@ -508,7 +469,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		min-height: 1.5rem;
+		min-height: 1.25rem;
 		color: inherit;
 		text-decoration: none;
 	}
@@ -521,8 +482,8 @@
 
 	.compact-avatars :global(img),
 	.compact-avatars :global(svg) {
-		width: 1.2rem;
-		height: 1.2rem;
+		width: 1rem;
+		height: 1rem;
 		border-radius: 50%;
 		border: 1px solid var(--gray-1);
 		margin-right: calc(-1 * var(--space-1));
@@ -531,17 +492,5 @@
 
 	.empty {
 		padding: 1rem;
-	}
-
-	.tag-count {
-		opacity: 0.6;
-		font-size: 0.85em;
-	}
-
-	.play-actions-group {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		margin-inline: auto;
 	}
 </style>

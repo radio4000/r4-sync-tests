@@ -4,9 +4,9 @@
 
 	/**
 	 * Items for the channel page nav (home/tracks/tags/mentions/following/followers).
-	 * @param {{slug: string, trackCount?: number, followerCount?: number, routeId?: string | null}} params
+	 * @param {{slug: string, trackCount?: number, routeId?: string | null}} params
 	 */
-	export function channelSectionMenuItems({slug, trackCount = 0, followerCount, routeId}) {
+	export function channelSectionMenuItems({slug, trackCount = 0, routeId}) {
 		return [
 			{
 				href: resolve('/[slug]', {slug}),
@@ -43,7 +43,6 @@
 				href: resolve('/[slug]/followers', {slug}),
 				icon: 'users',
 				label: m.nav_followers(),
-				count: followerCount,
 				active: routeId?.startsWith('/[slug]/followers')
 			}
 		]
