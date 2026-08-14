@@ -212,7 +212,12 @@
 				<p class="description">{@render description()}</p>
 			{:else if track.description}
 				<p class="description">
-					<LinkEntities slug={track.slug} text={track.description} {onTagClick} />
+					<LinkEntities
+						slug={track.slug}
+						text={track.description}
+						{onTagClick}
+						deckId={matchedDeckId}
+					/>
 				</p>
 			{/if}
 		</div>
@@ -350,7 +355,7 @@
 						<h3 class="title">{track.title}</h3>
 						{#if track.description}
 							<p class="description">
-								<LinkEntities slug={track.slug} text={track.description} />
+								<LinkEntities slug={track.slug} text={track.description} deckId={matchedDeckId} />
 							</p>
 						{/if}
 					</div>
@@ -528,14 +533,6 @@
 	.discogs {
 		display: flex;
 		align-items: center;
-		color: var(--gray-10);
-	}
-
-	:global(.trackcard-contextBtn) {
-		color: var(--gray-9);
-		article:hover & {
-			color: inherit;
-		}
 	}
 
 	.delete-track-preview {

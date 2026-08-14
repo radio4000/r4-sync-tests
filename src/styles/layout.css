@@ -183,6 +183,16 @@ menu.nav-vertical {
 	& + & {
 		margin-top: var(--space-1);
 	}
+
+	/* Vertical list of rows needs a horizontal rule between them, not the
+	   vertical divider bar the base menu/nav rule draws for horizontal
+	   toolbars. */
+	hr {
+		margin: var(--space-1) 0;
+		width: auto;
+		height: 1px;
+		background: var(--color-interface-border);
+	}
 }
 
 menu.nav-options {

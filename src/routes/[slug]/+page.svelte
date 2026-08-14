@@ -335,7 +335,7 @@
 					playContext={true}
 				/>
 				<footer>
-					<a href={resolve('/[slug]/tracks', {slug})} class="btn ghost see-all-link"
+					<a href={resolve('/[slug]/tracks', {slug})} class="btn chip"
 						>{m.channel_see_all_tracks({count: allTracks.length})}
 						<Icon icon="arrow-right" size={12} /></a
 					>
@@ -426,11 +426,6 @@
 			padding: 0.5rem;
 			text-align: center;
 		}
-	}
-
-	.see-all-link {
-		color: var(--accent-9);
-		font-weight: 500;
 	}
 
 	.common-follows {

@@ -2,19 +2,22 @@
 	import {appState} from '$lib/app-state.svelte'
 	import {page} from '$app/state'
 
-	/** @type {{href?: string, onclick?: () => void, value?: string, playing?: boolean, filtered?: boolean, children: import('svelte').Snippet}} */
-	const {href, onclick, value, playing, filtered, children} = $props()
+	/** @type {{href?: string, onclick?: () => void, value?: string, playing?: boolean, filtered?: boolean, deckId?: number, children: import('svelte').Snippet}} */
+	const {href, onclick, value, playing, filtered, deckId, children} = $props()
 
 	const splitRe = /\s+/
 
+	const matchesTitle = (title) =>
+		Boolean(value && title?.toLowerCase().split(splitRe).includes(value.toLowerCase()))
+
+	// A deck-scoped tag (rendered inside a specific deck's header/queue) only
+	// reflects that deck's own theme — otherwise a tag playing in one open
+	// deck would also light up the same tag shown in every other deck.
 	const isPlaying = $derived(
 		playing ??
-			Boolean(
-				value &&
-				Object.values(appState.decks).some((d) =>
-					d.playlist_title?.toLowerCase().split(splitRe).includes(value.toLowerCase())
-				)
-			)
+			(deckId != null
+				? matchesTitle(appState.decks[deckId]?.playlist_title)
+				: Object.values(appState.decks).some((d) => matchesTitle(d.playlist_title)))
 	)
 
 	const isFiltered = $derived.by(() => {

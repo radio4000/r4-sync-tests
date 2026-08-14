@@ -104,7 +104,7 @@
 			{:else}
 				<a href={resolve('/')} class="btn nav-btn" class:active={page.route.id === '/'}>
 					<IconR4 size={18} />
-					<span class="btn-label">{appName}</span>
+					<span class="btn-label">{m.nav_home()}</span>
 				</a>
 			{/if}
 		</div>
@@ -146,7 +146,7 @@
 					<ChannelAvatar id={userChannel.image} alt={userChannel.name} />
 					<span class="btn-label channel-slug-label">@{userChannel.slug}</span>
 				</a>
-				<AddTrackDialog class="nav-btn" label="Add" />
+				<AddTrackDialog class="nav-btn" label={m.track_add_title()} />
 				<BroadcastToggle channel={userChannel} class="nav-btn" />
 			{:else if isSignedIn}
 				<a
@@ -253,19 +253,6 @@
 	}
 
 	nav :global(.btn.nav-btn:hover) {
-		border-color: var(--color-control-border-hover);
-	}
-
-	nav :global(.broadcast-toggle.nav-btn),
-	nav :global(.add-track.nav-btn) {
-		background: var(--button-bg);
-		border-color: var(--color-control-border);
-	}
-
-	nav :global(.broadcast-toggle.nav-btn:hover),
-	nav :global(.broadcast-toggle.nav-btn:focus),
-	nav :global(.add-track.nav-btn:hover),
-	nav :global(.add-track.nav-btn:focus) {
 		background: var(--gray-4);
 		border-color: var(--color-control-border-hover);
 	}
@@ -450,8 +437,10 @@
 	}
 
 	/* Tightest phones: drop labels in the crowded user-nav */
+	/* Tightest phones: icon-only across the whole bar — dropping labels in
+	   just one group left some items with text and others without. */
 	@media (max-width: 520px) {
-		.user-nav :global(.btn.nav-btn .btn-label) {
+		nav :global(.btn.nav-btn .btn-label) {
 			display: none;
 		}
 	}

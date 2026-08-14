@@ -4,8 +4,8 @@
 	import {base} from '$app/paths'
 	import {page} from '$app/state'
 
-	/** @type {{text: string | null | undefined, slug?: string | null, onTagClick?: (tag: string) => void}} */
-	const {text, slug, onTagClick} = $props()
+	/** @type {{text: string | null | undefined, slug?: string | null, onTagClick?: (tag: string) => void, deckId?: number}} */
+	const {text, slug, onTagClick, deckId} = $props()
 
 	const parts = $derived.by(() => {
 		if (typeof text !== 'string') return [{type: 'text', content: ''}]
@@ -73,11 +73,13 @@
 {#each parts as part, i (i)}
 	{#if part.type === 'link'}
 		{#if part.isTag && onTagClick}
-			<Tag onclick={() => onTagClick(part.content.slice(1))} value={part.content}
+			<Tag onclick={() => onTagClick(part.content.slice(1))} value={part.content} {deckId}
 				>{part.content}</Tag
 			>
 		{:else}
-			<Tag href={part.href} value={part.isTag ? part.content : undefined}>{part.content}</Tag>
+			<Tag href={part.href} value={part.isTag ? part.content : undefined} {deckId}
+				>{part.content}</Tag
+			>
 		{/if}
 	{:else}
 		{part.content}

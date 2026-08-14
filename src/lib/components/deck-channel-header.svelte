@@ -123,7 +123,7 @@
 
 		{#if showModeMeta}
 			{#each derivedTags as tag (tag.label)}
-				<Tag href={tag.href} value={tag.label}>{tag.label}</Tag>
+				<Tag href={tag.href} value={tag.label} deckId={deck?.id}>{tag.label}</Tag>
 			{/each}
 		{/if}
 

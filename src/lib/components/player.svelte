@@ -478,7 +478,7 @@
 						{@render headerChannelCard(secondaryHeaderChannel)}
 					{/if}
 					{#each headerTags as tag (tag.value)}
-						<Tag href={tag.href} value={tag.value}>{tag.value}</Tag>
+						<Tag href={tag.href} value={tag.value} {deckId}>{tag.value}</Tag>
 					{/each}
 				</div>
 			{/if}
