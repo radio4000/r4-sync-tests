@@ -1,5 +1,25 @@
 import {describe, expect, test} from 'vitest'
-import {getPlayCountThreshold} from '$lib/utils'
+import {fuzzySearch, getPlayCountThreshold} from '$lib/utils'
+
+const channels = [
+	{name: 'Radio Alhara', slug: 'radio-alhara', description: 'Sounds from Palestine'},
+	{name: 'Radio 80000', slug: 'radio-80000', description: 'Community radio from Munich'},
+	{name: 'Kiosk Radio', slug: 'kiosk-radio', description: 'Broadcasting from Brussels'}
+]
+
+describe('fuzzySearch', () => {
+	test('matches objects across keys and tolerates typos', () => {
+		expect(fuzzySearch('alhara', channels, ['name', 'slug', 'description'])).toEqual([channels[0]])
+		expect(fuzzySearch('palestin', channels, ['name', 'slug', 'description'])).toEqual([
+			channels[0]
+		])
+	})
+
+	test('preserves all items for an empty query and respects limits', () => {
+		expect(fuzzySearch(' ', channels, ['name'])).toBe(channels)
+		expect(fuzzySearch('radio', channels, ['name'], {limit: 2})).toHaveLength(2)
+	})
+})
 
 describe('getPlayCountThreshold', () => {
 	test('returns full duration for tracks under 2 minutes', () => {
