@@ -87,7 +87,11 @@
 
 	.volume :global(media-mute-button.active) {
 		color: var(--accent-9);
-		border-color: var(--accent-9);
+		border-color: color-mix(
+			in oklch,
+			var(--accent-9) calc(var(--border-opacity) * 100%),
+			transparent
+		);
 		background-color: var(--accent-3);
 	}
 </style>

@@ -166,7 +166,7 @@
 		position: sticky;
 		bottom: 0;
 		background: var(--gray-1);
-		border-top: 1px solid var(--gray-4);
+		border-top: 1px solid var(--color-interface-border);
 		z-index: 2;
 	}
 

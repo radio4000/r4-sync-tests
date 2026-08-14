@@ -251,7 +251,7 @@
 		left: 50%;
 		transform: translate(-50%, -50%);
 		background: var(--gray-1);
-		border: 1px solid var(--gray-5);
+		border: 1px solid var(--color-interface-border);
 		padding: 1rem;
 		min-width: 300px;
 		z-index: 100;

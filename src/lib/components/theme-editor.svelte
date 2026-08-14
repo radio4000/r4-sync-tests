@@ -178,6 +178,11 @@
 				<input type="checkbox" bind:checked={appState.floating_ui} id={`${uid}-floating-ui`} />
 			</fieldset>
 
+			<fieldset>
+				<label for={`${uid}-show-borders`}>{m.theme_show_borders_label()}</label>
+				<input type="checkbox" bind:checked={appState.show_borders} id={`${uid}-show-borders`} />
+			</fieldset>
+
 			<fieldset class="row">
 				<label for={`${uid}-font-family`}>{m.theme_font_label()}</label>
 				<select
@@ -250,9 +255,14 @@
 	}
 
 	.box {
-		border: 1px solid var(--gray-6);
+		background: var(--color-interface-elevated);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		padding: var(--space-2);
+		/* Elevated bg alone can be too close to the page bg for contrast (e.g. gray-2
+		   vs gray-1 in light mode) — a soft shadow keeps the block readable without
+		   depending on the border being on. */
+		box-shadow: var(--shadow-modal);
 	}
 
 	h2 {

@@ -133,7 +133,7 @@
 		display: grid;
 		gap: 0.5rem;
 		min-height: 2.5rem;
-		border-bottom: 1px solid var(--gray-7);
+		border-bottom: 1px solid var(--color-interface-border);
 		font-size: var(--font-4);
 	}
 

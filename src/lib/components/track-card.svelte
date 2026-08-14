@@ -540,7 +540,7 @@
 
 	.delete-track-preview {
 		margin: 0.5rem 0;
-		border: 1px solid var(--gray-5);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		background: var(--color-interface-elevated);
 	}

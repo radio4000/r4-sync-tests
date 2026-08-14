@@ -101,8 +101,10 @@
 		height: 500px;
 		display: flex;
 		flex-direction: column;
-		border: 1px solid;
+		background: var(--color-interface-elevated);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
+		box-shadow: var(--shadow-modal);
 		padding-bottom: 0.5rem;
 	}
 

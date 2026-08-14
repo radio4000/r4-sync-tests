@@ -58,7 +58,7 @@
 	}
 
 	kbd {
-		border: 1px solid var(--gray-5);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		padding: var(--space-1) 0.5rem;
 		min-width: 3rem;
@@ -70,6 +70,6 @@
 	footer {
 		margin-top: 1.5rem;
 		padding-top: 1rem;
-		border-top: 1px solid var(--gray-5);
+		border-top: 1px solid var(--color-interface-border);
 	}
 </style>

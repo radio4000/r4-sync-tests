@@ -57,9 +57,11 @@
 
 <style>
 	.box {
-		border: 1px solid var(--gray-6);
+		background: var(--color-interface-elevated);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		padding: 0.75rem;
+		box-shadow: var(--shadow-modal);
 	}
 
 	.form {

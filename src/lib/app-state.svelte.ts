@@ -130,6 +130,7 @@ export const defaultAppState: AppState = {
 	show_track_range_control: true,
 	use_pointer_cursor: true,
 	floating_ui: true,
+	show_borders: true,
 	font_family: undefined,
 
 	user: undefined,

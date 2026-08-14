@@ -353,7 +353,7 @@
 	}
 
 	th {
-		border-bottom: 1px solid var(--gray-5);
+		border-bottom: 1px solid var(--color-interface-border);
 		padding: var(--space-1) 0.5rem;
 		font-weight: 500;
 		color: var(--gray-10);

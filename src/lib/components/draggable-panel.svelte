@@ -112,7 +112,7 @@
 		position: fixed;
 		background: var(--gray-1);
 		color: var(--gray-12);
-		border: 1px solid var(--gray-8);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 		z-index: 1000;

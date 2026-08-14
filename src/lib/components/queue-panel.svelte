@@ -168,7 +168,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		padding: 0.5rem;
-		border-bottom: 1px solid var(--gray-5);
+		border-bottom: 1px solid var(--color-interface-border);
 		align-items: center;
 		gap: var(--space-1);
 	}

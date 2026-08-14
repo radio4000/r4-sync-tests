@@ -652,7 +652,7 @@
 		gap: var(--space-1);
 		padding-bottom: 0.5rem;
 		margin-bottom: var(--space-1);
-		border-bottom: 1px solid var(--gray-6);
+		border-bottom: 1px solid var(--color-interface-border);
 	}
 
 	.sort-row select {

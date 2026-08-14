@@ -44,7 +44,7 @@
 		color: inherit;
 		text-decoration: none;
 		background: var(--gray-2);
-		border: 1px solid var(--gray-5);
+		border: 1px solid var(--color-interface-border);
 	}
 
 	.avatar {

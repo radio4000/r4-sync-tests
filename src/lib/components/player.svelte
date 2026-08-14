@@ -908,7 +908,7 @@
 	}
 
 	.bottom-chrome {
-		border-top: 1px solid var(--gray-5);
+		border-top: 1px solid var(--color-interface-border);
 		margin-top: auto;
 		display: flex;
 		flex-direction: column;

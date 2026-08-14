@@ -105,6 +105,12 @@ button.ghost,
 	&[aria-expanded='true'] {
 		border-color: var(--color-control-border);
 	}
+
+	/* Not necessarily hovered/focused (e.g. an open dropdown trigger) — needs its
+	   own background so the "active" state still reads without a border. */
+	&[aria-expanded='true'] {
+		background: var(--gray-4);
+	}
 }
 
 button.ghost.active,
@@ -149,10 +155,18 @@ button.primary,
 .btn.primary {
 	color: light-dark(var(--gray-1), var(--gray-12));
 	background: light-dark(var(--accent-9), var(--accent-7));
-	border-color: light-dark(var(--accent-10), var(--accent-8));
+	border-color: color-mix(
+		in oklch,
+		light-dark(var(--accent-10), var(--accent-8)) calc(var(--border-opacity) * 100%),
+		transparent
+	);
 
 	&:hover {
-		border-color: light-dark(var(--accent-12), var(--accent-9));
+		border-color: color-mix(
+			in oklch,
+			light-dark(var(--accent-12), var(--accent-9)) calc(var(--border-opacity) * 100%),
+			transparent
+		);
 	}
 }
 
@@ -193,13 +207,18 @@ button.chip,
 	align-items: center;
 	padding: 0 0.5rem;
 	background: var(--accent-4);
-	border: 1px solid var(--accent-6);
+	border: 1px solid
+		color-mix(in oklch, var(--accent-6) calc(var(--border-opacity) * 100%), transparent);
 	border-right: 0;
 	border-radius: 1rem 0 0 1rem;
 
 	&.active {
 		background: var(--accent-8);
-		border-color: var(--accent-9);
+		border-color: color-mix(
+			in oklch,
+			var(--accent-9) calc(var(--border-opacity) * 100%),
+			transparent
+		);
 	}
 }
 
@@ -225,14 +244,19 @@ button.chip,
 	padding: 0 0.5rem 0 var(--space-1);
 	border-radius: 0 1rem 1rem 0;
 	background: var(--accent-4);
-	border: 1px solid var(--accent-6);
+	border: 1px solid
+		color-mix(in oklch, var(--accent-6) calc(var(--border-opacity) * 100%), transparent);
 	border-left: 0;
 	min-width: 0;
 }
 
 .chip.active + .chip-delete {
 	background: var(--accent-7);
-	border-color: var(--accent-9);
+	border-color: color-mix(
+		in oklch,
+		var(--accent-9) calc(var(--border-opacity) * 100%),
+		transparent
+	);
 }
 
 .chip-delete:hover,

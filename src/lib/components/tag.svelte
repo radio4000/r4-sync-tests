@@ -68,19 +68,21 @@
 
 	a.filtered {
 		background: var(--accent-3);
-		box-shadow: 0 0 0 1px var(--gray-12);
+		box-shadow: 0 0 0 1px
+			color-mix(in oklch, var(--gray-12) calc(var(--border-opacity) * 100%), transparent);
 		color: var(--accent-11);
 	}
 
 	button.filtered {
 		background: var(--accent-3);
-		box-shadow: 0 0 0 1px var(--accent-9);
+		box-shadow: 0 0 0 1px
+			color-mix(in oklch, var(--accent-9) calc(var(--border-opacity) * 100%), transparent);
 		color: var(--accent-11);
 	}
 
 	a:hover,
 	button:hover {
-		--tag-border: var(--gray-7);
+		--tag-border: var(--color-interface-border);
 		background: var(--tag-bg-hover, var(--gray-2));
 		box-shadow: 0 0 0 1px var(--tag-border);
 		text-decoration: none;
@@ -89,7 +91,7 @@
 	a:active,
 	button:active {
 		background: var(--tag-bg-active, var(--gray-4));
-		box-shadow: 0 0 0 1px var(--gray-7);
+		box-shadow: 0 0 0 1px var(--color-interface-border);
 		text-decoration: underline;
 	}
 
@@ -97,13 +99,15 @@
 	button.playing:hover {
 		background: var(--accent-10);
 		color: var(--gray-1);
-		box-shadow: 0 0 0 1px var(--accent-11);
+		box-shadow: 0 0 0 1px
+			color-mix(in oklch, var(--accent-11) calc(var(--border-opacity) * 100%), transparent);
 	}
 
 	a.filtered:hover,
 	button.filtered:hover {
 		background: var(--accent-4);
 		color: var(--accent-11);
-		box-shadow: 0 0 0 1px var(--accent-9);
+		box-shadow: 0 0 0 1px
+			color-mix(in oklch, var(--accent-9) calc(var(--border-opacity) * 100%), transparent);
 	}
 </style>

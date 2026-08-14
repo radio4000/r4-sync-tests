@@ -48,6 +48,10 @@
 	--color-interface-border: var(--gray-6);
 	--color-control-border: var(--color-interface-border);
 	--color-control-border-hover: var(--gray-7);
+	/* For rings/borders that need to keep a specific color (not fade to the
+	   generic interface-border token) while still responding to "Show borders" —
+	   wrap the color in color-mix(in oklch, COLOR calc(var(--border-opacity) * 100%), transparent). */
+	--border-opacity: 1;
 
 	/* buttons (*-light/*-dark overrides come from the theme editor) */
 	--button-bg: light-dark(
@@ -86,4 +90,15 @@
 
 :root.dark {
 	color-scheme: dark;
+}
+
+/* "Show borders" off: fade border color to transparent, not border-width, so
+   nothing reflows. Elements that relied on a border alone for separation get
+   a background upgrade alongside their border color — see the components
+   using --color-interface-border / --color-control-border. */
+html.no-borders {
+	--color-interface-border: transparent;
+	--color-control-border: transparent;
+	--color-control-border-hover: transparent;
+	--border-opacity: 0;
 }

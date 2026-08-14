@@ -129,10 +129,12 @@
 
 <style>
 	.box {
-		border: 1px solid var(--gray-6);
+		background: var(--color-interface-elevated);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		padding: 0.75rem;
 		margin-bottom: 1rem;
+		box-shadow: var(--shadow-modal);
 	}
 
 	header {
@@ -161,7 +163,8 @@
 	}
 
 	kbd {
-		border: 1px solid var(--gray-5);
+		background: var(--gray-2);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		padding: var(--space-1) 0.5rem;
 		min-width: 3rem;
@@ -177,7 +180,7 @@
 		gap: 0.5rem;
 		margin-top: 1rem;
 		padding-top: 1rem;
-		border-top: 1px solid var(--gray-5);
+		border-top: 1px solid var(--color-interface-border);
 	}
 
 	code {
