@@ -201,13 +201,10 @@
 			--tag-color: var(--accent-11);
 		}
 
-		&.playing {
-			background: var(--gray-3);
-			border-color: var(--color-control-border-hover);
-			--tag-bg: var(--accent-4);
-			--tag-bg-hover: var(--accent-5);
-			--tag-bg-active: var(--accent-6);
-			--tag-color: var(--accent-11);
+		/* Same restraint as the active site menu item: no border/bg change,
+		   just an accent cue on the content itself — the channel name. */
+		&.playing h3 a {
+			color: var(--accent-9);
 		}
 
 		:global(.list) & {

@@ -450,13 +450,8 @@
 		}
 	}
 
-	.active {
-		background: var(--gray-3);
-		border-color: var(--color-control-border-hover);
-	}
-
-	/* The now-playing track reads the same way in the list as it does in the
-	   player — accent text, not just a faint background tint. */
+	/* Same restraint as the active site menu item: no border/bg change, just
+	   an accent cue on the content itself — here the title, there the icon. */
 	.active .title {
 		color: var(--accent-9);
 	}
