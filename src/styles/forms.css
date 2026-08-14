@@ -33,13 +33,17 @@ input[type='password'],
 input[type='number'],
 input[type='text'],
 input[type='url'] {
-	min-height: 2rem;
-	padding: 0 0.5rem;
+	min-height: 2.25rem;
+	padding: 0 0.625rem;
 	background: var(--color-interface-elevated);
 	color: var(--gray-12);
 	border-radius: var(--border-radius);
-	border: 0;
+	border: 1px solid var(--color-control-border);
 	line-height: 1;
+
+	&:hover {
+		border-color: var(--color-control-border-hover);
+	}
 
 	&:active,
 	&:focus {

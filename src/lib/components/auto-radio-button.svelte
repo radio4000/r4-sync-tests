@@ -11,6 +11,7 @@
 		title,
 		ariaLabel,
 		size = 16,
+		showLabel = false,
 		class: className = '',
 		...rest
 	}: {
@@ -20,6 +21,7 @@
 		title?: string
 		ariaLabel?: string
 		size?: number
+		showLabel?: boolean
 		class?: string
 		[key: string]: unknown
 	} = $props()
@@ -42,6 +44,9 @@
 	{@attach tooltip({content: resolvedTitle})}
 >
 	<Icon icon="infinite" {size} />
+	{#if showLabel}
+		<span>{m.common_auto()}</span>
+	{/if}
 	{#if showCount}
 		<PresenceCount {count} corner />
 	{/if}

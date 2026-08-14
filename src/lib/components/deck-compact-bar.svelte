@@ -91,37 +91,153 @@
 	}}
 >
 	<div class="deck-inner" class:active-track-bg={Boolean(displayTrack)}>
-		<div class="deck-identity">
-			<div class="channel-panel">
-				{#if headerChannel}
-					<ChannelMicroCard
-						channel={headerChannel}
-						href={appState.embed_mode ? undefined : resolve('/[slug]', {slug: headerChannel.slug})}
-					/>
+		<div class="deck-row">
+			<div class="deck-identity">
+				{#if displayTrack}
+					<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
+					<div
+						class="track-panel"
+						onclick={(e) => {
+							if (isMobileViewport()) return
+							if (!trackHref) return
+							if (e.target instanceof Element && e.target.closest('button, a')) return
+							goto(trackHref)
+						}}
+					>
+						<TrackCard track={displayTrack} {deckId} showMenu={false} />
+					</div>
 				{/if}
-				{#if secondaryChannel}
-					<ChannelMicroCard
-						channel={secondaryChannel}
-						href={appState.embed_mode
-							? undefined
-							: resolve('/[slug]', {slug: secondaryChannel.slug})}
-					/>
-				{/if}
-			</div>
-			{#if displayTrack}
-				<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
-				<div
-					class="track-panel"
-					onclick={(e) => {
-						if (isMobileViewport()) return
-						if (!trackHref) return
-						if (e.target instanceof Element && e.target.closest('button, a')) return
-						goto(trackHref)
-					}}
-				>
-					<TrackCard track={displayTrack} {deckId} showMenu={false} />
+				<div class="channel-panel">
+					{#if headerChannel}
+						<ChannelMicroCard
+							channel={headerChannel}
+							href={appState.embed_mode
+								? undefined
+								: resolve('/[slug]', {slug: headerChannel.slug})}
+						/>
+					{/if}
+					{#if secondaryChannel}
+						<ChannelMicroCard
+							channel={secondaryChannel}
+							href={appState.embed_mode
+								? undefined
+								: resolve('/[slug]', {slug: secondaryChannel.slug})}
+						/>
+					{/if}
 				</div>
-			{/if}
+			</div>
+			<menu class="deck-transport">
+				{#if !deck?.listening_to_channel_id && !deck?.auto_radio}
+					<button
+						onclick={() => previous(deckId, 'user_prev')}
+						aria-label={m.player_compact_prev()}
+						disabled={!canPrevFromQueue}
+						{@attach tooltip({content: m.player_tooltip_prev() + shortcutHint('previousTrack')})}
+					>
+						<Icon icon="previous-fill" />
+					</button>
+					<button
+						class="play"
+						class:active={deck?.is_playing}
+						onclick={() => togglePlayPause(deckId)}
+						aria-label={m.player_compact_play_pause()}
+						disabled={!canPlayFromQueue}
+						{@attach tooltip({
+							content:
+								(deck?.is_playing ? m.player_tooltip_pause() : m.player_tooltip_play()) +
+								shortcutHint('togglePlayPause')
+						})}
+					>
+						<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
+					</button>
+					<button
+						onclick={() => next(deckId, 'user_next')}
+						aria-label={m.player_compact_next()}
+						disabled={!canNextFromQueue}
+						{@attach tooltip({content: m.player_tooltip_next() + shortcutHint('nextTrack')})}
+					>
+						<Icon icon="next-fill" />
+					</button>
+					{#if activeQueue.length > 2}
+						<button
+							onclick={() => toggleShuffle(deckId)}
+							class:active={deck?.shuffle}
+							aria-label={m.player_tooltip_shuffle()}
+							{@attach tooltip({
+								content: m.player_tooltip_shuffle() + shortcutHint('toggleShuffle')
+							})}
+						>
+							<Icon icon="shuffle" />
+						</button>
+					{/if}
+					{#if display.autoRadioAvailable}
+						<AutoRadioButton size={14} onclick={() => rejoinAutoRadio(deckId)} />
+					{/if}
+					<SpeedControl {deckId} {provider} />
+					<VolumeControl {deckId} />
+				{:else if deck?.auto_radio}
+					<button
+						class="play"
+						class:active={deck?.is_playing}
+						onclick={() => togglePlayPause(deckId)}
+						aria-label={m.player_compact_play_pause()}
+						disabled={!canPlayFromQueue}
+						{@attach tooltip({
+							content:
+								(deck?.is_playing ? m.player_tooltip_pause() : m.player_tooltip_play()) +
+								shortcutHint('togglePlayPause')
+						})}
+					>
+						<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
+					</button>
+					<AutoRadioButton
+						live
+						drifted={!!deck?.auto_radio_drifted}
+						size={14}
+						count={modePresenceCount}
+						onclick={() =>
+							deck?.auto_radio_drifted ? resyncAutoRadio(deckId) : leaveAutoRadio(deckId)}
+					/>
+				{:else if !deck?.listening_to_channel_id}
+					<VolumeControl {deckId} />
+				{/if}
+			</menu>
+			<menu class="deck-actions">
+				{#if showEdgeControls && (!deck?.listening_to_channel_id || isListeningGroupControlDeck)}
+					<PopoverMenu
+						align="end"
+						valign="top"
+						closeOnClick={false}
+						btnClass="ghost"
+						bind:this={deckMenu}
+					>
+						{#snippet trigger()}
+							<Icon icon="options-horizontal" />
+						{/snippet}
+						<DeckMenu
+							{deckId}
+							compact
+							track={displayTrack}
+							channel={displayChannel}
+							{trackHref}
+							canEditTrack={canEditTrackChannel}
+							closeMenu={() => deckMenu?.close()}
+						/>
+					</PopoverMenu>
+				{/if}
+				{#if showEdgeControls && isListeningGroupControlDeck}
+					<button
+						class="expand"
+						onclick={() => toggleDeckCompact(deckId)}
+						aria-label={m.player_compact_show_panel()}
+						{@attach tooltip({
+							content: m.player_compact_show_panel() + shortcutHint('toggleCompactDeck')
+						})}
+					>
+						<Icon icon="deck-panel" expanded />
+					</button>
+				{/if}
+			</menu>
 		</div>
 		{#if appState.show_track_range_control !== false && displayTrack}
 			<PlayerProgress
@@ -137,118 +253,6 @@
 				}}
 			/>
 		{/if}
-		<menu class="deck-transport">
-			{#if !deck?.listening_to_channel_id && !deck?.auto_radio}
-				<button
-					onclick={() => previous(deckId, 'user_prev')}
-					aria-label={m.player_compact_prev()}
-					disabled={!canPrevFromQueue}
-					{@attach tooltip({content: m.player_tooltip_prev() + shortcutHint('previousTrack')})}
-				>
-					<Icon icon="previous-fill" />
-				</button>
-				<button
-					class="play"
-					class:active={deck?.is_playing}
-					onclick={() => togglePlayPause(deckId)}
-					aria-label={m.player_compact_play_pause()}
-					disabled={!canPlayFromQueue}
-					{@attach tooltip({
-						content:
-							(deck?.is_playing ? m.player_tooltip_pause() : m.player_tooltip_play()) +
-							shortcutHint('togglePlayPause')
-					})}
-				>
-					<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
-				</button>
-				<button
-					onclick={() => next(deckId, 'user_next')}
-					aria-label={m.player_compact_next()}
-					disabled={!canNextFromQueue}
-					{@attach tooltip({content: m.player_tooltip_next() + shortcutHint('nextTrack')})}
-				>
-					<Icon icon="next-fill" />
-				</button>
-				{#if activeQueue.length > 2}
-					<button
-						onclick={() => toggleShuffle(deckId)}
-						class:active={deck?.shuffle}
-						aria-label={m.player_tooltip_shuffle()}
-						{@attach tooltip({
-							content: m.player_tooltip_shuffle() + shortcutHint('toggleShuffle')
-						})}
-					>
-						<Icon icon="shuffle" />
-					</button>
-				{/if}
-				{#if display.autoRadioAvailable}
-					<AutoRadioButton size={14} onclick={() => rejoinAutoRadio(deckId)} />
-				{/if}
-				<SpeedControl {deckId} {provider} />
-				<VolumeControl {deckId} />
-			{:else if deck?.auto_radio}
-				<button
-					class="play"
-					class:active={deck?.is_playing}
-					onclick={() => togglePlayPause(deckId)}
-					aria-label={m.player_compact_play_pause()}
-					disabled={!canPlayFromQueue}
-					{@attach tooltip({
-						content:
-							(deck?.is_playing ? m.player_tooltip_pause() : m.player_tooltip_play()) +
-							shortcutHint('togglePlayPause')
-					})}
-				>
-					<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
-				</button>
-				<AutoRadioButton
-					live
-					drifted={!!deck?.auto_radio_drifted}
-					size={14}
-					count={modePresenceCount}
-					onclick={() =>
-						deck?.auto_radio_drifted ? resyncAutoRadio(deckId) : leaveAutoRadio(deckId)}
-				/>
-			{:else if !deck?.listening_to_channel_id}
-				<VolumeControl {deckId} />
-			{/if}
-		</menu>
-		<menu class="deck-actions">
-			{#if showEdgeControls && (!deck?.listening_to_channel_id || isListeningGroupControlDeck)}
-				<PopoverMenu
-					align="end"
-					valign="top"
-					closeOnClick={false}
-					btnClass="ghost"
-					bind:this={deckMenu}
-				>
-					{#snippet trigger()}
-						<Icon icon="options-horizontal" />
-					{/snippet}
-					<DeckMenu
-						{deckId}
-						compact
-						track={displayTrack}
-						channel={displayChannel}
-						{trackHref}
-						canEditTrack={canEditTrackChannel}
-						closeMenu={() => deckMenu?.close()}
-					/>
-				</PopoverMenu>
-			{/if}
-			{#if showEdgeControls && isListeningGroupControlDeck}
-				<button
-					class="expand"
-					onclick={() => toggleDeckCompact(deckId)}
-					aria-label={m.player_compact_show_panel()}
-					{@attach tooltip({
-						content: m.player_compact_show_panel() + shortcutHint('toggleCompactDeck')
-					})}
-				>
-					<Icon icon="deck-panel" expanded />
-				</button>
-			{/if}
-		</menu>
 	</div>
 </div>
 
@@ -260,37 +264,42 @@
 		flex-wrap: wrap;
 		min-width: 0;
 		overflow: visible;
+		user-select: none;
 	}
 
 	.deck-compact-bar :global(.progress) {
-		grid-area: progress;
 		min-width: 0;
-		padding: 0;
+		padding: 0 var(--space-2);
 	}
 
-	/* Grid: identity, playback transport, deck actions; progress full width below. */
+	/* Column: the identity/transport/actions row, then progress full-width below. */
 	.deck-inner {
-		display: grid;
-		grid-template-columns: minmax(0, 2fr) minmax(2.75rem, 1fr) auto;
-		grid-template-areas:
-			'identity transport actions'
-			'progress progress progress';
-		align-items: center;
-		gap: var(--space-1);
+		display: flex;
+		flex-direction: column;
 		min-width: 0;
 		flex: 1 1 auto;
 		width: 100%;
 		min-height: 2rem;
-		padding-inline: 0.5rem;
 		padding-block: var(--space-1);
 	}
 
-	.deck-identity {
-		grid-area: identity;
+	/* Flex, not grid: identity takes whatever transport/actions don't need instead
+	   of a fixed column ratio — a near-empty transport (mini player: just Play) no
+	   longer reserves space it isn't using. Never wraps — identity shrinks instead. */
+	.deck-row {
 		display: flex;
 		align-items: center;
-		gap: var(--space-1);
+		gap: var(--space-2);
 		min-width: 0;
+		padding-inline: var(--space-2);
+	}
+
+	.deck-identity {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-width: 0;
+		flex: 1 1 auto;
 	}
 
 	.channel-panel {
@@ -298,8 +307,9 @@
 		align-items: center;
 		flex-wrap: nowrap;
 		gap: var(--space-1);
+		flex: 0 1 auto;
 		min-width: 0;
-		max-width: 100%;
+		max-width: 45%;
 		overflow-x: auto;
 		scrollbar-width: none;
 		align-self: center;
@@ -312,8 +322,7 @@
 	:global(.channel-panel .channel-micro-card) {
 		--track-artwork-size: 1rem;
 		flex: 0 1 auto;
-		min-width: calc(var(--track-artwork-size) + var(--space-1) + 10ch);
-		min-width: 10rem;
+		min-width: 6rem;
 		max-width: max-content;
 		align-self: center;
 		background: none;
@@ -333,17 +342,16 @@
 		flex-wrap: nowrap;
 		gap: var(--space-2);
 		min-width: 0;
+		flex: 0 0 auto;
 	}
 
 	.deck-transport {
-		grid-area: transport;
 		justify-content: center;
 		overflow-x: auto;
 		scrollbar-width: none;
 	}
 
 	.deck-actions {
-		grid-area: actions;
 		justify-content: flex-end;
 	}
 

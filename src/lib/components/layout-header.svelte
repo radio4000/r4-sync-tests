@@ -102,7 +102,7 @@
 			{#if navPopoverOnLogo}
 				<NavPopover />
 			{:else}
-				<a href={resolve('/')} class="btn nav-btn">
+				<a href={resolve('/')} class="btn nav-btn" class:active={page.route.id === '/'}>
 					<IconR4 size={18} />
 					<span class="btn-label">{appName}</span>
 				</a>
@@ -131,23 +131,22 @@
 	<nav class="user-nav">
 		{#await preloading then}
 			{#if userChannel}
-				<AddTrackDialog class="nav-btn" label="Add" />
 				<a
 					href={resolve(`/${userChannel.slug}`)}
 					class={[
 						'btn',
 						'nav-btn',
 						'channel-link',
-						{broadcasting: isBroadcasting, active: page.params?.slug === userChannel.slug}
+						{active: page.params?.slug === userChannel.slug}
 					]}
 					{@attach tooltip({
 						content: isBroadcasting ? m.status_broadcasting() : m.header_go_to_channel()
 					})}
 				>
 					<ChannelAvatar id={userChannel.image} alt={userChannel.name} />
-					{#if isBroadcasting}<span class="broadcast-dot"></span>{/if}
 					<span class="btn-label channel-slug-label">@{userChannel.slug}</span>
 				</a>
+				<AddTrackDialog class="nav-btn" label="Add" />
 				<BroadcastToggle channel={userChannel} class="nav-btn" />
 			{:else if isSignedIn}
 				<a
@@ -200,8 +199,8 @@
 		--app-nav-pad-block: clamp(0rem, calc(var(--app-nav-btn-size) * 0.06), 0.2rem);
 		display: flex;
 		flex-flow: column nowrap;
-		gap: clamp(var(--space-1), calc(var(--app-nav-btn-size) * 0.2), 0.8rem);
-		padding: var(--space-2) var(--space-1);
+		gap: clamp(var(--space-2), calc(var(--app-nav-btn-size) * 0.35), 1.5rem);
+		padding: var(--space-3) var(--space-2);
 		inline-size: clamp(min-content, var(--app-header-size), max-content);
 		min-inline-size: min-content;
 		max-inline-size: max-content;
@@ -209,7 +208,10 @@
 		background: var(--floating-bg);
 		z-index: 50;
 		position: relative;
-		overflow: visible;
+		overflow-x: visible;
+		overflow-y: auto;
+		scrollbar-width: thin;
+		user-select: none;
 	}
 
 	nav {
@@ -218,7 +220,7 @@
 
 		@media (min-width: 768px) {
 			/* vertical version has more space */
-			gap: var(--space-1);
+			gap: var(--space-3);
 		}
 	}
 
@@ -236,25 +238,34 @@
 
 	nav :global(.btn.nav-btn) {
 		min-width: var(--app-nav-btn-size);
-		height: auto;
+		height: var(--app-nav-btn-size);
+		min-height: var(--app-nav-btn-size);
 		width: auto;
 		padding: var(--app-nav-pad-block) var(--app-nav-pad-inline);
 		gap: var(--app-nav-gap);
-		border-color: transparent;
+		border-color: var(--color-control-border);
 		background: transparent;
 		transition:
 			min-width 120ms ease,
 			min-height 120ms ease,
-			padding 120ms ease;
+			padding 120ms ease,
+			border-color 120ms ease;
 	}
 
-	nav :global(.broadcast-toggle.nav-btn) {
+	nav :global(.btn.nav-btn:hover) {
+		border-color: var(--color-control-border-hover);
+	}
+
+	nav :global(.broadcast-toggle.nav-btn),
+	nav :global(.add-track.nav-btn) {
 		background: var(--button-bg);
 		border-color: var(--color-control-border);
 	}
 
 	nav :global(.broadcast-toggle.nav-btn:hover),
-	nav :global(.broadcast-toggle.nav-btn:focus) {
+	nav :global(.broadcast-toggle.nav-btn:focus),
+	nav :global(.add-track.nav-btn:hover),
+	nav :global(.add-track.nav-btn:focus) {
 		background: var(--gray-4);
 		border-color: var(--color-control-border-hover);
 	}
@@ -269,23 +280,12 @@
 		white-space: nowrap;
 	}
 
-	.user-nav {
+	.nav-settings {
 		margin-top: auto;
-		margin-bottom: auto;
-	}
-
-	.broadcast-dot {
-		position: absolute;
-		top: -7px;
-		right: -5px;
-		width: 0.65rem;
-		height: 0.65rem;
-		border-radius: 50%;
-		background: var(--accent-9);
-	}
-
-	.btn:has(.broadcast-dot) {
-		position: relative;
+		position: sticky;
+		bottom: 0;
+		background: var(--color-interface);
+		z-index: 1;
 	}
 
 	.channel-link {
@@ -328,6 +328,15 @@
 		}
 	}
 
+	/* Active channel: ring around the avatar itself, since a real photo can't
+	   pick up the usual active-svg accent color. */
+	.channel-link.active {
+		:global(img),
+		:global(.fallback) {
+			box-shadow: 0 0 0 2px var(--accent-9) inset;
+		}
+	}
+
 	.channel-slug-label {
 		max-width: 8ch;
 		overflow: hidden;
@@ -339,8 +348,16 @@
 		display: none;
 	}
 
+	/* Compact/icon-only sidebar: same height and padding as the labeled sidebar —
+	   just square instead of a wide pill, matching the fluffychat-style icon rail. */
+	header.labels-none nav :global(.btn.nav-btn) {
+		width: var(--app-nav-btn-size);
+	}
+
 	header.labels-below :global(.btn.nav-btn) {
 		flex-direction: column;
+		height: auto;
+		min-height: var(--app-nav-btn-size);
 	}
 
 	header.labels-right :global(.btn.nav-btn) {
@@ -384,7 +401,7 @@
 			flex-direction: row;
 			justify-content: space-between;
 			gap: 0.5rem;
-			padding: var(--space-1) 0.5rem var(--space-2);
+			padding: var(--space-1) 0.5rem;
 			inline-size: 100%;
 			width: 100%;
 			min-inline-size: 100%;
@@ -407,18 +424,20 @@
 		.nav-settings {
 			flex: 0 0 auto;
 			justify-content: flex-end;
+			margin-top: 0;
+			position: static;
 		}
 
 		nav {
 			flex-direction: row;
 			flex: 0 0 auto;
 			justify-content: flex-start;
-			gap: var(--space-1);
+			gap: var(--space-2);
 		}
 
 		.user-nav {
-			flex: 1;
-			justify-content: center;
+			flex: 0 0 auto;
+			justify-content: flex-start;
 		}
 
 		/* Active menu item keeps same style on mobile */

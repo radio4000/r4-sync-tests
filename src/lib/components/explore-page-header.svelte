@@ -67,7 +67,7 @@
 	}
 
 	.explore-nav-row {
-		gap: 1rem;
+		gap: var(--space-2);
 		justify-content: space-between;
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
@@ -86,7 +86,6 @@
 			border-left: none;
 			margin-left: 0;
 			padding-left: 0;
-			padding-top: 0.5rem;
 			overflow-x: auto;
 			scrollbar-width: none;
 		}

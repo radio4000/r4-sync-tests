@@ -121,9 +121,11 @@
 			{/if}
 		{/if}
 
-		{#each derivedTags as tag (tag.label)}
-			<Tag href={tag.href} value={tag.label}>{tag.label}</Tag>
-		{/each}
+		{#if showModeMeta}
+			{#each derivedTags as tag (tag.label)}
+				<Tag href={tag.href} value={tag.label}>{tag.label}</Tag>
+			{/each}
+		{/if}
 
 		{#if showModeMeta && showAutoButton}
 			<AutoRadioButton

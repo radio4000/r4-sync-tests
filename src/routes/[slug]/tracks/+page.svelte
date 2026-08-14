@@ -267,47 +267,32 @@
 
 {#snippet navControls()}
 	{#if allTracks.length}
-		<button
-			type="button"
-			class="filter-toggle"
-			title={m.views_filters_label()}
-			onclick={() => (showFiltersModal = true)}
-		>
-			<Icon icon="hashtag" />
-			{activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
-		</button>
-		<SearchInput
-			bind:value={searchInput}
-			placeholder={`${visibleTracks.length}/${allTracks.length}`}
-			debounce={150}
-			autofocus={page.state.focus === true}
-		/>
-		<PopoverMenu closeOnClick={false} style="margin-left: auto;">
-			{#snippet trigger()}
-				<Icon
-					icon={direction === 'asc' ? 'funnel-ascending' : 'funnel-descending'}
-					strokeWidth={1.5}
-				/>
-			{/snippet}
-			<SortControls bind:order bind:direction onreshuffle={handleReshuffle} />
-		</PopoverMenu>
-		{#if hasActionableSelection}
-			<button type="button" title={m.common_play()} onclick={playFilteredTracks}
-				><Icon icon="play-fill" /></button
+		<div class="controls-row">
+			<button
+				type="button"
+				class="filter-toggle"
+				title={m.views_filters_label()}
+				onclick={() => (showFiltersModal = true)}
 			>
-			<button type="button" title={m.common_queue()} onclick={queueFilteredTracks}
-				><Icon icon="unordered-list" /></button
-			>
-			{#if channel && canShowFilteredAutoRadio}
-				<AutoRadioButton
-					live={isFilteredAutoActive && isFilteredAutoPlaying}
-					drifted={isFilteredAutoDrifted}
-					title={isFilteredAutoDrifted ? m.auto_radio_resync() : m.tracks_auto_radio_selection()}
-					onclick={() =>
-						joinAutoRadio(appState.active_deck_id, filteredAutoRadioTracks, filteredAutoView)}
-				/>
-			{/if}
-		{/if}
+				<Icon icon="hashtag" />
+				{activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
+			</button>
+			<SearchInput
+				bind:value={searchInput}
+				placeholder={`${visibleTracks.length}/${allTracks.length}`}
+				debounce={150}
+				autofocus={page.state.focus === true}
+			/>
+			<PopoverMenu closeOnClick={false}>
+				{#snippet trigger()}
+					<Icon
+						icon={direction === 'asc' ? 'funnel-ascending' : 'funnel-descending'}
+						strokeWidth={1.5}
+					/>
+				{/snippet}
+				<SortControls bind:order bind:direction onreshuffle={handleReshuffle} />
+			</PopoverMenu>
+		</div>
 	{/if}
 {/snippet}
 
@@ -418,7 +403,30 @@
 							/>
 						{/if}
 						{#if hasActionableSelection}
-							{@render filterActions()}
+							<menu class="results-actions">
+								<button type="button" title={m.common_play()} onclick={playFilteredTracks}
+									><Icon icon="play-fill" /><span>{m.common_play()}</span></button
+								>
+								<button type="button" title={m.common_queue()} onclick={queueFilteredTracks}
+									><Icon icon="unordered-list" /><span>{m.common_queue()}</span></button
+								>
+								{#if channel && canShowFilteredAutoRadio}
+									<AutoRadioButton
+										live={isFilteredAutoActive && isFilteredAutoPlaying}
+										drifted={isFilteredAutoDrifted}
+										title={isFilteredAutoDrifted
+											? m.auto_radio_resync()
+											: m.tracks_auto_radio_selection()}
+										showLabel
+										onclick={() =>
+											joinAutoRadio(
+												appState.active_deck_id,
+												filteredAutoRadioTracks,
+												filteredAutoView
+											)}
+									/>
+								{/if}
+							</menu>
 						{/if}
 					</div>
 				{/if}
@@ -461,10 +469,24 @@
 		flex-direction: column;
 		flex: 1;
 		min-height: 0;
+		padding-top: var(--space-2);
 	}
 
 	.filter-toggle {
 		font-size: var(--font-3);
+	}
+
+	.controls-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		width: 100%;
+	}
+
+	.results-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
 	}
 
 	.filters-dialog {
@@ -543,13 +565,6 @@
 		content: '└';
 		align-self: center;
 		margin-left: 0.5rem;
-		color: var(--gray-9);
-	}
-
-	/* ...and the actions to the chips they act on */
-	:global(.filter-chips) + .filter-actions::before {
-		content: '→';
-		align-self: center;
 		color: var(--gray-9);
 	}
 

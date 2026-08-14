@@ -85,7 +85,7 @@
 <svelte:window onkeydown={handleKeyDown} />
 
 <button
-	class={['btn', className]}
+	class={['btn', 'add-track', className]}
 	class:active={showModal}
 	onclick={() => open()}
 	aria-label={m.track_add_title()}

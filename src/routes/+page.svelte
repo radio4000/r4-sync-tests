@@ -211,17 +211,17 @@
 		<section class="section dashboard-section">
 			{#if showTrackWidget || showFavoritesWidget || showFavoriteBroadcastWidget}
 				<div class="dashboard-group">
-					<div class="dashboard-grid">
+					<div class="dashboard-grid dashboard-grid--scroll">
 						{#if showTrackWidget}
 							<a
 								class="dashboard-card dashboard-card--link dashboard-card--row dashboard-card--pill"
 								href={resolve('/[slug]/tracks', {slug: userChannel.slug})}
 							>
 								<Icon icon="unordered-list" size={16} />
-								<span>{m.home_dashboard_tracks()}</span>
-								<strong class="dashboard-value broadcast-count"
-									>{userChannelTrackCount.toLocaleString()}</strong
-								>
+								<span class="chip-label">
+									{m.home_dashboard_tracks()}
+									<strong class="chip-count">{userChannelTrackCount.toLocaleString()}</strong>
+								</span>
 							</a>
 						{/if}
 						{#if showFavoritesWidget}
@@ -230,10 +230,12 @@
 								href={resolve('/[slug]/following', {slug: userChannel.slug})}
 							>
 								<Icon icon="favorite-fill" size={16} />
-								<span>{m.home_dashboard_favorites()}</span>
-								<strong class="dashboard-value broadcast-count"
-									>{follows.followedChannels.length.toLocaleString()}</strong
-								>
+								<span class="chip-label">
+									{m.home_dashboard_favorites()}
+									<strong class="chip-count"
+										>{follows.followedChannels.length.toLocaleString()}</strong
+									>
+								</span>
 							</a>
 						{/if}
 						{#if showFavoriteBroadcastWidget}
@@ -242,10 +244,10 @@
 								href={resolve('/channels/broadcasting')}
 							>
 								<Icon icon="signal" size={16} />
-								<span>{m.home_dashboard_favorites_broadcasting()}</span>
-								<strong class="dashboard-value broadcast-count"
-									>{favoriteBroadcastCount.toLocaleString()}</strong
-								>
+								<span class="chip-label">
+									{m.home_dashboard_favorites_broadcasting()}
+									<strong class="chip-count">{favoriteBroadcastCount.toLocaleString()}</strong>
+								</span>
 							</a>
 						{/if}
 					</div>
@@ -275,7 +277,7 @@
 									class="dashboard-label--tag"
 									href={resolve('/[slug]/tracks', {slug: userChannel.slug}) +
 										`?tags=${encodeURIComponent(value)}`}
-									>#{value} <span class="tag-count">{count}</span></a
+									>#{value} <span class="chip-count">{count}</span></a
 								>
 								<a
 									class="btn ghost tag-pill-action"
@@ -577,7 +579,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
-		margin-inline: var(--space-2);
+		margin: var(--space-2);
 
 		:global(.list) {
 			margin: 0;
@@ -602,9 +604,11 @@
 		flex-wrap: nowrap;
 		overflow-x: auto;
 		scrollbar-width: none;
+		scroll-snap-type: x proximity;
 
 		& > .dashboard-card {
 			flex-shrink: 0;
+			scroll-snap-align: start;
 		}
 	}
 
@@ -625,30 +629,30 @@
 		overflow: hidden;
 	}
 
+	/* Same chrome as .btn.chip elsewhere (channel tabs, filters) — a pill is a pill. */
 	.dashboard-card--pill {
-		padding: 0rem 0.5rem;
-		border-radius: 999px;
+		padding: 0 var(--space-2);
+		border-radius: 1rem;
 		gap: var(--space-1);
-		background: var(--color-interface-elevated);
+		min-height: 2.25rem;
+		background: var(--button-bg);
+		border: 1px solid var(--color-control-border);
+
+		&:hover {
+			background: var(--gray-4);
+			border-color: var(--color-control-border-hover);
+		}
 	}
 
 	.dashboard-card--link {
 		text-decoration: none;
 		transition: background var(--duration-1);
-		padding-inline: 1rem;
 
 		&:hover,
 		&:focus-visible {
-			background: var(--gray-3);
+			background: var(--gray-4);
 			outline: none;
 		}
-	}
-
-	.dashboard-card--row > span:not(.channel-widget-avatar):not(.tag-count):not(.audience-counts) {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		min-width: 0;
 	}
 
 	.dashboard-card--row > a.dashboard-label--tag {
@@ -662,7 +666,7 @@
 	.dashboard-label--tag {
 		text-decoration: none;
 		display: inline-flex;
-		align-items: center;
+		align-items: baseline;
 		gap: var(--space-1);
 		min-width: 0;
 		flex-shrink: 1;
@@ -675,35 +679,11 @@
 		background: var(--gray-3);
 	}
 
-	.tag-count {
-		font-size: var(--font-2);
-		color: light-dark(var(--gray-9), var(--gray-8));
-		margin: 0;
-		display: inline-flex;
-		align-items: center;
-		line-height: 1;
-		flex-shrink: 0;
-	}
-
 	.tag-pill-action {
 		flex: 0 0 auto;
-	}
-
-	.dashboard-value {
-		font-size: var(--font-7);
-		font-weight: 600;
-		line-height: 1.1;
-		color: light-dark(var(--gray-12), var(--gray-11));
-	}
-
-	.broadcast-count {
-		margin-left: auto;
-		font-size: var(--font-2);
-		font-weight: 400;
-		color: var(--gray-9);
-		display: inline-flex;
-		align-items: center;
-		line-height: 1;
+		min-width: 1.5rem;
+		min-height: 1.5rem;
+		padding: 0;
 	}
 
 	.section-title {

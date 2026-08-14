@@ -97,7 +97,7 @@
 			>
 			<a href={resolve('/explore/tracks/network')} class="btn chip">{m.nav_feed()}</a>
 		{/snippet}
-		<SearchInput bind:value={search} debounce={300} placeholder={m.search_placeholder()} />
+		<SearchInput bind:value={search} debounce={300} placeholder={m.tracks_search_placeholder()} />
 	</ExplorePageHeader>
 
 	<div class="content">

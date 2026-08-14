@@ -147,11 +147,21 @@
 			border-inline-start: var(--floating-border);
 		}
 
-		:global(html.no-floating-ui) & .local .deck-item + .deck-item :global(.deck:not(.expanded):not(.compact)) {
+		:global(html.no-floating-ui)
+			&
+			.local
+			.deck-item
+			+ .deck-item
+			:global(.deck:not(.expanded):not(.compact)) {
 			border-inline-start: var(--floating-border);
 		}
 
-		:global(html.no-floating-ui) & .broadcasts .deck-item + .deck-item :global(.deck:not(.expanded):not(.compact)) {
+		:global(html.no-floating-ui)
+			&
+			.broadcasts
+			.deck-item
+			+ .deck-item
+			:global(.deck:not(.expanded):not(.compact)) {
 			border-block-start: var(--floating-border);
 		}
 
@@ -439,7 +449,12 @@
 				border-block-start: var(--floating-border);
 			}
 
-			:global(html.no-floating-ui) & .local .deck-item + .deck-item :global(.deck:not(.expanded):not(.compact)),
+			:global(html.no-floating-ui)
+				&
+				.local
+				.deck-item
+				+ .deck-item
+				:global(.deck:not(.expanded):not(.compact)),
 			:global(html.no-floating-ui) & .local + .broadcasts {
 				border-inline-start: none;
 				border-block-start: var(--floating-border);

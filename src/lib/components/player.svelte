@@ -753,7 +753,7 @@
 	.header-channel {
 		display: flex;
 		flex-direction: row;
-		align-items: flex-start;
+		align-items: center;
 		flex-wrap: wrap;
 		gap: var(--space-1);
 		row-gap: var(--space-1);

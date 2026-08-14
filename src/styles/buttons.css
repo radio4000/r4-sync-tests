@@ -9,9 +9,9 @@ button,
 	justify-content: center;
 
 	/* dimensions */
-	min-width: 2rem;
-	min-height: 1.75rem;
-	padding: 0 0.5rem;
+	min-width: 2.25rem;
+	min-height: 2.25rem;
+	padding: 0 0.625rem;
 
 	flex-shrink: 0;
 	white-space: nowrap;
@@ -168,6 +168,26 @@ button.chip,
 	padding: 0 var(--space-2);
 }
 
+/* Chip content: icon + label, with an optional trailing count badge. Label and
+   count share a baseline so mismatched font-sizes still read as aligned; the
+   icon (a sibling, not part of this wrapper) centers against the text block
+   as a whole via the chip's own align-items:center. */
+.chip-label {
+	display: inline-flex;
+	align-items: baseline;
+	gap: var(--space-1);
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.chip-count {
+	font-size: var(--font-2);
+	font-weight: 400;
+	color: light-dark(var(--gray-9), var(--gray-8));
+}
+
 .chip-group > :not(button) {
 	display: inline-flex;
 	align-items: center;
@@ -224,10 +244,9 @@ button.chip,
 	color: var(--color-warning);
 }
 
-/* Select: use normal text color and no border (styled via forms.css) */
+/* Select: use normal text color, border comes from forms.css */
 select {
 	color: var(--gray-12);
-	border: 0;
 	box-shadow: none;
 	background: var(--color-interface-elevated);
 }
