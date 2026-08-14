@@ -759,6 +759,11 @@
 		row-gap: var(--space-1);
 		min-width: 0;
 		max-width: min(64vw, 26rem);
+		/* Tags here are em-sized off the ambient font, which was the root
+		   size — much bigger than the same tags render elsewhere (e.g.
+		   deck-channel-header's meta-row). Match channel-micro-card's own
+		   font-2 so everything in this row reads at one consistent scale. */
+		font-size: var(--font-2);
 	}
 
 	.header-channel :global(.channel-micro-card) {
