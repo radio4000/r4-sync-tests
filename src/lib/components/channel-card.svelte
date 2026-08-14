@@ -201,10 +201,24 @@
 			--tag-color: var(--accent-11);
 		}
 
-		/* Same restraint as the active site menu item: no border/bg change,
-		   just an accent cue on the content itself — the channel name. */
+		/* Same restraint as the active site menu item: flatten the card itself
+		   — no border, no fill — and let the accent channel name be the only cue.
+		   Still picks up the normal hover/focus feedback (below), since those
+		   are about "you can interact with this," not "this is playing". */
+		&.playing {
+			background: transparent;
+			border-color: transparent;
+		}
+
 		&.playing h3 a {
 			color: var(--accent-9);
+		}
+
+		&.playing:hover,
+		&.playing:focus,
+		&.playing:focus-within {
+			background: var(--gray-3);
+			border-color: var(--color-control-border-hover);
 		}
 
 		:global(.list) & {

@@ -182,6 +182,19 @@ button.chip,
 	padding: 0 var(--space-2);
 }
 
+/* Same restraint as the active site menu item: no solid fill, just an
+   accent cue on the content itself. Overrides the louder generic
+   button.active/.btn.active treatment for pill-shaped tabs/filters. */
+button.chip.active,
+.btn.chip.active {
+	background: var(--color-interface-elevated);
+	color: var(--accent-9);
+
+	svg {
+		color: var(--accent-9);
+	}
+}
+
 /* Chip content: icon + label, with an optional trailing count badge. Label and
    count share a baseline so mismatched font-sizes still read as aligned; the
    icon (a sibling, not part of this wrapper) centers against the text block

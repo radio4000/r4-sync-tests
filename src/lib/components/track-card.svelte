@@ -450,8 +450,13 @@
 		}
 	}
 
-	/* Same restraint as the active site menu item: no border/bg change, just
-	   an accent cue on the content itself — here the title, there the icon. */
+	/* Same restraint as the active site menu item: flatten the row itself —
+	   no border, no fill — and let the accent title be the only cue. */
+	.active {
+		background: transparent;
+		border-color: transparent;
+	}
+
 	.active .title {
 		color: var(--accent-9);
 	}
