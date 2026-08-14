@@ -39,7 +39,14 @@
 
 <div class="globe" class:compact bind:this={section}>
 	{#if HomeMapChannels && visible}
-		<HomeMapChannels {channels} globeMode={true} {zoom} syncUrl={false} showControls={false} />
+		<HomeMapChannels
+			{channels}
+			globeMode={true}
+			{zoom}
+			syncUrl={false}
+			showControls={false}
+			tileStyle="carto"
+		/>
 	{:else}
 		<div class="globe-placeholder" aria-hidden="true"></div>
 	{/if}
