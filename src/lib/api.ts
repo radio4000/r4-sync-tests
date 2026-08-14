@@ -1027,11 +1027,11 @@ export async function toggleChannelAutoRadio(slug: string, tracks?: Track[]) {
 	const autoDecks = findAutoDecksForChannel(appState.decks, slug)
 	const resyncId = pickAutoResyncDeck(appState.decks, appState.active_deck_id, slug, autoDecks)
 	if (autoDecks.length && resyncId) {
-		resyncAutoRadio(resyncId)
+		await resyncAutoRadio(resyncId)
 	} else {
 		const channelTracks = tracks ?? (await loadChannelTracks(slug))
 		if (!hasAutoRadioCoverage(channelTracks)) return
-		joinAutoRadio(appState.active_deck_id, toAutoTracks(channelTracks), {
+		await joinAutoRadio(appState.active_deck_id, toAutoTracks(channelTracks), {
 			sources: [{channels: [slug]}]
 		})
 	}
