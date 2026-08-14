@@ -9,9 +9,9 @@ button,
 	justify-content: center;
 
 	/* dimensions */
-	min-width: 2rem;
-	min-height: 1.75rem;
-	padding: 0 0.5rem;
+	min-width: 2.25rem;
+	min-height: 2.25rem;
+	padding: 0 0.625rem;
 
 	flex-shrink: 0;
 	white-space: nowrap;

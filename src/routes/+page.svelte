@@ -634,7 +634,7 @@
 		padding: 0 var(--space-2);
 		border-radius: 1rem;
 		gap: var(--space-1);
-		min-height: 1.75rem;
+		min-height: 2.25rem;
 		background: var(--button-bg);
 		border: 1px solid var(--color-control-border);
 
@@ -681,6 +681,9 @@
 
 	.tag-pill-action {
 		flex: 0 0 auto;
+		min-width: 1.5rem;
+		min-height: 1.5rem;
+		padding: 0;
 	}
 
 	.section-title {
