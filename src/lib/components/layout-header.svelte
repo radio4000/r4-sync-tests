@@ -208,7 +208,9 @@
 		border-right: 1px solid var(--color-interface-border);
 		z-index: 50;
 		position: relative;
-		overflow: visible;
+		overflow-x: visible;
+		overflow-y: auto;
+		scrollbar-width: thin;
 		user-select: none;
 	}
 
@@ -280,6 +282,10 @@
 
 	.nav-settings {
 		margin-top: auto;
+		position: sticky;
+		bottom: 0;
+		background: var(--color-interface);
+		z-index: 1;
 	}
 
 	.channel-link {
@@ -395,7 +401,7 @@
 			flex-direction: row;
 			justify-content: space-between;
 			gap: 0.5rem;
-			padding: var(--space-1) 0.5rem var(--space-2);
+			padding: var(--space-1) 0.5rem;
 			inline-size: 100%;
 			width: 100%;
 			min-inline-size: 100%;
@@ -419,6 +425,7 @@
 			flex: 0 0 auto;
 			justify-content: flex-end;
 			margin-top: 0;
+			position: static;
 		}
 
 		nav {
