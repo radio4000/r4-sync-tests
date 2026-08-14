@@ -58,7 +58,9 @@
 		position: sticky;
 		top: 3rem;
 		z-index: 1;
-		border: 1px dashed var(--gray-5);
+		background: var(--color-interface-elevated);
+		border: 1px dashed var(--color-interface-border);
+		box-shadow: var(--shadow-modal);
 		padding: 0.5rem;
 		margin-left: 0.5rem;
 	}

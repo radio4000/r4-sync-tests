@@ -182,7 +182,7 @@
 
 		&:hover {
 			background: var(--gray-2);
-			border-color: var(--gray-5);
+			border-color: var(--color-interface-border);
 			--tag-bg: var(--accent-4);
 			--tag-bg-hover: var(--accent-5);
 			--tag-bg-active: var(--accent-6);
@@ -202,7 +202,7 @@
 
 		&.playing {
 			background: var(--gray-2);
-			border-color: var(--gray-5);
+			border-color: var(--color-interface-border);
 			--tag-bg: var(--accent-4);
 			--tag-bg-hover: var(--accent-5);
 			--tag-bg-active: var(--accent-6);

@@ -428,7 +428,9 @@
 <style>
 	.scrubber {
 		margin: 0.5rem 0 0.5rem 0.5rem;
-		border: 1px dashed var(--gray-5);
+		background: var(--color-interface-elevated);
+		border: 1px dashed var(--color-interface-border);
+		box-shadow: var(--shadow-modal);
 		padding: 0.5rem;
 		border-radius: var(--border-radius);
 

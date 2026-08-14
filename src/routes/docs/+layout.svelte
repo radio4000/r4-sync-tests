@@ -136,7 +136,7 @@
 			overflow-y: hidden;
 			position: static;
 			border-right: none;
-			border-bottom: 1px solid var(--gray-4);
+			border-bottom: 1px solid var(--color-interface-border);
 		}
 	}
 
@@ -155,7 +155,7 @@
 
 		.doc-prose {
 			padding-inline-end: 1rem;
-			border-right: 1px solid var(--gray-4);
+			border-right: 1px solid var(--color-interface-border);
 		}
 	}
 </style>

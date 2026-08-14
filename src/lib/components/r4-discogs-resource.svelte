@@ -477,8 +477,10 @@
 		display: block;
 		margin: 0.5rem 0;
 		font-size: var(--font-4);
-		border: 1px solid var(--gray-5);
+		background: var(--color-interface-elevated);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
+		box-shadow: var(--shadow-modal);
 		overflow: hidden;
 
 		fieldset {
@@ -573,8 +575,9 @@
 		color: var(--gray-8);
 		text-decoration: none;
 		padding: var(--space-1) var(--space-1);
+		background: var(--color-interface-elevated);
 		border-radius: 3px;
-		border: 1px solid var(--gray-5);
+		border: 1px solid var(--color-interface-border);
 
 		&:hover {
 			color: var(--gray-12);
@@ -640,7 +643,8 @@
 	}
 
 	.state {
-		border: 1px solid var(--gray-5);
+		background: var(--color-interface-elevated);
+		border: 1px solid var(--color-interface-border);
 		border-radius: 999px;
 		padding: 0.05rem var(--space-1);
 		font-size: var(--font-2);

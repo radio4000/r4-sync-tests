@@ -105,6 +105,12 @@ button.ghost,
 	&[aria-expanded='true'] {
 		border-color: var(--color-control-border);
 	}
+
+	/* Not necessarily hovered/focused (e.g. an open dropdown trigger) — needs its
+	   own background so the "active" state still reads without a border. */
+	&[aria-expanded='true'] {
+		background: var(--gray-4);
+	}
 }
 
 button.ghost.active,

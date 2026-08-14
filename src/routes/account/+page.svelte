@@ -159,6 +159,7 @@
 		margin: 0 0 1rem;
 	}
 	section.danger-zone {
+		background: color-mix(in oklch, var(--color-error) 8%, var(--color-interface));
 		border: 1px solid var(--color-error);
 		border-radius: var(--border-radius);
 		padding: 0.75rem;

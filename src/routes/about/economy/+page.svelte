@@ -765,7 +765,7 @@
 		flex-direction: column;
 		gap: 0;
 		overflow-y: auto;
-		border-right: 1px solid var(--gray-4);
+		border-right: 1px solid var(--color-interface-border);
 		background: var(--gray-1);
 	}
 
@@ -804,7 +804,7 @@
 		line-height: 1.6;
 		margin: 0;
 		padding-bottom: 1rem;
-		border-bottom: 1px solid var(--gray-4);
+		border-bottom: 1px solid var(--color-interface-border);
 	}
 
 	/* ─── Sidebar ─── */
@@ -813,7 +813,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: var(--space-2) var(--space-3);
-		border-bottom: 1px solid var(--gray-4);
+		border-bottom: 1px solid var(--color-interface-border);
 		position: sticky;
 		top: 0;
 		background: var(--gray-1);
@@ -926,7 +926,7 @@
 	.tab-bar {
 		align-items: center;
 		padding: var(--space-2) var(--space-3);
-		border-bottom: 1px solid var(--gray-4);
+		border-bottom: 1px solid var(--color-interface-border);
 		background: var(--gray-1);
 		flex-shrink: 0;
 	}
@@ -944,7 +944,7 @@
 	/* ─── Card surface (bg + border + radius); layout layered per type ─── */
 	.card {
 		background: var(--gray-1);
-		border: 1px solid var(--gray-4);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 	}
 
@@ -1294,7 +1294,7 @@
 		text-align: left;
 		padding: var(--space-2) var(--space-2);
 		white-space: nowrap;
-		border-bottom: 1px solid var(--gray-4);
+		border-bottom: 1px solid var(--color-interface-border);
 	}
 
 	td {
@@ -1324,7 +1324,7 @@
 		align-items: center;
 		gap: var(--space-2);
 		padding-bottom: var(--space-3);
-		border-bottom: 1px solid var(--gray-4);
+		border-bottom: 1px solid var(--color-interface-border);
 	}
 
 	.your-channel-label {
@@ -1344,7 +1344,7 @@
 		align-items: center;
 		gap: var(--space-2);
 		padding: var(--space-1) var(--space-2);
-		border: 1px solid var(--gray-5);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		background: var(--gray-1);
 		color: var(--gray-12);
@@ -1358,7 +1358,7 @@
 
 	.channel-pick-btn:hover {
 		background: var(--gray-2);
-		border-color: var(--gray-7);
+		border-color: var(--color-control-border-hover);
 	}
 
 	.channel-pick-btn.selected {
@@ -1490,7 +1490,7 @@
 
 	.earning-highlight--curator {
 		background: var(--gray-2);
-		border: 1px solid var(--gray-5);
+		border: 1px solid var(--color-interface-border);
 	}
 
 	.earning-highlight--artist {
@@ -1590,7 +1590,7 @@
 		.sidebar {
 			overflow-y: visible;
 			border-right: none;
-			border-bottom: 1px solid var(--gray-4);
+			border-bottom: 1px solid var(--color-interface-border);
 		}
 
 		.main {

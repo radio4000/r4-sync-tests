@@ -125,6 +125,8 @@ export interface AppState {
 	use_pointer_cursor?: boolean
 	/** Floating shell/deck panels (padding/gap). Off = flush with section seams. On by default. */
 	floating_ui?: boolean
+	/** Show borders on panels, cards, and controls. Off = borderless (still uses background for separation). On by default. */
+	show_borders?: boolean
 	font_family?: string
 	user?: User
 	language?: string

@@ -93,7 +93,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: var(--space-1) 0.5rem;
-		border-bottom: 1px solid var(--gray-4);
+		border-bottom: 1px solid var(--color-interface-border);
 		background: var(--color-interface);
 		font-size: var(--font-3);
 	}

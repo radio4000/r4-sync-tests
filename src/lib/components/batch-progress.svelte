@@ -104,8 +104,10 @@
 
 <style>
 	.chunk-progress {
-		border: 1px solid var(--gray-6);
+		background: var(--color-interface-elevated);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
+		box-shadow: var(--shadow-modal);
 		padding: var(--space-2);
 		display: flex;
 		flex-direction: column;
@@ -177,7 +179,7 @@
 	}
 
 	.controls {
-		border-top: 1px solid var(--gray-6);
+		border-top: 1px solid var(--color-interface-border);
 		padding-top: var(--space-2);
 		display: flex;
 		flex-wrap: wrap;

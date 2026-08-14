@@ -48,7 +48,7 @@
 	select {
 		width: 100%;
 		border-radius: var(--border-radius);
-		border: 1px solid var(--gray-6);
+		border: 1px solid var(--color-control-border);
 		background: var(--gray-2);
 		padding: 0.5rem;
 		font-size: inherit;

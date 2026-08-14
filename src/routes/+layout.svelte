@@ -247,6 +247,11 @@
 		root.style.removeProperty('--floating-border')
 	})
 
+	// Apply "Show borders" preference — see html.no-borders in variables.css.
+	$effect(() => {
+		document.documentElement.classList.toggle('no-borders', appState.show_borders === false)
+	})
+
 	// "Close" the database on page unload. I have not noticed any difference, but seems like a good thing to do.
 	$effect(() => {
 		const handler = async () => {

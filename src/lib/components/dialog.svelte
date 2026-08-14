@@ -128,7 +128,7 @@
 		z-index: 1;
 		background: inherit;
 		padding-bottom: 0.75rem;
-		border-bottom: 1px solid var(--gray-4);
+		border-bottom: 1px solid var(--color-interface-border);
 	}
 	.dialog-header :global(h2) {
 		margin: 0;
@@ -143,6 +143,6 @@
 		z-index: 1;
 		background: inherit;
 		padding-top: 0.75rem;
-		border-top: 1px solid var(--gray-4);
+		border-top: 1px solid var(--color-interface-border);
 	}
 </style>

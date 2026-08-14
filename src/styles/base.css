@@ -190,7 +190,7 @@ kbd {
 	line-height: 1.4;
 	color: var(--gray-11);
 	background: var(--gray-2);
-	border: 1px solid var(--gray-6);
+	border: 1px solid var(--color-interface-border);
 	border-bottom-width: 2px;
 	border-radius: 3px;
 }

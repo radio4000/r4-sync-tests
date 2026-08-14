@@ -87,3 +87,12 @@
 :root.dark {
 	color-scheme: dark;
 }
+
+/* "Show borders" off: fade border color to transparent, not border-width, so
+   nothing reflows. Elements that relied on a border alone for separation get
+   a background upgrade alongside their border color — see the components
+   using --color-interface-border / --color-control-border. */
+html.no-borders {
+	--color-interface-border: transparent;
+	--color-control-border: transparent;
+}

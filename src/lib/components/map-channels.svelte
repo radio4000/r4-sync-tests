@@ -567,7 +567,7 @@
 	:global(.maplibregl-popup-close-button:hover),
 	:global(.maplibregl-popup-close-button:focus-visible) {
 		background: var(--gray-3);
-		border-color: var(--gray-6);
+		border-color: var(--color-interface-border);
 		color: var(--accent-11);
 		outline: none;
 	}
