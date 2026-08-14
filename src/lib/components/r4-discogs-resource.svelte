@@ -645,7 +645,7 @@
 	.state {
 		background: var(--color-interface-elevated);
 		border: 1px solid var(--color-interface-border);
-		border-radius: 999px;
+		border-radius: calc(var(--border-radius) * 999);
 		padding: 0.05rem var(--space-1);
 		font-size: var(--font-2);
 		text-transform: uppercase;

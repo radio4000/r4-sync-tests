@@ -632,7 +632,7 @@
 	/* Same chrome as .btn.chip elsewhere (channel tabs, filters) — a pill is a pill. */
 	.dashboard-card--pill {
 		padding: 0 var(--space-2);
-		border-radius: 1rem;
+		border-radius: calc(var(--border-radius) * 999);
 		gap: var(--space-1);
 		min-height: 2.25rem;
 		background: var(--button-bg);
@@ -771,7 +771,7 @@
 		max-width: 56rem;
 		margin-inline: auto;
 		padding: 1.25rem;
-		border-radius: 0.75rem;
+		border-radius: var(--border-radius);
 		background: light-dark(var(--gray-2), var(--gray-2));
 	}
 

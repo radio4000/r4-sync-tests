@@ -369,7 +369,7 @@
 		min-height: 3.5rem;
 		min-width: 12rem;
 		padding-inline: 2rem;
-		border-radius: 999px;
+		border-radius: calc(var(--border-radius) * 999);
 		font-size: var(--font-6);
 		gap: var(--space-2);
 		box-shadow:
@@ -378,7 +378,7 @@
 	}
 
 	.live-action {
-		border-radius: 999px;
+		border-radius: calc(var(--border-radius) * 999);
 	}
 
 	.channel-meta {

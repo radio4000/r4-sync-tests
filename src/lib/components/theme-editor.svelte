@@ -153,7 +153,6 @@
 			</fieldset>
 
 			{@render cssToggle('--border-radius', m.theme_corners_label())}
-			{@render cssToggle('--media-radius', m.theme_artwork_label())}
 
 			<fieldset>
 				<label for={`${uid}-show-artwork`}>{m.theme_show_artwork_label()}</label>
