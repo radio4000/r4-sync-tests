@@ -174,20 +174,31 @@
 		}}
 	>
 		{#if ytid && showImage && appState.show_track_artwork}
-			<button
-				type="button"
-				class="artwork-trigger"
-				title={isTrackPlaying ? m.common_pause() : m.common_play()}
-				onclick={handleArtworkClick}
-				ondblclick={(event) => event.stopPropagation()}
-			>
+			{#if active}
+				<!-- The active track's artwork is a static image — no play/pause toggle
+				     hidden behind an unlabeled tap target for the track already playing. -->
 				<img
 					src={imageSrc}
 					alt={track.title}
 					class="artwork"
 					loading={(index ?? 0) > 20 ? 'lazy' : undefined}
 				/>
-			</button>
+			{:else}
+				<button
+					type="button"
+					class="artwork-trigger"
+					title={isTrackPlaying ? m.common_pause() : m.common_play()}
+					onclick={handleArtworkClick}
+					ondblclick={(event) => event.stopPropagation()}
+				>
+					<img
+						src={imageSrc}
+						alt={track.title}
+						class="artwork"
+						loading={(index ?? 0) > 20 ? 'lazy' : undefined}
+					/>
+				</button>
+			{/if}
 		{/if}
 		<div class="text">
 			<h3 class={['title', {locatable: Boolean(onLocate && !linkTitleToTrack)}]} onclick={onLocate}>
@@ -382,6 +393,7 @@
 		object-position: center;
 		align-self: center;
 		border-radius: var(--media-radius);
+		flex-shrink: 0;
 	}
 
 	.artwork-trigger {
@@ -436,6 +448,16 @@
 	.active {
 		background: var(--gray-2);
 		border-color: var(--gray-5);
+	}
+
+	/* The now-playing track reads the same way in the list as it does in the
+	   player — accent text, not just a faint background tint. */
+	.active .title {
+		color: var(--accent-9);
+	}
+
+	.active .title :global(a) {
+		color: inherit;
 	}
 
 	.selected {
