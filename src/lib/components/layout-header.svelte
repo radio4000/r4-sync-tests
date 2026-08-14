@@ -244,7 +244,7 @@
 		padding: var(--app-nav-pad-block) var(--app-nav-pad-inline);
 		gap: var(--app-nav-gap);
 		border-color: var(--color-control-border);
-		background: transparent;
+		background: var(--button-bg);
 		transition:
 			min-width 120ms ease,
 			min-height 120ms ease,

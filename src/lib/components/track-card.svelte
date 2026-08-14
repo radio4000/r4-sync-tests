@@ -451,7 +451,7 @@
 	}
 
 	.active {
-		background: var(--gray-2);
+		background: var(--gray-3);
 		border-color: var(--color-control-border-hover);
 	}
 
@@ -468,7 +468,7 @@
 	/* Keyboard-current row (roving tabindex) — same weight as :hover/.active,
 	   distinguished from them by the accent border instead of a gray one. */
 	.selected {
-		background: var(--gray-2);
+		background: var(--gray-3);
 		border-color: var(--accent-7);
 		--tag-bg: var(--gray-4);
 		--tag-bg-hover: var(--gray-5);
@@ -527,11 +527,21 @@
 	article {
 		display: flex;
 		align-items: center;
+		background: var(--color-interface-elevated);
 		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		transition:
 			background 0.15s,
 			border-color 0.15s;
+
+		/* The row now paints its own opaque background, so the list's own
+		   :hover background (layout.css) no longer shows through it. */
+		:global(.list > li:hover) &,
+		:global(.list > div:hover) & {
+			background: var(--gray-3);
+			border-color: var(--color-control-border-hover);
+		}
+
 		:global(.popover-menu) {
 			padding: 0.2em;
 		}

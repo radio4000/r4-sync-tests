@@ -171,6 +171,7 @@
 		display: flex;
 		flex-flow: column nowrap;
 		gap: var(--space-1);
+		background: var(--color-interface-elevated);
 		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		padding: var(--space-1);
@@ -181,8 +182,8 @@
 			border-color 0.1s;
 
 		&:hover {
-			background: var(--gray-2);
-			border-color: var(--color-interface-border);
+			background: var(--gray-3);
+			border-color: var(--color-control-border-hover);
 			--tag-bg: var(--accent-4);
 			--tag-bg-hover: var(--accent-5);
 			--tag-bg-active: var(--accent-6);
@@ -191,7 +192,7 @@
 
 		&:focus,
 		&:focus-within {
-			background: var(--gray-2);
+			background: var(--gray-3);
 			border-color: var(--accent-7);
 			outline: none;
 			--tag-bg: var(--accent-4);
@@ -201,8 +202,8 @@
 		}
 
 		&.playing {
-			background: var(--gray-2);
-			border-color: var(--color-interface-border);
+			background: var(--gray-3);
+			border-color: var(--color-control-border-hover);
 			--tag-bg: var(--accent-4);
 			--tag-bg-hover: var(--accent-5);
 			--tag-bg-active: var(--accent-6);
