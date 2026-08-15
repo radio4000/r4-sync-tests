@@ -414,10 +414,6 @@
 		border-inline-end: var(--floating-border);
 	}
 
-	:global(html.no-floating-ui) .scroll-area {
-		border: none;
-	}
-
 	:global(html.no-floating-ui) .compact-deck-item :global(.deck-compact-bar) {
 		border: none;
 		border-block-start: var(--floating-border);
@@ -427,15 +423,11 @@
 		display: none;
 	}
 
-	/* Single deck expanded: take full content width. Collapsed to zero size, but
-	   border/radius don't shrink away with it — an empty bordered sliver would
-	   stay visible next to the deck, so drop them explicitly. */
+	/* Single deck expanded: take full content width */
 	.deckExpanded .scroll-area {
 		flex: 0 0 0;
 		min-width: 0;
 		overflow: hidden;
-		border: none;
-		border-radius: 0;
 	}
 
 	.deckExpanded :global(.deck-strip) {
@@ -453,10 +445,9 @@
 		gap: var(--floating-gap);
 	}
 
-	/* Plain layout container — NOT bordered/backgrounded itself, so its border
-	   doesn't wrap the deck-strip too. Each of .scroll-area (the page) and each
-	   individual .deck card owns its own border, matching the rest of the
-	   floating-panel system. */
+	/* Plain layout container — not bordered/backgrounded itself, so it doesn't
+	   wrap the deck-strip. .scroll-area (the page) is borderless too — every
+	   card inside it already has its own border, an outer frame was redundant. */
 	.content {
 		display: flex;
 		flex: 1;
@@ -470,8 +461,6 @@
 		min-width: 0;
 		min-height: 0;
 		overflow-y: auto;
-		border-radius: var(--border-radius);
-		border: var(--floating-border);
 		scrollbar-width: thin;
 		overscroll-behavior: contain;
 		scrollbar-gutter: stable;
