@@ -493,7 +493,6 @@
 	"player_tooltip_shuffle": "Aléatoire",
 	"player_visible": "Masquer la vidéo",
 	"queue_clear_history_button": "Effacer l'historique",
-	"queue_clear_search": "Effacer la recherche",
 	"queue_empty": "Aucun titre ne correspond à ce filtre.",
 	"queue_hidden": "Afficher la file",
 	"queue_no_tracks": "File vide. Choisissez un canal pour lancer la lecture.",

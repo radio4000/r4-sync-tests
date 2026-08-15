@@ -421,6 +421,7 @@
 		display: flex;
 		flex-flow: column;
 		padding-top: 0.5rem;
+		padding-inline: 0.5rem;
 		footer {
 			margin: 0;
 			padding: 0.5rem;

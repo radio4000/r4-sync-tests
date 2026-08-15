@@ -42,10 +42,14 @@
 	--font-8: 1.5rem;
 	--font-9: 2.25rem;
 
-	/* interface surface colors (neutral backgrounds, not accent-derived) */
+	/* interface surface colors (neutral backgrounds, not accent-derived).
+	   Border/elevated steps are asymmetric per theme on purpose: the same gray
+	   step reads with very different contrast near white than near black, so a
+	   single step number for both themes was too strong in light mode and too
+	   weak in dark mode. */
 	--color-interface: var(--gray-1);
-	--color-interface-elevated: var(--gray-2);
-	--color-interface-border: var(--gray-6);
+	--color-interface-elevated: light-dark(var(--gray-2), var(--gray-4));
+	--color-interface-border: light-dark(var(--gray-4), var(--gray-6));
 	--color-control-border: var(--color-interface-border);
 	--color-control-border-hover: var(--gray-7);
 	/* For rings/borders that need to keep a specific color (not fade to the

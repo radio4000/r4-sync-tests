@@ -667,7 +667,7 @@ function startBroadcastStateListener(channelId) {
 			}
 			const decks = payload?.payload?.decks ?? payload?.decks
 			logDedup(`recv:${channelId}`, `state_receive @${label(channelId)} ${deckSummary(decks)}`)
-			applyBroadcastState(channelId, decks)
+			applyBroadcastState(channelId, decks, seq)
 		})
 		.subscribe((status) => {
 			if (status === 'SUBSCRIBED') {
@@ -730,6 +730,19 @@ function stopBroadcastTableListener(channelId) {
 	}
 }
 
+/**
+ * True once a newer state message has superseded `seq` for this channel. Lets an
+ * in-flight applyBroadcastState/syncDeckToBroadcastState call recognize — after an
+ * `await` — that a later message has since taken over, so it can stop instead of
+ * racing that newer call and clobbering it with a stale snapshot (e.g. re-applying
+ * an old is_playing value over the current one).
+ * @param {string} channelId
+ * @param {number | undefined} seq
+ */
+function isSuperseded(channelId, seq) {
+	return typeof seq === 'number' && lastReceivedStateSeqByChannel.get(channelId) !== seq
+}
+
 function closeListeningDecksForChannel(channelId) {
 	const decksToClose = Object.entries(appState.decks)
 		.filter(([, deck]) => deck.listening_to_channel_id === channelId)
@@ -741,7 +754,12 @@ function closeListeningDecksForChannel(channelId) {
 	}
 }
 
-async function applyBroadcastState(channelId, decks) {
+/**
+ * @param {string} channelId
+ * @param {BroadcastDeckState[]} decks
+ * @param {number} [seq]
+ */
+async function applyBroadcastState(channelId, decks, seq) {
 	if (!Array.isArray(decks) || !decks.length) return
 
 	const incomingTrackIds = new Set(decks.map((d) => d?.track_id).filter(Boolean))
@@ -773,6 +791,11 @@ async function applyBroadcastState(channelId, decks) {
 
 	// Let Svelte tear down removed deck components and their media elements
 	if (removed) await tick()
+
+	// A newer state message may have arrived (and already started applying) while
+	// we were waiting for the removal to flush — bail so this stale call doesn't
+	// race the newer one and clobber play/pause state it already applied.
+	if (isSuperseded(channelId, seq)) return
 
 	// Map broadcast state to listener decks by track_id, then fill positionally
 	/** @type {Set<number>} */
@@ -808,7 +831,7 @@ async function applyBroadcastState(channelId, decks) {
 		const deckId = deckForBi[bi]
 		if (deckId == null) continue
 		const state = decks[bi]
-		void syncDeckToBroadcastState(deckId, channelId, state)
+		void syncDeckToBroadcastState(deckId, channelId, state, seq)
 	}
 }
 
@@ -818,8 +841,13 @@ async function applyBroadcastState(channelId, decks) {
  * @param {number} deckId
  * @param {string} channelId
  * @param {BroadcastDeckState | undefined | null} state
+ * @param {number} [seq]
  */
-async function syncDeckToBroadcastState(deckId, channelId, state) {
+async function syncDeckToBroadcastState(deckId, channelId, state, seq) {
+	// A newer state message may already be applying (or have applied) for this
+	// channel — don't let this now-stale call race it and re-apply old fields
+	// (is_playing in particular) after the newer, correct call already ran.
+	if (isSuperseded(channelId, seq)) return
 	const deck = appState.decks[deckId]
 	if (!deck) return
 

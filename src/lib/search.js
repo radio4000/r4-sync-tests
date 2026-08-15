@@ -28,23 +28,38 @@ export async function findChannelBySlug(slug) {
 
 /**
  * Combined channel search: slug lookups + FTS + local fuzzy, deduplicated.
- * @param {{slugs?: string[], query?: string, localChannels?: import('$lib/types').Channel[]}} params
- * @returns {Promise<import('$lib/types').Channel[]>}
+ * `count` reflects the remote FTS total only (slug lookups and local fuzzy
+ * matches are small, unpaginated bonuses layered on top).
+ * @param {{slugs?: string[], query?: string, localChannels?: import('$lib/types').Channel[], limit?: number, offset?: number}} params
+ * @returns {Promise<{channels: import('$lib/types').Channel[], count: number}>}
  */
-export async function searchChannelsCombined({slugs = [], query = '', localChannels = []} = {}) {
+export async function searchChannelsCombined({
+	slugs = [],
+	query = '',
+	localChannels = [],
+	limit = 100,
+	offset = 0
+} = {}) {
 	/** @type {Promise<import('$lib/types').Channel[]>[]} */
 	const promises = []
+	let count = 0
 	if (slugs.length) {
 		promises.push(...slugs.map((slug) => findChannelBySlug(slug).then((c) => (c ? [c] : []))))
 	}
 	if (query) {
-		promises.push(searchChannels(query))
-		const local = searchChannelsLocal(query, localChannels)
-		if (local.length) promises.push(Promise.resolve(local))
+		const fts = await searchChannels(query, {limit, offset})
+		count = fts.count
+		promises.push(Promise.resolve(fts.channels))
+		// Local fuzzy is a client-side bonus on top of the paginated FTS results —
+		// only surface it on the first page, or it'd reappear on every page.
+		if (offset === 0) {
+			const local = searchChannelsLocal(query, localChannels)
+			if (local.length) promises.push(Promise.resolve(local))
+		}
 	}
-	if (!promises.length) return []
+	if (!promises.length) return {channels: [], count: 0}
 	const results = await Promise.all(promises)
-	return dedupeById(results.flat())
+	return {channels: dedupeById(results.flat()), count}
 }
 
 /**

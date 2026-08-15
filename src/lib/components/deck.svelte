@@ -217,8 +217,6 @@
 		max-width: none;
 		height: 100%;
 		min-height: 0;
-		border: 0;
-		border-radius: 0;
 	}
 
 	.deck.expanded .resize-handle {

@@ -493,7 +493,6 @@
 	"player_tooltip_shuffle": "シャッフル",
 	"player_visible": "動画を非表示",
 	"queue_clear_history_button": "履歴をクリア",
-	"queue_clear_search": "検索をクリア",
 	"queue_empty": "このフィルターに一致するトラックはありません。",
 	"queue_hidden": "キューを表示",
 	"queue_no_tracks": "キューは空です。再生を開始するにはチャンネルを選択してください。",

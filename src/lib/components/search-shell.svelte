@@ -3,9 +3,17 @@
 	import SearchInput from '$lib/components/search-input.svelte'
 	import SearchTabs from '$lib/components/search-tabs.svelte'
 	import ViewsBar from '$lib/components/views-bar.svelte'
+	import PageHeader from '$lib/components/page-header.svelte'
 	import * as m from '$lib/paraglide/messages'
 
-	let {uid, value = $bindable(''), onsubmit, view = undefined, onviewchange = undefined} = $props()
+	let {
+		uid,
+		value = $bindable(''),
+		onsubmit,
+		view = undefined,
+		onviewchange = undefined,
+		pagination = undefined
+	} = $props()
 
 	const placeholder = $derived.by(() => {
 		if (page.route.id === '/search/channels')
@@ -15,43 +23,49 @@
 	})
 </script>
 
-<header class="search-header">
-	<form {onsubmit}>
+<PageHeader wrap>
+	<form class="search-form" {onsubmit}>
 		<label for="{uid}-search" class="visually-hidden">{m.search_title()}</label>
 		<SearchInput id="{uid}-search" bind:value {placeholder} autofocus />
 	</form>
-	<SearchTabs />
-	{#if view && onviewchange}
-		<ViewsBar {view} onchange={onviewchange} />
-	{/if}
-</header>
+	<nav class="search-nav-row">
+		<SearchTabs />
+		<div class="search-nav-controls">
+			{#if pagination}{@render pagination()}{/if}
+			{#if view && onviewchange}
+				<ViewsBar {view} onchange={onviewchange} />
+			{/if}
+		</div>
+	</nav>
+</PageHeader>
 
 <style>
-	.search-header {
-		position: sticky;
-		top: 0;
-		background: linear-gradient(to bottom, var(--color-interface) 60%, transparent);
-		z-index: 3;
-		padding: 0.5rem;
-		padding-bottom: 1.5rem;
-		display: flex;
-		align-items: flex-start;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-
-	.search-header :global(.search-tabs),
-	.search-header :global(.popover-menu),
-	.search-header :global(.views-bar) {
-		flex-shrink: 0;
-	}
-
-	.search-header form {
+	.search-form {
 		flex: 1 1 100%;
 		min-width: min(200px, 100%);
 	}
 
-	.search-header form :global(input) {
+	.search-form :global(input) {
 		width: 100%;
+	}
+
+	.search-nav-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		width: 100%;
+	}
+
+	.search-nav-row :global(.search-tabs) {
+		flex-shrink: 0;
+	}
+
+	.search-nav-controls {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-shrink: 0;
 	}
 </style>

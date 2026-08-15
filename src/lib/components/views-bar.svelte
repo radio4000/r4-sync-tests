@@ -160,7 +160,7 @@
 			{/if}
 			<li>
 				<PopoverMenu closeOnClick={false} align="end">
-					{#snippet trigger()}{m.views_filters_label()}{/snippet}
+					{#snippet trigger()}<Icon icon="filter-alt" title={m.views_filters_label()} />{/snippet}
 					<form class="form" onsubmit={(e) => e.preventDefault()}>
 						{#each view.sources as s, i (i)}
 							<div class="query-group">
@@ -229,7 +229,12 @@
 			</li>
 			<li>
 				<PopoverMenu closeOnClick={false} align="end">
-					{#snippet trigger()}{m.views_display_label()}{/snippet}
+					{#snippet trigger()}
+						<Icon
+							icon={r1Direction === 'asc' ? 'funnel-ascending' : 'funnel-descending'}
+							title={m.views_display_label()}
+						/>
+					{/snippet}
 					<form class="form" onsubmit={(e) => e.preventDefault()}>
 						<fieldset>
 							<legend>{m.views_sort_label()}</legend>
