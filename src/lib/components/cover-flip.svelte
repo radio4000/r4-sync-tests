@@ -1,6 +1,7 @@
 <script>
 	import {createLoop} from '$lib/loop.ts'
 	import {untrack} from 'svelte'
+	import * as m from '$lib/paraglide/messages'
 
 	/** @type {{
 	 *  items: any[],
@@ -78,7 +79,7 @@
 	bind:this={container}
 	tabindex="0"
 	role="listbox"
-	aria-label="Cover flip"
+	aria-label={m.cover_flip_aria_label()}
 	aria-orientation={isHorizontal ? 'horizontal' : 'vertical'}
 	aria-activedescendant={activeIndex > -1 ? getItemId(activeIndex) : undefined}
 	onkeydown={handleKeydown}

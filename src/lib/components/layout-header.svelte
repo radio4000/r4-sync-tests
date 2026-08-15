@@ -182,11 +182,11 @@
 			href={resolve('/menu')}
 			class="btn settings-link nav-btn"
 			class:active={page.route.id?.startsWith('/menu') || page.route.id?.startsWith('/settings')}
-			aria-label="Menu"
-			{@attach tooltip({content: 'Menu'})}
+			aria-label={m.nav_menu()}
+			{@attach tooltip({content: m.nav_menu()})}
 		>
 			<Icon icon="menu" />
-			<span class="btn-label">Menu</span>
+			<span class="btn-label">{m.nav_menu()}</span>
 		</a>
 		<InternetIndicator href={resolve('/import')} />
 	</nav>

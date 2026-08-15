@@ -351,7 +351,9 @@
 									<div class="compact-group-actions">
 										<button
 											class={['compact-group-sync', {active: compactListeningDecksSynced}]}
-											aria-label={compactListeningDecksSynced ? 'Live' : 'Sync'}
+											aria-label={compactListeningDecksSynced
+												? m.decks_compact_sync_live()
+												: m.decks_compact_sync_action()}
 											onclick={() =>
 												compactListeningDeckIds.forEach((id) => resyncBroadcastDeck(id))}
 										>

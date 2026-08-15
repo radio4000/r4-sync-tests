@@ -307,7 +307,7 @@
 									class:active={page.route.id?.startsWith('/[slug]/backup')}
 								>
 									<Icon icon="document-download" />
-									Backup
+									{m.channel_backup_title()}
 								</a>
 								<hr />
 							{:else if isLocalChannel(channel?.id)}

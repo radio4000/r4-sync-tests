@@ -46,10 +46,10 @@
 				href={pageHref(currentPage - 1)}
 				data-sveltekit-noscroll
 				data-sveltekit-keepfocus
-				aria-label="Previous page">←</a
+				aria-label={m.pagination_previous_page()}>←</a
 			>
 		{:else}
-			<span class="btn" aria-disabled="true" aria-label="Previous page">←</span>
+			<span class="btn" aria-disabled="true" aria-label={m.pagination_previous_page()}>←</span>
 		{/if}
 		<button
 			class="page-label"
@@ -57,7 +57,7 @@
 				dialogInitialPage = currentPage
 				showDialog = true
 			}}
-			aria-label="Go to page"
+			aria-label={m.pagination_go_to_page()}
 			>{currentPage}{#if totalPages > 0}/{totalPages}{/if}</button
 		>
 		{#if hasNextPage}
@@ -67,10 +67,10 @@
 				href={pageHref(currentPage + 1)}
 				data-sveltekit-noscroll
 				data-sveltekit-keepfocus
-				aria-label="Next page">→</a
+				aria-label={m.pagination_next_page()}>→</a
 			>
 		{:else}
-			<span class="btn" aria-disabled="true" aria-label="Next page">→</span>
+			<span class="btn" aria-disabled="true" aria-label={m.pagination_next_page()}>→</span>
 		{/if}
 	</span>
 	<Dialog bind:showModal={showDialog}>

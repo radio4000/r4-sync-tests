@@ -4,14 +4,15 @@
 	import BackLink from '$lib/components/back-link.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import Seo from '$lib/components/seo.svelte'
+	import * as m from '$lib/paraglide/messages'
 </script>
 
-<Seo title={`Community — ${appName}`} plain />
+<Seo title={m.community_page_title({appName})} plain />
 
 <article class="focused constrained">
 	<header>
 		<BackLink href={resolve('/menu')} />
-		<h1>Community</h1>
+		<h1>{m.nav_community()}</h1>
 	</header>
 
 	<menu class="nav-vertical">
@@ -24,11 +25,11 @@
 		{/each}
 		<a href="https://forms.gle/BcqxRWjTJBDCku4L9" target="_blank" rel="noreferrer">
 			<Icon icon="message-circle" />
-			Feedback
+			{m.community_feedback()}
 		</a>
 		<a href="mailto:{appContactEmail}">
 			<Icon icon="message-circle" />
-			Contact
+			{m.community_contact()}
 			<small>{appContactEmail}</small>
 		</a>
 	</menu>
@@ -36,11 +37,11 @@
 	<menu class="nav-vertical">
 		<a href="https://v1.radio4000.com/" target="_blank" rel="noreferrer">
 			<Icon icon="history" />
-			Radio4000 v1
+			{m.community_v1_link()}
 		</a>
 		<a href="https://v2.radio4000.com/" target="_blank" rel="noreferrer">
 			<Icon icon="history" />
-			Radio4000 v2
+			{m.community_v2_link()}
 		</a>
 	</menu>
 </article>

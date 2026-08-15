@@ -148,7 +148,7 @@
 	{#if isListeningToBroadcast && hasListeningMultiDeck}
 		<button onclick={toggleListeningVideoMix} class:active={listeningVideoMixActive} data-no-close>
 			<Icon icon="gradient" />
-			Video mix
+			{m.deck_menu_video_mix()}
 		</button>
 	{/if}
 

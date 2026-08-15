@@ -175,7 +175,7 @@
 							</div>
 							{#if i < view.sources.length - 1}<hr />{/if}
 						{/each}
-						<button type="button" onclick={addSource} data-no-close>+ Source</button>
+						<button type="button" onclick={addSource} data-no-close>{m.views_add_source()}</button>
 					</form>
 				</PopoverMenu>
 			</li>

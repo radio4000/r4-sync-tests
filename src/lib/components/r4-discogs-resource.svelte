@@ -370,7 +370,7 @@
 					title={m.discogs_view_on_discogs()}
 				>
 					<Icon icon="tag" size={12} />
-					Discogs
+					{m.discogs_link_label()}
 				</a>
 			{/if}
 		</div>

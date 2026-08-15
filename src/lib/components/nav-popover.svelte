@@ -196,7 +196,7 @@
 								id={`${uid}-following-all`}
 							>
 								<Icon icon={conceptIcons.following} size={15} />
-								<span>All following</span>
+								<span>{m.nav_all_following()}</span>
 							</a>
 						</section>
 					{/if}

@@ -140,14 +140,14 @@
 
 	<p>
 		{m.history_local_note()}
-		- <a href="/settings/analytics">analytics &rarr;</a>
+		- <a href="/settings/analytics">{m.history_analytics_link()}</a>
 	</p>
 
 	{#if allEvents.length > 0}
 		<menu class="header-actions">
 			<menu class="filters">
 				<button class:active={!activeFilter} onclick={() => (activeFilter = null)}>
-					all ({allEvents.length})
+					{m.history_filter_all({count: allEvents.length})}
 				</button>
 				{#each eventTypes as type (type)}
 					<button
@@ -183,7 +183,7 @@
 {:else if allEvents.length === 0}
 	<p class="focused constrained">{m.history_empty()}</p>
 {:else if filteredEvents.length === 0}
-	<p class="focused constrained">No {activeFilter} events yet.</p>
+	<p class="focused constrained">{m.history_no_events_filtered({filter: activeFilter ?? ''})}</p>
 {:else}
 	<article>
 		{#each days as day (day.key)}
@@ -228,9 +228,9 @@
 				<table>
 					<thead>
 						<tr>
-							<th>time</th>
-							<th>event</th>
-							<th>properties</th>
+							<th>{m.history_col_time()}</th>
+							<th>{m.history_col_event()}</th>
+							<th>{m.history_col_properties()}</th>
 						</tr>
 					</thead>
 					<tbody>

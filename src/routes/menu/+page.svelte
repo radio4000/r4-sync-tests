@@ -31,12 +31,12 @@
 	})
 </script>
 
-<Seo title={`Menu — ${appName}`} plain />
+<Seo title={m.menu_page_title({appName})} plain />
 
 <article class="focused constrained">
 	<header>
 		<BackLink href={resolve('/')} />
-		<h1>Menu</h1>
+		<h1>{m.nav_menu()}</h1>
 	</header>
 
 	<menu class="nav-vertical">
@@ -91,7 +91,7 @@
 		</a>
 		<a href={resolve('/menu/community')}>
 			<Icon icon="users" />
-			Community
+			{m.nav_community()}
 		</a>
 		<a href={resolve('/about')}>
 			<Icon icon="circle-info" />
@@ -102,7 +102,7 @@
 	<menu class="nav-vertical">
 		<a href={resolve('/docs')}>
 			<Icon icon="document" />
-			Docs
+			{m.nav_docs()}
 		</a>
 		<a href={changelogHref} target="_blank" rel="noreferrer">
 			<Icon icon="html" />
@@ -111,7 +111,7 @@
 		{#if repoUrl}
 			<a href={sourceHref || repoUrl} target="_blank" rel="noreferrer">
 				<Icon icon="code-branch" />
-				Code
+				{m.nav_code()}
 			</a>
 		{/if}
 	</menu>

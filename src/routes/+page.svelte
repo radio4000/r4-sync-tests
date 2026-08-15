@@ -292,7 +292,7 @@
 								<button
 									class="btn ghost tag-pill-action"
 									onclick={() => playChannelTag(value)}
-									title="Play #{value}"
+									title={m.home_tag_play_title({value})}
 								>
 									<Icon icon="play-fill" />
 								</button>
@@ -305,7 +305,7 @@
 								<a
 									class="btn ghost tag-pill-action"
 									href={resolve('/search/tracks') + `?q=${encodeURIComponent('#' + value)}`}
-									title="Search #{value} globally"
+									title={m.home_tag_search_title({value})}
 								>
 									<Icon icon="search" />
 								</a>
@@ -321,7 +321,7 @@
 						<button
 							class="dismiss-btn"
 							onclick={() => (appState.show_onboarding_hint = false)}
-							aria-label="Close"
+							aria-label={m.home_onboarding_close()}
 						>
 							<Icon icon="close" />
 						</button>
@@ -349,7 +349,7 @@
 						<button
 							class="btn onboarding-toggle"
 							onclick={() => (appState.show_onboarding_hint = true)}
-							title="Show getting started"
+							title={m.home_onboarding_show()}
 						>
 							<Icon icon="circle-info" />
 						</button>

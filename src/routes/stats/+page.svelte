@@ -270,7 +270,7 @@
 		<h1>{m.stats_heading()}</h1>
 	</header>
 	<p>{m.stats_intro()}</p>
-	<p>This page is a work in progress :)</p>
+	<p>{m.stats_wip_note()}</p>
 
 	<section>
 		<header>
@@ -386,19 +386,19 @@
 
 	<section>
 		<header>
-			<h2>local system</h2>
+			<h2>{m.stats_local_system_heading()}</h2>
 		</header>
 
 		<dl class="meta">
-			<dt>channels</dt>
+			<dt>{m.stats_local_channels_label()}</dt>
 			<dd>{channelsCached.toLocaleString()}</dd>
-			<dt>tracks</dt>
+			<dt>{m.stats_local_tracks_label()}</dt>
 			<dd>{tracksCached.toLocaleString()}</dd>
-			<dt>track metadata</dt>
+			<dt>{m.stats_local_track_metadata_label()}</dt>
 			<dd>{tracksWithMeta.toLocaleString()}</dd>
-			<dt>play history</dt>
+			<dt>{m.stats_local_play_history_label()}</dt>
 			<dd>{plays.length.toLocaleString()}</dd>
-			<dt>follows</dt>
+			<dt>{m.stats_local_follows_label()}</dt>
 			<dd>{follows.length.toLocaleString()}</dd>
 		</dl>
 

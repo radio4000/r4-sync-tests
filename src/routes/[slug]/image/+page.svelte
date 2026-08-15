@@ -19,6 +19,7 @@
 	import ChannelScene from '$lib/components/channel-scene-ogl.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import Icon from '$lib/components/icon.svelte'
+	import * as m from '$lib/paraglide/messages'
 
 	const channelActivity = $derived(getChannelActivity())
 	const channelCtx = getChannelCtx()
@@ -127,7 +128,12 @@
 			<Icon icon="arrow-left" />
 		</a>
 	{/if}
-	<button type="button" class="btn" title="3D controls" onclick={() => (showControlsModal = true)}>
+	<button
+		type="button"
+		class="btn"
+		title={m.canvas_controls_button_title()}
+		onclick={() => (showControlsModal = true)}
+	>
 		<Icon icon="circle-info" />
 	</button>
 {/snippet}
