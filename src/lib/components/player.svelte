@@ -803,7 +803,9 @@
 			margin-left: auto;
 		}
 
-		/* Mobile: transport centered, speed/volume collapse to their buttons */
+		/* Mobile: transport centered; speed/volume shrink to content instead of
+		   growing to fill the row, but keep their sliders — DJing with multiple
+		   decks needs per-deck volume, same as it needs speed. */
 		@media (max-width: 768px) {
 			justify-content: center;
 
@@ -811,10 +813,6 @@
 			:global(.volume) {
 				flex: 0 0 auto;
 				margin-left: 0;
-			}
-
-			:global(.volume .range) {
-				display: none;
 			}
 		}
 	}
