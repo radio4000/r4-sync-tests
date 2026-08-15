@@ -142,7 +142,7 @@ export const defaultAppState: AppState = {
 	modal_track_edit: null,
 	modal_shortcuts: false,
 	modal_nav: false,
-	show_welcome_hint: true,
+	show_welcome_hint: false,
 	show_onboarding_hint: true,
 	analytics_opt_in: false
 }
