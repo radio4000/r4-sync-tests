@@ -427,11 +427,15 @@
 		display: none;
 	}
 
-	/* Single deck expanded: take full content width */
+	/* Single deck expanded: take full content width. Collapsed to zero size, but
+	   border/radius don't shrink away with it — an empty bordered sliver would
+	   stay visible next to the deck, so drop them explicitly. */
 	.deckExpanded .scroll-area {
 		flex: 0 0 0;
 		min-width: 0;
 		overflow: hidden;
+		border: none;
+		border-radius: 0;
 	}
 
 	.deckExpanded :global(.deck-strip) {
