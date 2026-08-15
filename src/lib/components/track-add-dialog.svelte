@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
+	import {page} from '$app/state'
 	import {appState} from '$lib/app-state.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import Dialog from '$lib/components/dialog.svelte'
@@ -26,7 +27,7 @@
 
 	function open(data: {track?: Track; url?: string} = {}) {
 		if (!isSignedIn) {
-			goto(resolve('/auth'))
+			goto(resolve('/auth') + `?redirect=${encodeURIComponent(page.url.pathname)}`)
 			return
 		}
 		if (!channel) {

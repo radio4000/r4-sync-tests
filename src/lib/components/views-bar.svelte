@@ -47,17 +47,6 @@
 		mode = 'idle'
 	}
 
-	function splitList(s: string) {
-		return [
-			...new Set(
-				s
-					.split(',')
-					.map((x) => x.trim())
-					.filter(Boolean)
-			)
-		]
-	}
-
 	function updateSource(index: number, s: ViewSource) {
 		const sources = [...view.sources]
 		sources[index] = s
@@ -172,43 +161,6 @@
 										</button>
 									</header>
 								{/if}
-								<fieldset>
-									<label for="{uid}-channels-{i}">{m.views_channels_label()}</label>
-									<input
-										id="{uid}-channels-{i}"
-										type="text"
-										value={s.channels?.join(', ') || ''}
-										onchange={(e) =>
-											updateSource(i, {...s, channels: splitList(e.currentTarget.value)})}
-										placeholder={m.views_channels_placeholder()}
-									/>
-								</fieldset>
-								<fieldset>
-									<legend>{m.views_tags_label()}</legend>
-									<fieldset class="row">
-										<select
-											value={s.tagsMode || 'any'}
-											onchange={(e) =>
-												updateSource(i, {
-													...s,
-													tagsMode: e.currentTarget.value === 'all' ? 'all' : 'any'
-												})}
-										>
-											<option value="any">{m.views_tags_any()}</option>
-											<option value="all">{m.views_tags_all()}</option>
-										</select>
-										<input
-											type="text"
-											value={s.tags?.join(', ') || ''}
-											onchange={(e) =>
-												updateSource(i, {
-													...s,
-													tags: splitList(e.currentTarget.value.replaceAll('#', ''))
-												})}
-											placeholder={m.views_tags_placeholder()}
-										/>
-									</fieldset>
-								</fieldset>
 								<fieldset>
 									<label for="{uid}-search-{i}">{m.views_search_label()}</label>
 									<input

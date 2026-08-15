@@ -8,13 +8,21 @@
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
 	import {getFollowedChannels} from '$lib/followed-channels.svelte'
 	import {getFeaturedPool} from '$lib/collections/featured'
+	import {getFeaturedSuggestions} from '$lib/featured-suggestions.svelte'
 	import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
-	import {getChannelTags, extractHashtags} from '$lib/utils'
+	import {
+		getChannelTags,
+		extractHashtags,
+		seededRandom,
+		shuffleArray,
+		shuffleSeed
+	} from '$lib/utils'
 	import {loadDeckView, playTrack, sortByNewest} from '$lib/api'
 	import {isBroadcasting} from '$lib/deck'
 	import {authStatus} from '$lib/app-state.svelte'
 	import {appPresence} from '$lib/presence.svelte'
 	import ChannelCard from '$lib/components/channel-card.svelte'
+	import Dialog from '$lib/components/dialog.svelte'
 	import FeaturedChannels from '$lib/components/featured-channels.svelte'
 	import HomeGlobe from '$lib/components/home-globe.svelte'
 	import {not, isNull, eq} from '@tanstack/db'
@@ -55,6 +63,23 @@
 	let featuredLoaded = $state(false)
 
 	const featuredPickCount = $derived(!isSignedIn ? FEATURED_COUNT_LOGGEDOUT : FEATURED_COUNT)
+
+	// Popular tags as listening starting points (logged-out homepage) — cheap:
+	// tagsCollection is a pre-aggregated, hour-cached `tag, count` query, not a
+	// scan over tracks. Clicking one searches that tag across every channel.
+	// Same shape as pickFeatured() for channels: a tight quality window (tags
+	// are already sorted by count desc), shuffled for rotation, sliced to the
+	// pick count — narrow enough that it stays "most used", not the long tail.
+	const DISCOVERY_TAG_COUNT = 20
+	const DISCOVERY_TAG_WINDOW = 24
+	const tagSuggestions = getFeaturedSuggestions()
+	const tagSuggestionsSeed = shuffleSeed()
+	const discoveryTags = $derived(
+		shuffleArray(
+			tagSuggestions.tags.slice(0, DISCOVERY_TAG_WINDOW),
+			seededRandom(tagSuggestionsSeed)
+		).slice(0, DISCOVERY_TAG_COUNT)
+	)
 
 	$effect(() => {
 		if (featuredLoaded) return
@@ -192,16 +217,14 @@
 			</a>
 		{/if}
 		{#if !isSignedIn}
-			{#if !appState.show_welcome_hint}
-				<button
-					class="btn"
-					style="margin-left: auto"
-					onclick={() => (appState.show_welcome_hint = true)}
-					title={m.welcome_title({appName})}
-				>
-					<Icon icon="circle-info" />
-				</button>
-			{/if}
+			<button
+				class="btn"
+				style="margin-left: auto"
+				onclick={() => (appState.show_welcome_hint = true)}
+				title={m.welcome_title({appName})}
+			>
+				<Icon icon="circle-info" />
+			</button>
 		{/if}
 	</PageHeader>
 
@@ -373,53 +396,27 @@
 	{:else}
 		<!-- Not logged in -->
 
-		{#if appState.show_welcome_hint || showBroadcastCountWidget}
-			<div class="loggedout-top-row" class:modal-open={appState.show_welcome_hint}>
-				{#if appState.show_welcome_hint}
-					<section class="section welcome-section dismissible top-row-welcome">
-						<button
-							class="dismiss-btn"
-							onclick={() => (appState.show_welcome_hint = false)}
-							aria-label="Close"
-						>
-							<Icon icon="close" />
-						</button>
-						<h1>{m.welcome_title({appName})}</h1>
-						<p class="tagline">{m.welcome_tagline_channel()}</p>
-						<p class="tagline">{m.welcome_tagline_metadata()}</p>
-						<ul class="feature-list">
-							<li>{m.welcome_feature_archive()}</li>
-							<li>{m.welcome_feature_decks()}</li>
-							<li>{m.welcome_feature_follow()}</li>
-							<li>{m.welcome_feature_open()}</li>
-						</ul>
-						<menu class="welcome-menu">
-							<a
-								href={resolve('/auth/create-account') + '?redirect=' + resolve('/create-channel')}
-								class="btn primary">{m.header_start_your_radio()}</a
-							>
-							<a href={resolve('/auth/login')} class="btn">{m.nav_sign_in()}</a>
-							<a href={resolve('/about')} class="btn ghost">{m.nav_about()}</a>
-						</menu>
-					</section>
-				{/if}
-
-				{#if showBroadcastCountWidget}
-					<section class="section top-row-live">
-						<h2 class="section-title">
-							<a class="btn chip" href={resolve('/channels/broadcasting')}
-								>{m.home_broadcasting()}</a
-							>
-						</h2>
-						<ol class="list">
-							{#each activeBroadcasts as broadcast (broadcast.channel_id)}
-								<li><ChannelCard channel={broadcast.channels} /></li>
-							{/each}
-						</ol>
-					</section>
-				{/if}
-			</div>
-		{/if}
+		<Dialog bind:showModal={appState.show_welcome_hint}>
+			{#snippet header()}
+				<h2>{m.welcome_title({appName})}</h2>
+			{/snippet}
+			<p class="tagline">{m.welcome_tagline_channel()}</p>
+			<p class="tagline">{m.welcome_tagline_metadata()}</p>
+			<ul class="feature-list">
+				<li>{m.welcome_feature_archive()}</li>
+				<li>{m.welcome_feature_decks()}</li>
+				<li>{m.welcome_feature_follow()}</li>
+				<li>{m.welcome_feature_open()}</li>
+			</ul>
+			<menu class="welcome-menu">
+				<a
+					href={resolve('/auth/create-account') + '?redirect=' + resolve('/create-channel')}
+					class="btn primary">{m.header_start_your_radio()}</a
+				>
+				<a href={resolve('/auth/login')} class="btn">{m.nav_sign_in()}</a>
+				<a href={resolve('/about')} class="btn ghost">{m.nav_about()}</a>
+			</menu>
+		</Dialog>
 
 		<div class="loggedout-over-globe">
 			<div class="loggedout-grid">
@@ -429,8 +426,33 @@
 					titleHref={resolve('/channels/featured')}
 					skeleton
 					column
-				/>
+				>
+					{#snippet headerExtra()}
+						{#if showBroadcastCountWidget}
+							<a class="btn chip active top-row-live" href={resolve('/channels/broadcasting')}>
+								<Icon icon="signal" size={16} />
+								<span class="chip-label">
+									{m.home_broadcasting()}
+									<strong class="chip-count">{broadcastCount.toLocaleString()}</strong>
+								</span>
+							</a>
+						{/if}
+					{/snippet}
+				</FeaturedChannels>
 			</div>
+
+			{#if discoveryTags.length}
+				<div class="tag-suggestions">
+					<small>{m.home_tag_suggestions_label()}</small>
+					<nav class="tabs">
+						{#each discoveryTags as tag (tag)}
+							<a class="btn chip" href={resolve('/search') + `?q=${encodeURIComponent('#' + tag)}`}
+								>#{tag}</a
+							>
+						{/each}
+					</nav>
+				</div>
+			{/if}
 
 			{#if featuredLoaded && (channelCount || trackCount || appPresence.count)}
 				<footer class="stats footer-stats">
@@ -519,33 +541,9 @@
 		z-index: 0;
 	}
 
-	.homepage:not(.signed-in) .loggedout-over-globe,
-	.homepage:not(.signed-in) .loggedout-top-row,
-	.homepage:not(.signed-in) .welcome-section {
+	.homepage:not(.signed-in) .loggedout-over-globe {
 		position: relative;
 		z-index: 5;
-	}
-
-	.loggedout-top-row {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: var(--space-2);
-		padding: var(--space-2) 0.5rem 0;
-	}
-
-	@media (min-width: 1024px) {
-		.loggedout-top-row.modal-open {
-			grid-template-columns: minmax(24rem, 1.2fr) minmax(20rem, 1fr);
-			align-items: start;
-		}
-
-		.loggedout-top-row.modal-open .top-row-live {
-			order: 0;
-		}
-
-		.loggedout-top-row.modal-open .top-row-welcome {
-			order: 1;
-		}
 	}
 
 	.loggedout-over-globe {
@@ -556,7 +554,7 @@
 		flex-direction: column;
 		flex: 1;
 		min-height: 0;
-		padding: 0 0.5rem 0.5rem;
+		padding: var(--space-2) 0.5rem 0.5rem;
 		gap: 0.5rem;
 	}
 
@@ -718,6 +716,17 @@
 		padding-inline: 0.5rem;
 	}
 
+	.tag-suggestions {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		min-width: 0;
+
+		small {
+			color: light-dark(var(--gray-9), var(--gray-8));
+		}
+	}
+
 	.dismissible {
 		position: relative;
 	}
@@ -728,31 +737,17 @@
 		right: 0.5rem;
 	}
 
-	.welcome-section {
-		max-width: 56rem;
-		margin-inline: auto;
-		padding: 1.5rem;
-		border-radius: var(--border-radius);
-		background: var(--accent-2);
-		margin-bottom: var(--space-3);
+	.tagline {
+		font-size: var(--font-6);
+	}
 
-		h1 {
-			font-size: var(--font-8);
-			margin-bottom: 1rem;
-		}
+	.feature-list {
+		margin-block: 1rem;
+		font-size: var(--font-5);
+		padding-left: 1.25rem;
 
-		.tagline {
-			font-size: var(--font-6);
-		}
-
-		.feature-list {
-			margin-block: 1rem;
-			font-size: var(--font-5);
-			padding-left: 1.25rem;
-
-			li {
-				margin-block: var(--space-1);
-			}
+		li {
+			margin-block: var(--space-1);
 		}
 	}
 

@@ -4,8 +4,14 @@
 	import {base} from '$app/paths'
 	import {page} from '$app/state'
 
-	/** @type {{text: string | null | undefined, slug?: string | null, onTagClick?: (tag: string) => void, deckId?: number}} */
-	const {text, slug, onTagClick, deckId} = $props()
+	/** @type {{text: string | null | undefined, slug?: string | null, onTagClick?: (tag: string) => void, deckId?: number, selectedTags?: string[]}} */
+	const {text, slug, onTagClick, deckId, selectedTags} = $props()
+
+	// Explicit override for Tag's `filtered` state — Tag's own URL fallback only
+	// understands the channel tracks page's ?tags= param, so any page with its
+	// own filter model (search's ?q=, the deck queue's in-memory tags) needs to
+	// say which tags are active itself.
+	const selectedTagSet = $derived(new Set((selectedTags ?? []).map((t) => t.toLowerCase())))
 
 	const parts = $derived.by(() => {
 		if (typeof text !== 'string') return [{type: 'text', content: ''}]
@@ -54,7 +60,11 @@
 				type: 'link',
 				content: entity,
 				href,
-				isTag
+				isTag,
+				filtered:
+					isTag && selectedTags !== undefined
+						? selectedTagSet.has(entity.slice(1).toLowerCase())
+						: undefined
 			})
 
 			lastIndex = offset + match.length
@@ -73,12 +83,18 @@
 {#each parts as part, i (i)}
 	{#if part.type === 'link'}
 		{#if part.isTag && onTagClick}
-			<Tag onclick={() => onTagClick(part.content.slice(1))} value={part.content} {deckId}
-				>{part.content}</Tag
+			<Tag
+				onclick={() => onTagClick(part.content.slice(1))}
+				value={part.content}
+				filtered={part.filtered}
+				{deckId}>{part.content}</Tag
 			>
 		{:else}
-			<Tag href={part.href} value={part.isTag ? part.content : undefined} {deckId}
-				>{part.content}</Tag
+			<Tag
+				href={part.href}
+				value={part.isTag ? part.content : undefined}
+				filtered={part.filtered}
+				{deckId}>{part.content}</Tag
 			>
 		{/if}
 	{:else}

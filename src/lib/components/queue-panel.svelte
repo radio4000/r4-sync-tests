@@ -135,6 +135,7 @@
 				{canEditTrack}
 				onSelectTrack={(trackId) => (selectedTrackId = trackId)}
 				onTagClick={toggleTag}
+				{selectedTags}
 			/>
 		{:else if queueTracks.length === 0}
 			<div class="empty-state">

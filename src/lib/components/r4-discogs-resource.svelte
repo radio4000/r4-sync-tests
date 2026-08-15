@@ -375,80 +375,86 @@
 			{/if}
 		</div>
 
-		{#if full && (releaseStats || resource.community)}
-			<div class="release-community" aria-label={m.discogs_release_summary()}>
-				{#if releaseStats}
-					<span>
-						<Icon icon="unordered-list" size={12} />
-						{releaseStats}
-					</span>
-				{/if}
-				{#if resource.community}
-					<span title={m.discogs_users_have()}>
-						<Icon icon="users" size={12} />
-						{m.discogs_have_count({count: resource.community.have})}
-					</span>
-					<span title={m.discogs_users_want()}>
-						<Icon icon="favorite" size={12} />
-						{m.discogs_want_count({count: resource.community.want})}
-					</span>
-				{/if}
-				{#if Number(resource.community?.rating?.count) > 0}
-					<span title={m.discogs_avg_rating()}>
-						<Icon icon="chart-scatter" size={12} />
-						{(resource.community?.rating?.average ?? 0).toFixed(2)} / 5 ({m.discogs_ratings_count({
-							count: resource.community?.rating?.count ?? 0
-						})})
-					</span>
-				{/if}
-			</div>
-		{/if}
-
 		{#if full && tracklistItems.length > 0}
-			<ul class="list tracklist">
-				{#each trackRows as row (row.key)}
-					{@const track = row.track}
-					<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_noninteractive_element_interactions -->
-					<li
-						class="tracklist-item"
-						class:has-video={row.hasVideo}
-						class:is-real={row.isReal}
-						onclick={(e) => handleRowClick(e, track)}
-					>
-						<TrackCard
-							{track}
-							canEdit={false}
-							onPlay={playFromRelease}
-							selected={selectedTrackId === track.id}
-							showImage={row.hasVideo}
+			<details class="release-tracklist-details">
+				<summary>{m.discogs_show_tracklist({count: tracklistItems.length})}</summary>
+
+				{#if releaseStats || resource.community}
+					<div class="release-community" aria-label={m.discogs_release_summary()}>
+						{#if releaseStats}
+							<span>
+								<Icon icon="unordered-list" size={12} />
+								{releaseStats}
+							</span>
+						{/if}
+						{#if resource.community}
+							<span title={m.discogs_users_have()}>
+								<Icon icon="users" size={12} />
+								{m.discogs_have_count({count: resource.community.have})}
+							</span>
+							<span title={m.discogs_users_want()}>
+								<Icon icon="favorite" size={12} />
+								{m.discogs_want_count({count: resource.community.want})}
+							</span>
+						{/if}
+						{#if Number(resource.community?.rating?.count) > 0}
+							<span title={m.discogs_avg_rating()}>
+								<Icon icon="chart-scatter" size={12} />
+								{(resource.community?.rating?.average ?? 0).toFixed(2)} / 5 ({m.discogs_ratings_count(
+									{
+										count: resource.community?.rating?.count ?? 0
+									}
+								)})
+							</span>
+						{/if}
+					</div>
+				{/if}
+
+				<ul class="list tracklist">
+					{#each trackRows as row (row.key)}
+						{@const track = row.track}
+						<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_noninteractive_element_interactions -->
+						<li
+							class="tracklist-item"
+							class:has-video={row.hasVideo}
+							class:is-real={row.isReal}
+							onclick={(e) => handleRowClick(e, track)}
 						>
-							{#snippet description()}
-								<span class="track-hints">
-									{row.item.position}{row.item.duration ? ` · ${row.item.duration}` : ''}
-									{#if row.isReal}
-										<small class="state state--real">{m.discogs_in_channel()}</small>
-									{:else if row.hasVideo}
-										<small class="state">{m.discogs_video_available()}</small>
-									{:else}
-										<small class="state state--muted">{m.discogs_no_video()}</small>
+							<TrackCard
+								{track}
+								canEdit={false}
+								onPlay={playFromRelease}
+								selected={selectedTrackId === track.id}
+								showImage={row.hasVideo}
+							>
+								{#snippet description()}
+									<span class="track-hints">
+										{row.item.position}{row.item.duration ? ` · ${row.item.duration}` : ''}
+										{#if row.isReal}
+											<small class="state state--real">{m.discogs_in_channel()}</small>
+										{:else if row.hasVideo}
+											<small class="state">{m.discogs_video_available()}</small>
+										{:else}
+											<small class="state state--muted">{m.discogs_no_video()}</small>
+										{/if}
+									</span>
+								{/snippet}
+								{#snippet children(track)}
+									{#if row.hasVideo && onSelectMedia}
+										<button
+											type="button"
+											class="ghost use-btn"
+											onclick={() => onSelectMedia?.(track.url, selectedTrackTitle(row.item.title))}
+										>
+											{m.discogs_use_button()}
+										</button>
 									{/if}
-								</span>
-							{/snippet}
-							{#snippet children(track)}
-								{#if row.hasVideo && onSelectMedia}
-									<button
-										type="button"
-										class="ghost use-btn"
-										onclick={() => onSelectMedia?.(track.url, selectedTrackTitle(row.item.title))}
-									>
-										{m.discogs_use_button()}
-									</button>
-								{/if}
-							{/snippet}
-						</TrackCard>
-					</li>
-				{/each}
-			</ul>
+								{/snippet}
+							</TrackCard>
+						</li>
+					{/each}
+				</ul>
+			</details>
 		{/if}
 
 		{#if suggestions && suggestionsList.length > 0}
@@ -583,6 +589,18 @@
 			color: var(--gray-12);
 			border-color: var(--color-control-border-hover);
 		}
+	}
+
+	.release-tracklist-details summary {
+		cursor: var(--interactive-cursor, pointer);
+		padding: var(--space-1) 0.8rem;
+		font-size: var(--font-3);
+		color: var(--gray-10);
+		background: var(--gray-2);
+	}
+
+	.release-tracklist-details summary:hover {
+		color: var(--gray-12);
 	}
 
 	.release-community {

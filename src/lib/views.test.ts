@@ -21,7 +21,8 @@ describe('parseSource', () => {
 		expect(parseSource('@alice @bob')).toEqual({channels: ['alice', 'bob']})
 	})
 	test('tags', () => {
-		expect(parseSource('#jazz #dub')).toEqual({tags: ['jazz', 'dub']})
+		// Multiple tags default to AND ("matches all"), not OR — see channelViewFromUrl.
+		expect(parseSource('#jazz #dub')).toEqual({tags: ['jazz', 'dub'], tagsMode: 'all'})
 	})
 	test('search', () => {
 		expect(parseSource('miles davis')).toEqual({search: 'miles davis'})
@@ -30,11 +31,16 @@ describe('parseSource', () => {
 		expect(parseSource('@ko002 #jazz miles davis')).toEqual({
 			channels: ['ko002'],
 			tags: ['jazz'],
+			tagsMode: 'all',
 			search: 'miles davis'
 		})
 	})
 	test('deduplicates channels and tags', () => {
-		expect(parseSource('@a @a #x #x')).toEqual({channels: ['a'], tags: ['x']})
+		expect(parseSource('@a @a #x #x')).toEqual({
+			channels: ['a'],
+			tags: ['x'],
+			tagsMode: 'all'
+		})
 	})
 	test('empty input', () => {
 		expect(parseSource('')).toEqual({})
@@ -81,7 +87,7 @@ describe('parseView', () => {
 	})
 	test('channel + tag + search with options', () => {
 		expect(parseView('@ko002 #jazz miles davis?order=created&direction=asc&limit=50')).toEqual({
-			sources: [{channels: ['ko002'], tags: ['jazz'], search: 'miles davis'}],
+			sources: [{channels: ['ko002'], tags: ['jazz'], tagsMode: 'all', search: 'miles davis'}],
 			order: 'created',
 			direction: 'asc',
 			limit: 50
@@ -90,8 +96,8 @@ describe('parseView', () => {
 	test('multiple sources', () => {
 		expect(parseView('@alice #jazz;@bob #techno;@coco miles davis')).toEqual({
 			sources: [
-				{channels: ['alice'], tags: ['jazz']},
-				{channels: ['bob'], tags: ['techno']},
+				{channels: ['alice'], tags: ['jazz'], tagsMode: 'all'},
+				{channels: ['bob'], tags: ['techno'], tagsMode: 'all'},
 				{channels: ['coco'], search: 'miles davis'}
 			]
 		})
@@ -114,8 +120,8 @@ describe('parseView', () => {
 	test('strips r4:// prefix', () => {
 		expect(parseView('r4://@alice #jazz;@bob #techno?order=shuffle')).toEqual({
 			sources: [
-				{channels: ['alice'], tags: ['jazz']},
-				{channels: ['bob'], tags: ['techno']}
+				{channels: ['alice'], tags: ['jazz'], tagsMode: 'all'},
+				{channels: ['bob'], tags: ['techno'], tagsMode: 'all'}
 			],
 			order: 'shuffle'
 		})
@@ -203,10 +209,10 @@ describe('parseSource: token splitting and adjacency', () => {
 		// arguably should be two tags, but testing actual behavior
 		const result = parseSource('#fish#apples')
 		// BUG? This gives a single tag 'fish#apples' instead of ['fish', 'apples']
-		expect(result).toEqual({tags: ['fish#apples']})
+		expect(result).toEqual({tags: ['fish#apples'], tagsMode: 'all'})
 	})
 	test('#fish #apples — space between tags', () => {
-		expect(parseSource('#fish #apples')).toEqual({tags: ['fish', 'apples']})
+		expect(parseSource('#fish #apples')).toEqual({tags: ['fish', 'apples'], tagsMode: 'all'})
 	})
 	test('@alice@bob — no space between channels', () => {
 		// one token '@alice@bob', starts with @, slug = 'alice@bob'
@@ -220,17 +226,21 @@ describe('parseSource: token splitting and adjacency', () => {
 	})
 	test('#jazz@alice — tag absorbs the @', () => {
 		const result = parseSource('#jazz@alice')
-		expect(result).toEqual({tags: ['jazz@alice']})
+		expect(result).toEqual({tags: ['jazz@alice'], tagsMode: 'all'})
 	})
 	test('comma-separated tags are not split', () => {
 		// #jazz,dub is one token → one tag 'jazz,dub'
-		expect(parseSource('#jazz,dub')).toEqual({tags: ['jazz,dub']})
+		expect(parseSource('#jazz,dub')).toEqual({tags: ['jazz,dub'], tagsMode: 'all'})
 	})
 	test('search with special characters', () => {
 		expect(parseSource('café naïve über')).toEqual({search: 'café naïve über'})
 	})
 	test('unicode in channels and tags', () => {
-		expect(parseSource('@日本語 #音楽')).toEqual({channels: ['日本語'], tags: ['音楽']})
+		expect(parseSource('@日本語 #音楽')).toEqual({
+			channels: ['日本語'],
+			tags: ['音楽'],
+			tagsMode: 'all'
+		})
 	})
 })
 
@@ -239,6 +249,7 @@ describe('parseSource edge cases', () => {
 		expect(parseSource('  @alice   #jazz   miles   davis  ')).toEqual({
 			channels: ['alice'],
 			tags: ['jazz'],
+			tagsMode: 'all',
 			search: 'miles davis'
 		})
 	})
@@ -246,6 +257,7 @@ describe('parseSource edge cases', () => {
 		expect(parseSource('@a\t#b\t\thello')).toEqual({
 			channels: ['a'],
 			tags: ['b'],
+			tagsMode: 'all',
 			search: 'hello'
 		})
 	})
@@ -268,13 +280,15 @@ describe('parseSource edge cases', () => {
 	})
 	test('tags with hyphens and numbers', () => {
 		expect(parseSource('#lo-fi #80s #post-punk')).toEqual({
-			tags: ['lo-fi', '80s', 'post-punk']
+			tags: ['lo-fi', '80s', 'post-punk'],
+			tagsMode: 'all'
 		})
 	})
 	test('interleaved tokens', () => {
 		expect(parseSource('#jazz @alice hello @bob #dub world')).toEqual({
 			channels: ['alice', 'bob'],
 			tags: ['jazz', 'dub'],
+			tagsMode: 'all',
 			search: 'hello world'
 		})
 	})
@@ -288,9 +302,9 @@ describe('parseView multi-query stress', () => {
 		const input = '@alice #jazz;@bob #techno;#ambient;miles davis;@coco @dan'
 		const view = parseView(input)
 		expect(view.sources).toHaveLength(5)
-		expect(view.sources[0]).toEqual({channels: ['alice'], tags: ['jazz']})
-		expect(view.sources[1]).toEqual({channels: ['bob'], tags: ['techno']})
-		expect(view.sources[2]).toEqual({tags: ['ambient']})
+		expect(view.sources[0]).toEqual({channels: ['alice'], tags: ['jazz'], tagsMode: 'all'})
+		expect(view.sources[1]).toEqual({channels: ['bob'], tags: ['techno'], tagsMode: 'all'})
+		expect(view.sources[2]).toEqual({tags: ['ambient'], tagsMode: 'all'})
 		expect(view.sources[3]).toEqual({search: 'miles davis'})
 		expect(view.sources[4]).toEqual({channels: ['coco', 'dan']})
 	})
@@ -336,10 +350,11 @@ describe('parseView multi-query stress', () => {
 		expect(view.sources[2]).toEqual({tags: ['ambient', 'dub'], tagsMode: 'all'})
 	})
 
-	test('tagsMode=any is ignored (it is the default)', () => {
+	test('tagsMode=any has no effect — "all" is the default for any tagged source', () => {
+		// There's no wire format for requesting "any" explicitly; the ?tagsMode
+		// param can only ever push a source to 'all' (parseView never clears it).
 		const view = parseView('#jazz?tagsMode=any')
-		expect(view.sources[0]).toEqual({tags: ['jazz']})
-		expect(view.sources[0].tagsMode).toBeUndefined()
+		expect(view.sources[0]).toEqual({tags: ['jazz'], tagsMode: 'all'})
 	})
 })
 
@@ -623,8 +638,8 @@ describe('viewFromUrl', () => {
 		const url = new URL('http://x.com/search?q=%40alice%20%23jazz%3B%40bob%20%23techno')
 		expect(viewFromUrl(url)).toEqual({
 			sources: [
-				{channels: ['alice'], tags: ['jazz']},
-				{channels: ['bob'], tags: ['techno']}
+				{channels: ['alice'], tags: ['jazz'], tagsMode: 'all'},
+				{channels: ['bob'], tags: ['techno'], tagsMode: 'all'}
 			]
 		})
 	})

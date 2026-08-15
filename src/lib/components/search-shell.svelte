@@ -12,7 +12,8 @@
 		onsubmit,
 		view = undefined,
 		onviewchange = undefined,
-		pagination = undefined
+		pagination = undefined,
+		filterToggle = undefined
 	} = $props()
 
 	const placeholder = $derived.by(() => {
@@ -31,6 +32,7 @@
 	<nav class="search-nav-row">
 		<SearchTabs />
 		<div class="search-nav-controls">
+			{#if filterToggle}{@render filterToggle()}{/if}
 			{#if pagination}{@render pagination()}{/if}
 			{#if view && onviewchange}
 				<ViewsBar {view} onchange={onviewchange} />
@@ -53,19 +55,23 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		flex-wrap: wrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: thin;
+		scroll-snap-type: x proximity;
 		gap: var(--space-2);
 		width: 100%;
 	}
 
-	.search-nav-row :global(.search-tabs) {
+	.search-nav-row :global(.search-tabs),
+	.search-nav-controls {
 		flex-shrink: 0;
+		scroll-snap-align: start;
 	}
 
 	.search-nav-controls {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		flex-shrink: 0;
 	}
 </style>

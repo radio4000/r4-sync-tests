@@ -11,9 +11,9 @@
 	import AutoRadioButton from '$lib/components/auto-radio-button.svelte'
 	import PopoverMenu from '$lib/components/popover-menu.svelte'
 	import Icon from '$lib/components/icon.svelte'
-	import Dialog from '$lib/components/dialog.svelte'
 	import SortControls from '$lib/components/sort-controls.svelte'
 	import FilterChips from '$lib/components/filter-chips.svelte'
+	import TagsFilterDialog from '$lib/components/tags-filter-dialog.svelte'
 	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import {addToPlaylist, ensureActiveDeck, joinAutoRadio, loadDeckView, playTrack} from '$lib/api'
 	import {toAutoTracks, hasAutoRadioCoverage} from '$lib/player/auto-radio'
@@ -43,14 +43,7 @@
 	let direction = $state<View['direction']>('desc')
 	let randomSeed = $state('')
 	let reshuffleKey = $state(0)
-	let tagsSearch = $state('')
-	let tagsSort = $state<'count' | 'alpha'>('count')
-	let tagsDirection = $state<'asc' | 'desc'>('desc')
 	let showFiltersModal = $state(false)
-	const tagsSortOptions = [
-		{value: 'count' as const, icon: 'hash' as const, label: () => m.tags_sort_count()},
-		{value: 'alpha' as const, icon: 'sort' as const, label: () => m.tags_sort_alpha()}
-	]
 
 	// SearchInput binds straight to the URL — no local mirror state to fall out of sync.
 	// keepFocus is required: goto() resets focus to <body> on every navigation by default,
@@ -107,7 +100,6 @@
 	)
 	let allTracks = $derived(tracksQuery.data || [])
 	let canEdit = $derived(canEditChannel(channel?.id))
-	let aggregatedTags = $derived(getChannelTags(allTracks))
 	let isSorting = $derived(order !== 'created' || direction !== 'desc')
 	let isFiltering = $derived(
 		searchValue !== '' || selectedTags.length > 0 || isSorting || Boolean(matchingSlug)
@@ -115,21 +107,6 @@
 	let activeFilterCount = $derived(
 		selectedTags.length + (searchValue ? 1 : 0) + (isSorting ? 1 : 0) + (matchingSlug ? 1 : 0)
 	)
-	let selectedTagsSort = $derived(
-		tagsSortOptions.find((option) => option.value === tagsSort) ?? tagsSortOptions[0]
-	)
-	let visibleTags = $derived.by(() => {
-		const q = tagsSearch.trim().toLowerCase()
-		const filtered = aggregatedTags.filter((tag) => !q || tag.value.includes(q))
-		const direction = tagsDirection === 'asc' ? 1 : -1
-		return filtered.toSorted((a, b) => {
-			const base =
-				tagsSort === 'alpha'
-					? a.value.localeCompare(b.value)
-					: a.count - b.count || a.value.localeCompare(b.value)
-			return base * direction
-		})
-	})
 	let filteredTracks = $derived.by(() => {
 		// Force recomputation when user explicitly reshuffles.
 		if (order === 'shuffle') void reshuffleKey
@@ -156,6 +133,10 @@
 			return Boolean(key && matchingTrackKeys.has(key))
 		})
 	})
+	// Narrows as filters are applied, so selecting a tag updates the tag list
+	// (and its counts) to what's still reachable, instead of always showing
+	// the channel's full, unfiltered tag cloud.
+	let aggregatedTags = $derived(getChannelTags(visibleTracks))
 	let hasActionableSelection = $derived(isFiltering && visibleTracks.length > 0)
 	let filteredAutoRadioTracks = $derived(toAutoTracks(visibleTracks))
 	let canShowFilteredAutoRadio = $derived(hasAutoRadioCoverage(visibleTracks))
@@ -294,90 +275,45 @@
 	{/if}
 {/snippet}
 
-{#if showFiltersModal}
-	<Dialog bind:showModal={showFiltersModal}>
-		{#snippet header()}
-			<header class="modal-header">
-				<h2>Tags filter</h2>
-				{#if activeFilterCount > 0}
-					<div class="modal-header-actions">
-						<button type="button" class="ghost" onclick={clearTrackFilters}>
-							{m.common_clear()}
-						</button>
-					</div>
-				{/if}
-			</header>
-		{/snippet}
-		<section class="filters-dialog">
-			<div class="filters-stats-row">
-				<p class="filters-stats">
-					<strong>{visibleTracks.length}</strong> / {allTracks.length}
-					{m.nav_tracks()}
-				</p>
-				{#if hasActionableSelection}
-					{@render filterActions(true)}
-				{/if}
-			</div>
+<TagsFilterDialog
+	bind:showModal={showFiltersModal}
+	tags={aggregatedTags}
+	{selectedTags}
+	onToggleTag={toggleTag}
+>
+	{#snippet dialogHeader()}
+		<header class="modal-header">
+			<h2>{m.views_filters_label()}</h2>
 			{#if activeFilterCount > 0}
-				<FilterChips
-					search={searchValue}
-					matching={matchingSlug}
-					tags={selectedTags}
-					onRemoveTag={toggleTag}
-					onClearMatching={clearMatchingFilter}
-				/>
-			{/if}
-			<section class="filters-dialog-panel">
-				<h3>{m.views_tags_label()}</h3>
-				<div class="tags-toolbar">
-					<div class="tags-search-row">
-						<input type="search" bind:value={tagsSearch} placeholder="Search tags" />
-						<PopoverMenu>
-							{#snippet trigger()}
-								<Icon icon={selectedTagsSort.icon} />
-								{selectedTagsSort.label()}
-							{/snippet}
-							<menu class="tags-sort-options nav-vertical">
-								{#each tagsSortOptions as option (option.value)}
-									<button
-										type="button"
-										class:active={tagsSort === option.value}
-										onclick={() => (tagsSort = option.value)}
-										title={option.label()}
-									>
-										<Icon icon={option.icon} />
-										{option.label()}
-									</button>
-								{/each}
-							</menu>
-						</PopoverMenu>
-						<button
-							type="button"
-							class="ghost"
-							title={tagsDirection === 'asc'
-								? m.channels_tooltip_sort_asc()
-								: m.channels_tooltip_sort_desc()}
-							onclick={() => (tagsDirection = tagsDirection === 'asc' ? 'desc' : 'asc')}
-						>
-							<Icon icon={tagsDirection === 'asc' ? 'funnel-ascending' : 'funnel-descending'} />
-						</button>
-					</div>
+				<div class="modal-header-actions">
+					<button type="button" class="ghost" onclick={clearTrackFilters}>
+						{m.common_clear()}
+					</button>
 				</div>
-				<menu class="tags-filter">
-					{#each visibleTags as { value, count } (value)}
-						<button
-							type="button"
-							class:active={selectedTags.includes(value)}
-							onclick={() => toggleTag(value)}
-						>
-							#{value} <span class="tag-count">({count})</span>
-						</button>
-					{/each}
-				</menu>
-			</section>
-		</section>
-	</Dialog>
-{/if}
+			{/if}
+		</header>
+	{/snippet}
+	{#snippet dialogTop()}
+		<div class="filters-stats-row">
+			<p class="filters-stats">
+				<strong>{visibleTracks.length}</strong> / {allTracks.length}
+				{m.nav_tracks()}
+			</p>
+			{#if hasActionableSelection}
+				{@render filterActions(true)}
+			{/if}
+		</div>
+		{#if activeFilterCount > 0}
+			<FilterChips
+				search={searchValue}
+				matching={matchingSlug}
+				tags={selectedTags}
+				onRemoveTag={toggleTag}
+				onClearMatching={clearMatchingFilter}
+			/>
+		{/if}
+	{/snippet}
+</TagsFilterDialog>
 
 {#if channel}
 	<Subpage
@@ -440,6 +376,7 @@
 					playContext={true}
 					selectedTrackId={targetTrackId}
 					onTagClick={toggleTag}
+					{selectedTags}
 				/>
 			{/if}
 
@@ -485,11 +422,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
-	}
-
-	.filters-dialog {
-		display: grid;
-		gap: 0.75rem;
+		margin-inline-start: auto;
 	}
 
 	.filters-stats {
@@ -506,51 +439,6 @@
 
 	.filter-actions {
 		align-items: center;
-	}
-
-	.filters-dialog-panel {
-		display: grid;
-		gap: var(--space-1);
-		h3 {
-			margin: 0;
-		}
-	}
-
-	.tags-filter {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1);
-		max-height: min(32vh, 22rem);
-		overflow: auto;
-		button.active {
-			background: var(--accent-5);
-			color: var(--accent-11);
-		}
-	}
-
-	.tags-toolbar {
-		display: grid;
-		gap: var(--space-1);
-	}
-
-	.tags-search-row {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto auto;
-		align-items: center;
-		gap: var(--space-1);
-	}
-
-	.tags-sort-options {
-		min-width: 10rem;
-	}
-
-	.tags-sort-options button {
-		justify-content: flex-start;
-	}
-
-	.tag-count {
-		opacity: 0.6;
-		font-size: 0.85em;
 	}
 
 	.filter-row {

@@ -5,8 +5,8 @@
 	import Icon from './icon.svelte'
 	import * as m from '$lib/paraglide/messages'
 
-	/** @type {{pool: import('$lib/types').Channel[], pickCount: number, titleHref?: string, skeleton?: boolean, column?: boolean}} */
-	let {pool, pickCount, titleHref, skeleton = false, column = false} = $props()
+	/** @type {{pool: import('$lib/types').Channel[], pickCount: number, titleHref?: string, skeleton?: boolean, column?: boolean, headerExtra?: import('svelte').Snippet}} */
+	let {pool, pickCount, titleHref, skeleton = false, column = false, headerExtra} = $props()
 
 	// Daily-seeded by default (same rotation as /featured); reshuffle picks a
 	// random seed for instant variety. Shared pickFeatured keeps both in sync.
@@ -30,6 +30,7 @@
 				{/if}
 			</h2>
 			<menu>
+				{#if headerExtra}{@render headerExtra()}{/if}
 				{#if pool.length > pickCount}
 					<button type="button" title={m.home_featured_refresh()} onclick={reshuffle}>
 						<Icon icon="switch-alt" />
