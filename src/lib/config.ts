@@ -74,7 +74,7 @@ export const navPopoverOnLogo = false
 
 export const MAP_TILE_STYLES = ['carto', 'topo', 'satellite'] as const
 export type MapTileStyle = (typeof MAP_TILE_STYLES)[number]
-export const DEFAULT_MAP_TILE_STYLE: MapTileStyle = 'satellite'
+export const DEFAULT_MAP_TILE_STYLE: MapTileStyle = 'carto'
 export const DEFAULT_MAP_SHOW_DAY_NIGHT = true
 export const DEFAULT_MAP_SHOW_GRATICULES = true
 
