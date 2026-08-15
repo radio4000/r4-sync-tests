@@ -159,6 +159,7 @@
 	.day-header {
 		font-size: var(--font-4);
 		font-weight: 600;
+		text-align: center;
 		color: light-dark(var(--gray-11), var(--gray-9));
 		margin: 1rem 0 var(--space-1);
 		&:first-child {

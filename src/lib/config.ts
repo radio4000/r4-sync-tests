@@ -46,7 +46,7 @@ export const communityLinks: CommunityLink[] = [
 export const conceptIcons = {
 	home: 'radio',
 	channels: 'globe',
-	tracks: 'play-fill',
+	tracks: 'unordered-list',
 	tags: 'tag',
 	search: 'search',
 	feed: 'history',
