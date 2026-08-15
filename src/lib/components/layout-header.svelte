@@ -146,8 +146,6 @@
 					<ChannelAvatar id={userChannel.image} alt={userChannel.name} />
 					<span class="btn-label channel-slug-label">@{userChannel.slug}</span>
 				</a>
-				<AddTrackDialog class="nav-btn" label={m.track_add_title()} />
-				<BroadcastToggle channel={userChannel} class="nav-btn" />
 			{:else if isSignedIn}
 				<a
 					href={resolve('/create-channel')}
@@ -159,6 +157,10 @@
 					<Icon icon="user" />
 					<span class="btn-label">{m.nav_channels()}</span>
 				</a>
+			{/if}
+			<AddTrackDialog class="nav-btn" label={m.track_add_title()} />
+			{#if userChannel}
+				<BroadcastToggle channel={userChannel} class="nav-btn" />
 			{/if}
 			{#if !isSignedIn}
 				<a
