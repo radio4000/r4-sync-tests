@@ -433,7 +433,6 @@
 	"player_tooltip_shuffle": "随机播放",
 	"player_visible": "隐藏视频",
 	"queue_clear_history_button": "清除历史",
-	"queue_clear_search": "清除搜索",
 	"queue_empty": "没有曲目符合此筛选条件。",
 	"queue_hidden": "显示队列",
 	"queue_no_tracks": "队列为空。请选择一个频道开始播放。",
