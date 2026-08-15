@@ -89,9 +89,9 @@
 			query,
 			localChannels: [...channelsCollection.state.values()]
 		})
-			.then((results) => {
+			.then((result) => {
 				if (!stale) {
-					channels = results
+					channels = result.channels
 					channelsLoading = false
 				}
 			})
@@ -113,7 +113,11 @@
 		onsubmit={search.handleSubmit}
 		{view}
 		onviewchange={onViewsBarChange}
-	/>
+	>
+		{#snippet pagination()}
+			<Pagination {currentPage} {pageSize} {totalCount} defaultPageSize={50} />
+		{/snippet}
+	</SearchShell>
 
 	{#if hasFilter}
 		{#if !channelsLoading && !tracksLoading && channels.length === 0 && tracks.length === 0}
@@ -148,7 +152,6 @@
 							? m.search_track_one({count: resultCount})
 							: m.search_track_other({count: resultCount})}
 					</h2>
-					<Pagination {currentPage} {pageSize} {totalCount} defaultPageSize={50} />
 					<SearchTrackMenu {tracks} title={search.value.trim()} {view} basePath="/search" />
 				</header>
 				<ul class="list">
@@ -226,11 +229,15 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		flex-wrap: wrap;
 		gap: 0.5rem;
 		padding-inline: 0.5rem;
 	}
 
 	section {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 		margin-bottom: 1rem;
 	}
 

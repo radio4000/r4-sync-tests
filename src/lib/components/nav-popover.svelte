@@ -65,9 +65,9 @@
 		searching = true
 		let stale = false
 		searchChannelsCombined({query: q, localChannels: appState.local_channels ?? []})
-			.then((r) => {
+			.then(({channels}) => {
 				if (stale) return
-				results = r.slice(0, 12)
+				results = channels.slice(0, 12)
 				searching = false
 			})
 			.catch(() => {

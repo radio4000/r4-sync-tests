@@ -42,20 +42,20 @@ export const buildFtsFilter = (query) => {
 /**
  * Search channels remotely
  * @param {string} query
- * @param {{limit?: number}} options
- * @returns {Promise<import('$lib/types').Channel[]>}
+ * @param {{limit?: number, offset?: number}} options
+ * @returns {Promise<{channels: import('$lib/types').Channel[], count: number}>}
  */
-export async function searchChannels(query, {limit = 100} = {}) {
-	if (!query?.trim()) return []
+export async function searchChannels(query, {limit = 100, offset = 0} = {}) {
+	if (!query?.trim()) return {channels: [], count: 0}
 	const filter = buildFtsFilter(query)
-	if (!filter) return []
-	const {data, error} = await sdk.supabase
+	if (!filter) return {channels: [], count: 0}
+	const {data, error, count} = await sdk.supabase
 		.from('channels_with_tracks')
-		.select('*')
+		.select('*', {count: 'exact'})
 		.or(filter)
-		.limit(limit)
+		.range(offset, offset + limit - 1)
 	if (error) throw new Error(error.message)
-	return /** @type {import('$lib/types').Channel[]} */ (data ?? [])
+	return {channels: /** @type {import('$lib/types').Channel[]} */ (data ?? []), count: count ?? 0}
 }
 
 /**
