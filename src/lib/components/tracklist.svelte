@@ -28,7 +28,8 @@
 		showSlug?: boolean,
 		selectedTrackId?: string | null,
 		onSelectTrack?: (trackId: string | null) => void,
-		onTagClick?: (tag: string) => void
+		onTagClick?: (tag: string) => void,
+		selectedTags?: string[]
 		}}
 	*/
 	const {
@@ -45,7 +46,8 @@
 		showSlug = false,
 		selectedTrackId: selectedTrackIdProp = null,
 		onSelectTrack,
-		onTagClick
+		onTagClick,
+		selectedTags
 	} = $props()
 	let internalSelectedTrackId = $state(/** @type {string | null} */ (null))
 	const selectedTrackId = $derived(selectedTrackIdProp ?? internalSelectedTrackId)
@@ -214,6 +216,7 @@
 		canEdit={canEditItem(track)}
 		showSlug={false}
 		{onTagClick}
+		{selectedTags}
 	/>
 	{#if showSlug}<ChannelMicroCard slug={track.slug} />{/if}
 	{@render footer?.({track})}
