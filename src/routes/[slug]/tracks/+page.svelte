@@ -31,7 +31,6 @@
 	const channelCtx = getChannelCtx()
 	const tracksQuery = getTracksQueryCtx()
 
-	let searchInput = $state(page.url.searchParams.get('q') ?? '')
 	const {toggleTag} = getTagFilter()
 	// Single source of truth for the URL-backed filter (?tags=, ?q=, order/direction).
 	let urlView = $derived(channelViewFromUrl(page.url, page.params.slug))
@@ -53,18 +52,17 @@
 		{value: 'alpha' as const, icon: 'sort' as const, label: () => m.tags_sort_alpha()}
 	]
 
-	// Sync search input → URL (debounced by SearchInput)
-	$effect(() => {
-		const trimmed = searchInput.trim()
+	// SearchInput binds straight to the URL — no local mirror state to fall out of sync.
+	// keepFocus is required: goto() resets focus to <body> on every navigation by default,
+	// which was unfocusing the search box on every debounced keystroke.
+	function setSearchValue(next: string) {
+		const trimmed = next.trim()
 		if (trimmed === searchValue) return
 		const url = new URL(page.url)
-		if (trimmed) {
-			url.searchParams.set('q', trimmed)
-		} else {
-			url.searchParams.delete('q')
-		}
-		goto(url, {replaceState: true})
-	})
+		if (trimmed) url.searchParams.set('q', trimmed)
+		else url.searchParams.delete('q')
+		goto(url, {replaceState: true, keepFocus: true})
+	}
 
 	$effect(() => {
 		order = urlOrder
@@ -278,7 +276,7 @@
 				{activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
 			</button>
 			<SearchInput
-				bind:value={searchInput}
+				bind:value={() => searchValue, setSearchValue}
 				placeholder={`${visibleTracks.length}/${allTracks.length}`}
 				debounce={150}
 				autofocus={page.state.focus === true}
