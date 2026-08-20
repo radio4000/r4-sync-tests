@@ -280,7 +280,12 @@
 					{#if (appState.channels?.length ?? 0) > 0}
 						<ButtonFollow channel={displayChannel} />
 					{:else}
-						<a href={authHref} class="btn" {@attach tooltip({content: m.common_follow()})}>
+						<a
+							href={authHref}
+							class="btn"
+							rel="nofollow"
+							{@attach tooltip({content: m.common_follow()})}
+						>
 							<Icon icon="favorite" />
 						</a>
 					{/if}
