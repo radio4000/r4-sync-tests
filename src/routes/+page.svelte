@@ -6,7 +6,7 @@
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {channelsCollection, fetchAppStats} from '$lib/collections/channels'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {getFollowedChannels} from '$lib/followed-channels.svelte'
+	import {getFollowedChannels, getChannelConnections} from '$lib/followed-channels.svelte'
 	import {getFeaturedPool} from '$lib/collections/featured'
 	import {getFeaturedSuggestions} from '$lib/featured-suggestions.svelte'
 	import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
@@ -17,7 +17,7 @@
 		shuffleArray,
 		shuffleSeed
 	} from '$lib/utils'
-	import {loadDeckView, playTrack, sortByNewest} from '$lib/api'
+	import {loadDeckView, playTrack, sortByNewest, toggleChannelPlay} from '$lib/api'
 	import {isBroadcasting} from '$lib/deck'
 	import {authStatus} from '$lib/app-state.svelte'
 	import {appPresence} from '$lib/presence.svelte'
@@ -48,6 +48,7 @@
 
 	const follows = getFollowedChannels()
 	const favoriteChannelIds = $derived(new Set(follows.followedIds))
+	const followerConn = getChannelConnections('followers', () => userChannel?.id, {hydrate: false})
 
 	// Todo checklist: show when channel exists but onboarding is incomplete
 	const showOnboarding = $derived(
@@ -166,6 +167,7 @@
 	}
 
 	const showFavoritesWidget = $derived(follows.followedChannels.length > 0)
+	const showFollowersWidget = $derived(followerConn.ids.length > 0)
 	const showFavoriteBroadcastWidget = $derived(favoriteBroadcastCount > 0)
 	const showBroadcastCountWidget = $derived(broadcastCount > 0 && !userChannelIsBroadcasting)
 
@@ -232,7 +234,7 @@
 		<!-- Logged in with channel -->
 
 		<section class="section dashboard-section">
-			{#if showTrackWidget || showFavoritesWidget || showFavoriteBroadcastWidget}
+			{#if showTrackWidget || showFavoritesWidget || showFollowersWidget || showFavoriteBroadcastWidget}
 				<div class="dashboard-group">
 					<div class="dashboard-grid dashboard-grid--scroll">
 						{#if showTrackWidget}
@@ -261,6 +263,18 @@
 								</span>
 							</a>
 						{/if}
+						{#if showFollowersWidget}
+							<a
+								class="dashboard-card dashboard-card--link dashboard-card--row dashboard-card--pill"
+								href={resolve('/[slug]/followers', {slug: userChannel.slug})}
+							>
+								<Icon icon="users" size={16} />
+								<span class="chip-label">
+									{m.nav_followers()}
+									<strong class="chip-count">{followerConn.ids.length.toLocaleString()}</strong>
+								</span>
+							</a>
+						{/if}
 						{#if showFavoriteBroadcastWidget}
 							<a
 								class="dashboard-card dashboard-card--link dashboard-card--row dashboard-card--pill"
@@ -280,6 +294,14 @@
 			{#if userChannelTopTags.length > 0 || tagsLoading}
 				<div class="dashboard-group">
 					<div class="dashboard-grid dashboard-grid--scroll">
+						<button
+							type="button"
+							class="dashboard-card dashboard-card--link dashboard-card--row dashboard-card--pill"
+							onclick={() => toggleChannelPlay(userChannel)}
+						>
+							<Icon icon="play-fill" size={16} />
+							<span class="chip-label">{m.home_play_all()}</span>
+						</button>
 						{#if tagsLoading}
 							<div
 								class="dashboard-card dashboard-card--row dashboard-card--pill loading-placeholder"
