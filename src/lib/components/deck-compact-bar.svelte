@@ -390,8 +390,10 @@
 		outline-offset: 0;
 	}
 
+	/* See player.svelte's identical fix — the compact bar also sits on
+	   --floating-bg, not the app's plain background. */
 	.track-panel :global(article.active) {
-		background: transparent;
+		background: var(--color-interface);
 	}
 
 	.track-panel :global(.card) {

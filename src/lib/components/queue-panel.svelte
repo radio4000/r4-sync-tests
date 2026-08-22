@@ -171,6 +171,13 @@
 		background: transparent;
 	}
 
+	/* Same fix as player.svelte/deck-compact-bar.svelte: TrackCard's .active
+	   is transparent by default (correct on a normal page), but this panel
+	   sits on the deck's --floating-bg, not the app's plain background. */
+	main :global(article.active) {
+		background: var(--color-interface);
+	}
+
 	.empty-state {
 		display: flex;
 		flex-direction: column;
