@@ -6,14 +6,16 @@
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import * as m from '$lib/paraglide/messages'
 
-	/** @type {{display?: 'grid' | 'list' | 'map' | 'infinite', order?: string, direction?: 'asc' | 'desc', setDisplay?: (value: 'grid' | 'list' | 'map' | 'infinite') => void}} */
+	/** @type {{display?: 'grid' | 'list' | 'map' | 'tuner' | 'infinite', order?: string, direction?: 'asc' | 'desc', setDisplay?: (value: 'grid' | 'list' | 'map' | 'tuner' | 'infinite') => void, showSort?: boolean, onreshuffle?: () => void}} */
 	let {
 		display = $bindable('grid'),
 		order = $bindable('updated'),
 		direction = $bindable('desc'),
-		setDisplay = (/** @type {'grid' | 'list' | 'map' | 'infinite'} */ value) => {
+		setDisplay = (/** @type {'grid' | 'list' | 'map' | 'tuner' | 'infinite'} */ value) => {
 			display = value
-		}
+		},
+		showSort = true,
+		onreshuffle = undefined
 	} = $props()
 </script>
 
@@ -47,6 +49,13 @@
 			<Icon icon="map" strokeWidth={1.7} /><small>{m.channels_view_label_map()}</small>
 		</button>
 		<button
+			class:active={display === 'tuner'}
+			onclick={() => setDisplay('tuner')}
+			{@attach tooltip({content: m.channels_tooltip_tuner()})}
+		>
+			<Icon icon="radio" /><small>{m.channels_view_label_tuner()}</small>
+		</button>
+		<button
 			class:active={display === 'infinite'}
 			onclick={() => setDisplay('infinite')}
 			{@attach tooltip({content: m.channels_tooltip_infinite()})}
@@ -54,5 +63,7 @@
 			<Icon icon="box-3d" /><small>{m.channels_view_label_infinite()}</small>
 		</button>
 	</menu>
-	<SortControls bind:order bind:direction />
+	{#if showSort}
+		<SortControls bind:order bind:direction {onreshuffle} />
+	{/if}
 </PopoverMenu>

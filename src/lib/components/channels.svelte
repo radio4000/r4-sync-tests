@@ -14,8 +14,6 @@
 	import {getChannelActivity} from '$lib/channel-activity.svelte'
 	import {toChannelCardMedia} from '$lib/components/channel-ui-state.ts'
 	import {
-		viewIconMap,
-		viewLabelMap,
 		handleCanvasClick as onCanvasClick,
 		handleCanvasDoubleClick
 	} from '$lib/components/channels-view-shared.js'
@@ -23,12 +21,11 @@
 	import {paginationFromUrl, shuffleSeed} from '$lib/utils'
 	import {pickFeatured, dailySeed} from '$lib/collections/featured'
 	import ChannelCard from './channel-card.svelte'
+	import ChannelsViewControls from './channels-view-controls.svelte'
 	import Dialog from './dialog.svelte'
 	import Pagination from './pagination.svelte'
 	import Icon from './icon.svelte'
-	import PopoverMenu from './popover-menu.svelte'
 	import SearchInput from './search-input.svelte'
-	import SortControls from './sort-controls.svelte'
 	import SpectrumScanner from './spectrum-scanner.svelte'
 	import ExplorePageHeader from './explore-page-header.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
@@ -455,55 +452,16 @@
 			/>
 		{/if}
 
-		<PopoverMenu
-			id="channels-display"
-			closeOnClick={false}
-			triggerAttachment={tooltip({content: m.channels_view_mode({mode: viewLabelMap[display]()})})}
-		>
-			{#snippet trigger()}<Icon icon={viewIconMap[display]} strokeWidth={1.7} />{/snippet}
-			<menu class="view-modes">
-				<button
-					class:active={display === 'grid'}
-					onclick={() => setDisplay('grid')}
-					{@attach tooltip({content: m.channels_tooltip_grid()})}
-					><Icon icon="grid" strokeWidth={1.7} /><small>{m.channels_view_label_grid()}</small
-					></button
-				>
-				<button
-					class:active={display === 'list'}
-					onclick={() => setDisplay('list')}
-					{@attach tooltip({content: m.channels_tooltip_list()})}
-					><Icon icon="unordered-list" /><small>{m.channels_view_label_list()}</small></button
-				>
-				<button
-					class:active={display === 'map'}
-					onclick={() => setDisplay('map')}
-					{@attach tooltip({content: m.channels_tooltip_map()})}
-					><Icon icon="map" strokeWidth={1.7} /><small>{m.channels_view_label_map()}</small></button
-				>
-				<button
-					class:active={display === 'tuner'}
-					onclick={() => setDisplay('tuner')}
-					{@attach tooltip({content: m.channels_tooltip_tuner()})}
-					><Icon icon="radio" /><small>{m.channels_view_label_tuner()}</small></button
-				>
-				<button
-					class:active={display === 'infinite'}
-					onclick={() => setDisplay('infinite')}
-					{@attach tooltip({content: m.channels_tooltip_infinite()})}
-					><Icon icon="box-3d" /><small>{m.channels_view_label_infinite()}</small></button
-				>
-			</menu>
-			{#if filter !== 'featured'}
-				<SortControls
-					bind:order={appState.channels_order}
-					bind:direction={appState.channels_order_direction}
-					onreshuffle={() => {
-						paginatedLimit = CHANNELS_PAGE_SIZE
-					}}
-				/>
-			{/if}
-		</PopoverMenu>
+		<ChannelsViewControls
+			{display}
+			{setDisplay}
+			bind:order={appState.channels_order}
+			bind:direction={appState.channels_order_direction}
+			showSort={filter !== 'featured'}
+			onreshuffle={() => {
+				paginatedLimit = CHANNELS_PAGE_SIZE
+			}}
+		/>
 	</ExplorePageHeader>
 
 	{#if display === 'map'}
@@ -577,23 +535,14 @@
 			display: flex;
 			flex-direction: column;
 			flex-grow: 1;
+			min-height: 0;
 		}
 		&.layout--infinite :global(.canvas-wrapper) {
 			flex: 1;
 		}
 		&.layout--tuner :global(.scanner) {
 			flex: 1;
-		}
-		&.layout--infinite :global(.page-header),
-		&.layout--map :global(.page-header),
-		&.layout--tuner :global(.page-header) {
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			margin-inline: 0;
-			/* Default page controls layer: above content, below app overlays/fullscreen deck. */
-			z-index: 3;
+			min-height: 0;
 		}
 	}
 
