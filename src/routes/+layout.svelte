@@ -87,6 +87,25 @@
 		return total
 	})
 
+	// .compact-decks growing/shrinking squeezes .content's share of their
+	// shared flex column — a squeeze CSS transitions can't reach, since
+	// nothing on .content's own cascade changes. FLIP: measure before, let
+	// Svelte update the DOM, animate from the old height to the new one.
+	let compactDecksEl = $state(/** @type {HTMLElement | undefined} */ (undefined))
+	let compactDecksHeight = /** @type {number | undefined} */ (undefined)
+	$effect(() => {
+		void compactDeckIds.length
+		const el = compactDecksEl
+		const from = compactDecksHeight
+		compactDecksHeight = el?.scrollHeight
+		if (el && from !== undefined && from !== compactDecksHeight) {
+			el.animate([{height: `${from}px`}, {height: `${compactDecksHeight}px`}], {
+				duration: 200,
+				easing: 'cubic-bezier(0.2, 0, 0, 1)'
+			})
+		}
+	})
+
 	// Ensure first client render uses persisted locale before any message call runs.
 	if (typeof window !== 'undefined') {
 		const storedLocale = appState.language
@@ -364,7 +383,11 @@
 						<DeckStrip />
 					</section>
 					{#if compactDeckIds.length}
-						<section class="compact-decks" aria-label={m.decks_compact_label()}>
+						<section
+							class="compact-decks"
+							aria-label={m.decks_compact_label()}
+							bind:this={compactDecksEl}
+						>
 							{#each compactLocalDeckIds as deckId (deckId)}
 								<div
 									class="compact-deck-item"
