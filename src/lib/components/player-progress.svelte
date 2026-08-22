@@ -31,6 +31,7 @@
 		style="--range-fill: {fill}%"
 	/>
 	<time class="remaining-time">-{formatDuration(remainingTime, '-:--')}</time>
+	<time>{formatDuration(duration, '-:--')}</time>
 </menu>
 
 <style>
