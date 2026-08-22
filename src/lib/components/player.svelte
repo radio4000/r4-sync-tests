@@ -39,7 +39,7 @@
 	import {parseUrl} from 'media-now/parse-url'
 	import {tracksCollection, updateTrack} from '$lib/collections/tracks'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {isDbId, extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
+	import {isDbId, extractHashtags, HASH_PREFIX_REGEX, isMobileViewport} from '$lib/utils'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
 	import Tag from '$lib/components/tag.svelte'
 	import TrackCard from '$lib/components/track-card.svelte'
@@ -460,7 +460,22 @@
 >
 	<!-- 1. Top bar: logo + player controls -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<header class="header" onclick={() => (appState.active_deck_id = deckId)}>
+	<header
+		class="header"
+		onclick={(e) => {
+			appState.active_deck_id = deckId
+			// Mobile: the expanded deck covers the whole screen, so navigating to the
+			// channel's route via this link would otherwise happen invisibly behind it.
+			// Collapse to the compact bar so the route change is actually visible.
+			if (
+				isMobileViewport() &&
+				e.target instanceof Element &&
+				e.target.closest('.channel-micro-card')
+			) {
+				toggleDeckCompact(deckId)
+			}
+		}}
+	>
 		<div class="header-top">
 			{#if hasMultipleDecks}
 				<div
