@@ -32,8 +32,8 @@
 	<nav class="search-nav-row">
 		<SearchTabs />
 		<div class="search-nav-controls">
-			{#if filterToggle}{@render filterToggle()}{/if}
 			{#if pagination}{@render pagination()}{/if}
+			{#if filterToggle}{@render filterToggle()}{/if}
 			{#if view && onviewchange}
 				<ViewsBar {view} onchange={onviewchange} />
 			{/if}
