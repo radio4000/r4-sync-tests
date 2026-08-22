@@ -1,5 +1,7 @@
 <script>
 	import {page} from '$app/state'
+	import {scale} from 'svelte/transition'
+	import {cubicOut} from 'svelte/easing'
 	import {appState} from '$lib/app-state.svelte'
 	import {showPlayerParam, sortedListeningDeckIds} from '$lib/deck'
 	import Player from '$lib/components/player.svelte'
@@ -24,6 +26,27 @@
 
 	// Deck 1 hides when empty; additional decks are always visible
 	let visible = $derived(showPlayer && deck && (deckId !== 1 || hasContent))
+
+	// `mounted` lags `visible` by one frame on the way in (not the way out).
+	// When a deck's *component instance* is freshly created by deck-strip's
+	// {#each} — deck 1 doesn't exist in appState.decks at all until it first
+	// gets content — `visible` can already be true on this component's very
+	// first render. Svelte only plays an intro transition on a genuine
+	// false→true edge of an already-mounted block, not a block that starts
+	// true, so without this every real play action (which sets deck fields
+	// in one batch) skipped the entrance animation entirely.
+	let mounted = $state(false)
+	$effect(() => {
+		if (!visible) {
+			mounted = false
+			return
+		}
+		if (mounted) return
+		const id = requestAnimationFrame(() => {
+			mounted = true
+		})
+		return () => cancelAnimationFrame(id)
+	})
 
 	// Inline deck width from stored value
 	let videoMixOpacity = $derived.by(() => {
@@ -84,7 +107,7 @@
 	}
 </script>
 
-{#if visible}
+{#if mounted}
 	<section
 		class={{
 			deck: true,
@@ -101,6 +124,7 @@
 		data-deck={deckId}
 		style={deckStyle}
 		bind:this={deckEl}
+		transition:scale={{duration: 150, start: 0.96, opacity: 0, easing: cubicOut}}
 	>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="resize-handle" onpointerdown={onResizeStart}></div>
@@ -127,21 +151,6 @@
 		position: relative;
 		background: var(--floating-bg);
 		border: var(--floating-border);
-		opacity: 1;
-		scale: 1;
-		transition:
-			opacity var(--duration-2) var(--ease-out),
-			scale var(--duration-2) var(--ease-out);
-	}
-
-	/* Entrance only — deck 1 mounts/unmounts as it gains/loses content, and
-	   every deck mounts fresh when opened, so `visible` going false→true is
-	   always a real appearance, never a resize. */
-	@starting-style {
-		.deck {
-			opacity: 0;
-			scale: 0.96;
-		}
 	}
 
 	/* Flush mode: drop the card box; deck-strip adds one-sided seams between decks. */
@@ -150,10 +159,7 @@
 	}
 
 	.deck:not(.expanded) {
-		transition:
-			border-color var(--duration-2) var(--ease-out),
-			opacity var(--duration-2) var(--ease-out),
-			scale var(--duration-2) var(--ease-out);
+		transition: border-color var(--duration-2) var(--ease-out);
 	}
 
 	.resize-handle {
