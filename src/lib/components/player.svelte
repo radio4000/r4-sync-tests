@@ -632,6 +632,8 @@
 					{@render btnPrev()}
 					{@render btnPlay()}
 					{@render btnNext()}
+					<SpeedControl {deckId} {provider} />
+					<VolumeControl {deckId} />
 					{#if activeQueue.length > 2}
 						<button
 							onclick={() => toggleShuffle(deckId)}
@@ -647,10 +649,9 @@
 					{#if display.autoRadioAvailable}
 						<AutoRadioButton size={14} onclick={() => rejoinAutoRadio(deckId)} />
 					{/if}
-					<SpeedControl {deckId} {provider} />
-					<VolumeControl {deckId} />
 				{:else if deck?.auto_radio}
 					{@render btnPlay()}
+					<VolumeControl {deckId} />
 					<AutoRadioButton
 						live
 						drifted={!!deck?.auto_radio_drifted}
@@ -659,7 +660,6 @@
 						onclick={() =>
 							deck?.auto_radio_drifted ? resyncAutoRadio(deckId) : leaveAutoRadio(deckId)}
 					/>
-					<VolumeControl {deckId} />
 				{/if}
 			</menu>
 		{/if}

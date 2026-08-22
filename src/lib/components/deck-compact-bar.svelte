@@ -172,6 +172,8 @@
 					>
 						<Icon icon="next-fill" />
 					</button>
+					<SpeedControl {deckId} {provider} />
+					<VolumeControl {deckId} />
 					{#if activeQueue.length > 2}
 						<button
 							onclick={() => toggleShuffle(deckId)}
@@ -187,8 +189,6 @@
 					{#if display.autoRadioAvailable}
 						<AutoRadioButton size={14} onclick={() => rejoinAutoRadio(deckId)} />
 					{/if}
-					<SpeedControl {deckId} {provider} />
-					<VolumeControl {deckId} />
 				{:else if deck?.auto_radio}
 					<button
 						class="play"
@@ -204,6 +204,7 @@
 					>
 						<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
 					</button>
+					<VolumeControl {deckId} />
 					<AutoRadioButton
 						live
 						drifted={!!deck?.auto_radio_drifted}
