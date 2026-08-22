@@ -296,12 +296,30 @@
 		border-radius: var(--border-radius) var(--border-radius) 0 0;
 	}
 
-	/* Hide queue panel via CSS — keeps it in the DOM */
-	.deck.hide-queue :global(.queue-panel) {
-		display: none;
+	/* Hide queue panel via CSS — keeps it in the DOM. Fades + collapses
+	   instead of an instant display:none, via the same allow-discrete +
+	   @starting-style pattern dialog.svelte uses. */
+	.deck :global(.queue-panel) {
+		opacity: 1;
+		transition:
+			opacity var(--duration-2) var(--ease-out),
+			display var(--duration-2) allow-discrete;
 	}
 
-	/* When queue is hidden, let video fill available space but not overflow */
+	.deck.hide-queue :global(.queue-panel) {
+		display: none;
+		opacity: 0;
+	}
+
+	@starting-style {
+		.deck:not(.hide-queue) :global(.queue-panel) {
+			opacity: 0;
+		}
+	}
+
+	/* When queue is hidden, let video fill available space but not overflow —
+	   transitions in step with the queue panel's own fade (player.svelte's
+	   .video carries the width/height/flex/opacity transition). */
 	.deck.hide-queue :global(.video) {
 		max-height: none;
 		flex: 1;
@@ -318,12 +336,14 @@
 		flex: 1;
 	}
 
-	/* Hide video via CSS — keeps media element in the DOM for audio playback */
+	/* Hide video via CSS — keeps media element in the DOM for audio playback.
+	   Fades out first, same reasoning as the compact deck's width collapse. */
 	.deck.hide-video :global(media-controller.video) {
 		position: absolute;
 		width: 0;
 		height: 0;
 		overflow: hidden;
+		opacity: 0;
 		pointer-events: none;
 	}
 
