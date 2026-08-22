@@ -844,6 +844,13 @@
 		width: 100%;
 		max-height: 25dvh;
 		background: black;
+		opacity: 1;
+		transition:
+			flex var(--duration-2) var(--ease-out),
+			max-height var(--duration-2) var(--ease-out),
+			width var(--duration-2) var(--ease-out),
+			height var(--duration-2) var(--ease-out),
+			opacity var(--duration-2) var(--ease-out);
 	}
 
 	.video:not(:has(.native-audio-player)) {
@@ -936,11 +943,6 @@
 			flex: 1 1 auto;
 			min-width: 0;
 		}
-		/* TrackCard's own .active is transparent, which is correct on a normal
-		   page (reveals the app background) but wrong here: the deck itself
-		   sits on --floating-bg, a visibly different, elevated shade. Use the
-		   app's plain background explicitly so an active track looks the same
-		   inside the deck as it does everywhere else. */
 		:global(article.active) {
 			background: var(--color-interface);
 		}
