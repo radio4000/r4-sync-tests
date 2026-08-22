@@ -632,7 +632,6 @@
 					{@render btnPrev()}
 					{@render btnPlay()}
 					{@render btnNext()}
-					<SpeedControl {deckId} {provider} />
 					<VolumeControl {deckId} />
 					{#if activeQueue.length > 2}
 						<button
@@ -662,6 +661,9 @@
 					/>
 				{/if}
 			</menu>
+			{#if !isListeningToBroadcast && !deck?.auto_radio}
+				<SpeedControl {deckId} {provider} />
+			{/if}
 		{/if}
 	</section>
 </div>
@@ -823,6 +825,11 @@
 		justify-content: center;
 		padding-inline: var(--space-1);
 		min-height: 1.35rem;
+	}
+
+	/* Speed now lives below .controls as its own full-width row. */
+	.bottom-chrome > :global(.speed) {
+		padding: 0 0.5rem 0.5rem;
 	}
 
 	.layout-controls {

@@ -140,6 +140,9 @@
 					{/if}
 				</div>
 			</div>
+			{#if !deck?.listening_to_channel_id && !deck?.auto_radio}
+				<SpeedControl {deckId} {provider} />
+			{/if}
 			<menu class="deck-transport">
 				{#if !deck?.listening_to_channel_id && !deck?.auto_radio}
 					<button
@@ -172,7 +175,6 @@
 					>
 						<Icon icon="next-fill" />
 					</button>
-					<SpeedControl {deckId} {provider} />
 					<VolumeControl {deckId} />
 					{#if activeQueue.length > 2}
 						<button
@@ -303,6 +305,12 @@
 		flex: 1 1 auto;
 	}
 
+	.deck-row > :global(.speed) {
+		flex: 0 1 7rem;
+		min-width: 0;
+		max-width: 9rem;
+	}
+
 	.channel-panel {
 		display: flex;
 		align-items: center;
@@ -360,19 +368,12 @@
 		display: none;
 	}
 
-	.deck-transport :global(.speed),
 	.deck-transport :global(.volume) {
 		flex: 1 1 7rem;
 		min-width: 0;
-	}
-	.deck-transport :global(.volume) {
 		max-width: 10rem;
 	}
-	.deck-transport :global(.speed .speed-btn) {
-		min-width: 0;
-	}
 
-	.deck-transport :global(.speed .range),
 	.deck-transport :global(.volume .range),
 	.deck-transport :global(.volume media-mute-button),
 	.deck-transport :global(.volume .btn) {
@@ -423,6 +424,10 @@
 		.deck-transport > :global(*:not(.play)) {
 			display: none;
 		}
+
+		.deck-row > :global(.speed) {
+			display: none;
+		}
 	}
 
 	@media (min-width: 768px) {
@@ -430,7 +435,6 @@
 			overflow-x: visible;
 		}
 
-		.deck-transport :global(.speed),
 		.deck-transport :global(.volume) {
 			flex: 1 1 6.75rem;
 		}
