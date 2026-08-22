@@ -158,8 +158,22 @@
 		border: none;
 	}
 
+	/* Smoothly resize across compact/normal/expanded instead of snapping —
+	   this is the deck's own box; deck-item's flex/width (deck-strip.svelte)
+	   transitions in step so the outer wrapper doesn't clip it short. */
+	.deck {
+		transition:
+			width var(--duration-2) var(--ease-out),
+			height var(--duration-2) var(--ease-out),
+			opacity var(--duration-2) var(--ease-out);
+	}
+
 	.deck:not(.expanded) {
-		transition: border-color var(--duration-2) var(--ease-out);
+		transition:
+			width var(--duration-2) var(--ease-out),
+			height var(--duration-2) var(--ease-out),
+			opacity var(--duration-2) var(--ease-out),
+			border-color var(--duration-2) var(--ease-out);
 	}
 
 	.resize-handle {
@@ -260,12 +274,14 @@
 	}
 
 	/* Compact: collapse to zero width, stay in DOM for audio playback.
-	   The DeckCompactBar at the bottom of the layout provides the compact UI. */
+	   The DeckCompactBar at the bottom of the layout provides the compact UI.
+	   Fades out first so the content doesn't visibly cram as the box shrinks. */
 	.deck.compact {
 		width: 0;
 		min-width: 0;
 		overflow: hidden;
 		border: none;
+		opacity: 0;
 		pointer-events: none;
 	}
 

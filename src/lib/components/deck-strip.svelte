@@ -141,6 +141,15 @@
 			display: none;
 		}
 
+		/* Universal (applies under every breakpoint's own flex/width values
+		   below) — smoothly resizes as decks collapse to compact, expand to
+		   fullscreen, or make room for a sibling that does either. */
+		.deck-item {
+			transition:
+				flex var(--duration-2) var(--ease-out),
+				width var(--duration-2) var(--ease-out);
+		}
+
 		/* Flush mode: main | decks, then decks from each other (reuse --floating-border).
 		   `&` keeps html.no-floating-ui as an ancestor, not a descendant of .deck-strip. */
 		:global(html.no-floating-ui) &:not(.all-compact) {
