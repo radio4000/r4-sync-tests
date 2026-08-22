@@ -725,13 +725,15 @@
 		{"name": "track-add-dialog.svelte", "desc": "Create track dialog, 'c' keyboard shortcut."},
 		{"name": "track-edit-dialog.svelte", "desc": "Edit existing track."},
 
-		{"name": "Channels", "desc": "Grid/list/map/tuner views with filter, sort, shuffle."},
-		{"name": "ChannelCard", "desc": "Channel preview with avatar, description, live dot."},
 		{
-			"name": "FeaturedChannels",
-			"desc": "Featured channels grid: seeded pick, reshuffle, play toggle."
+			"name": "Channels",
+			"desc": "The /channels directory: filter/pagination/URL-synced, own display toggle."
 		},
-		{"name": "HomeGlobe", "desc": "Lazy channels globe — loads map when scrolled into view."},
+		{
+			"name": "ChannelsView + ChannelsViewControls",
+			"desc": "Reusable grid/list/map/tuner/infinite display for a given channel array (no filter/pagination) + its icon+text display/sort toggle. Used by the homepage and profile pages (following/followers)."
+		},
+		{"name": "ChannelCard", "desc": "Channel preview with avatar, description, live dot."},
 
 		{
 			"name": "Seo",
