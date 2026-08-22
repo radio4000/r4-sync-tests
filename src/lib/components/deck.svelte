@@ -127,6 +127,21 @@
 		position: relative;
 		background: var(--floating-bg);
 		border: var(--floating-border);
+		opacity: 1;
+		scale: 1;
+		transition:
+			opacity var(--duration-2) var(--ease-out),
+			scale var(--duration-2) var(--ease-out);
+	}
+
+	/* Entrance only — deck 1 mounts/unmounts as it gains/loses content, and
+	   every deck mounts fresh when opened, so `visible` going false→true is
+	   always a real appearance, never a resize. */
+	@starting-style {
+		.deck {
+			opacity: 0;
+			scale: 0.96;
+		}
 	}
 
 	/* Flush mode: drop the card box; deck-strip adds one-sided seams between decks. */
@@ -135,7 +150,10 @@
 	}
 
 	.deck:not(.expanded) {
-		transition: border-color var(--duration-2) var(--ease-out);
+		transition:
+			border-color var(--duration-2) var(--ease-out),
+			opacity var(--duration-2) var(--ease-out),
+			scale var(--duration-2) var(--ease-out);
 	}
 
 	.resize-handle {
