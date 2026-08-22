@@ -70,7 +70,7 @@ input[type='range'] {
 		height: var(--range-track-height);
 		background: linear-gradient(
 			to right,
-			var(--range-track-color, var(--gray-4)) var(--range-fill, 0%),
+			var(--range-track-color, var(--accent-5)) var(--range-fill, 0%),
 			var(--gray-4) var(--range-fill, 0%)
 		);
 	}
@@ -98,7 +98,7 @@ input[type='range'] {
 	}
 
 	&::-moz-range-progress {
-		background: var(--range-track-color, var(--accent-4));
+		background: var(--range-track-color, var(--accent-5));
 	}
 
 	&:disabled {
