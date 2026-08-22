@@ -647,6 +647,9 @@
 		</footer>
 
 		{#if !isListeningToBroadcast || deck?.auto_radio}
+			{#if !isListeningToBroadcast && !deck?.auto_radio}
+				<SpeedControl {deckId} {provider} />
+			{/if}
 			<menu class="controls">
 				{#if !isListeningToBroadcast && !deck?.auto_radio}
 					{@render btnPrev()}
@@ -681,9 +684,6 @@
 					/>
 				{/if}
 			</menu>
-			{#if !isListeningToBroadcast && !deck?.auto_radio}
-				<SpeedControl {deckId} {provider} />
-			{/if}
 		{/if}
 	</section>
 </div>
@@ -821,9 +821,9 @@
 		flex-shrink: 0;
 		padding: 0.5rem;
 
-		:global(.volume) {
-			margin-left: auto;
-		}
+		/* Volume's own flex-grow already fills whatever space prev/play/next
+		   don't need — that alone pushes shuffle/auto (following it) to the
+		   right, so it always grows and pushes the other buttons to the sides. */
 
 		/* Mobile: transport centered; speed/volume shrink to content instead of
 		   growing to fill the row, but keep their sliders — DJing with multiple
@@ -834,7 +834,6 @@
 			:global(.speed),
 			:global(.volume) {
 				flex: 0 0 auto;
-				margin-left: 0;
 			}
 		}
 	}
@@ -847,9 +846,18 @@
 		min-height: 1.35rem;
 	}
 
-	/* Speed now lives below .controls as its own full-width row. */
+	/* Speed lives above .controls as its own full-width row, snug under the
+	   track. Its own `flex: 1 1 6rem` is meant for sitting in a *row*
+	   (.controls) — as a direct child of .bottom-chrome's column layout, that
+	   basis applies to height instead of width, forcing a tall box. Reset it
+	   to size from content. */
 	.bottom-chrome > :global(.speed) {
-		padding: 0 0.5rem 0.5rem;
+		flex: 0 0 auto;
+		padding: 0.25rem 0.5rem;
+	}
+
+	:global(.bottom-chrome > .speed + .controls) {
+		padding-top: 0;
 	}
 
 	.layout-controls {
