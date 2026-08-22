@@ -578,6 +578,20 @@
 	{@render children?.()}
 
 	<section class="bottom-chrome">
+		{#if appState.show_track_range_control !== false && displayTrack}
+			<PlayerProgress
+				currentTime={mediaCurrentTime}
+				{mediaDuration}
+				trackDuration={track?.duration}
+				isPlaying={Boolean(deck?.is_playing)}
+				disabled={isListeningToBroadcast}
+				onseek={(val) => {
+					if (deck) deck.media_current_time = val
+					if (mediaElement) mediaElement.currentTime = val
+				}}
+			/>
+		{/if}
+
 		<!-- 4. Channel/track info + mode info -->
 		<footer
 			class="track-panel"
@@ -611,20 +625,6 @@
 				/>
 			{/if}
 		</footer>
-
-		{#if appState.show_track_range_control !== false && displayTrack}
-			<PlayerProgress
-				currentTime={mediaCurrentTime}
-				{mediaDuration}
-				trackDuration={track?.duration}
-				isPlaying={Boolean(deck?.is_playing)}
-				disabled={isListeningToBroadcast}
-				onseek={(val) => {
-					if (deck) deck.media_current_time = val
-					if (mediaElement) mediaElement.currentTime = val
-				}}
-			/>
-		{/if}
 
 		{#if !isListeningToBroadcast || deck?.auto_radio}
 			<menu class="controls">
@@ -918,11 +918,6 @@
 
 		@media (max-width: 768px) {
 			margin-top: 0;
-
-			/* Progress bar moves below the controls */
-			> :global(.progress) {
-				order: 2;
-			}
 		}
 	}
 
