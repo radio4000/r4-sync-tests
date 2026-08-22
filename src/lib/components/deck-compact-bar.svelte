@@ -91,6 +91,20 @@
 	}}
 >
 	<div class="deck-inner" class:active-track-bg={Boolean(displayTrack)}>
+		{#if appState.show_track_range_control !== false && displayTrack}
+			<PlayerProgress
+				currentTime={deck?.media_current_time ?? 0}
+				mediaDuration={deck?.media_duration ?? NaN}
+				trackDuration={displayTrack?.duration}
+				isPlaying={Boolean(deck?.is_playing)}
+				disabled={Boolean(deck?.listening_to_channel_id)}
+				onseek={(val) => {
+					if (deck) deck.media_current_time = val
+					const mediaElement = getMediaPlayer(deckId)
+					if (mediaElement) mediaElement.currentTime = val
+				}}
+			/>
+		{/if}
 		<div class="deck-row">
 			<div class="deck-identity">
 				{#if displayTrack}
@@ -239,20 +253,6 @@
 				{/if}
 			</menu>
 		</div>
-		{#if appState.show_track_range_control !== false && displayTrack}
-			<PlayerProgress
-				currentTime={deck?.media_current_time ?? 0}
-				mediaDuration={deck?.media_duration ?? NaN}
-				trackDuration={displayTrack?.duration}
-				isPlaying={Boolean(deck?.is_playing)}
-				disabled={Boolean(deck?.listening_to_channel_id)}
-				onseek={(val) => {
-					if (deck) deck.media_current_time = val
-					const mediaElement = getMediaPlayer(deckId)
-					if (mediaElement) mediaElement.currentTime = val
-				}}
-			/>
-		{/if}
 	</div>
 </div>
 
