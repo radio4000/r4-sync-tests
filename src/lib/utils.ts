@@ -177,6 +177,18 @@ export function channelAvatarUrl(id: string, size = 250, format = 'webp', qualit
 	return `${appCloudinaryUrl}/image/upload/w_${size},h_${size},c_thumb,q_${quality},fl_awebp/${id}.${format}`
 }
 
+/**
+ * Build a Cloudinary URL for a channel image at its original aspect ratio
+ * (width-constrained, no square crop) — for display contexts like album art.
+ * @param {string} id - Cloudinary image ID
+ * @param {number} [width=500] - Max width, height scales to preserve aspect ratio
+ * @param {string} [format='webp'] - Image format
+ * @param {number} [quality=70] - Image quality (1-100)
+ */
+export function channelImageUrl(id: string, width = 500, format = 'webp', quality = 70) {
+	return `${appCloudinaryUrl}/image/upload/w_${width},c_limit,q_${quality},fl_awebp/${id}.${format}`
+}
+
 /** YouTube thumbnail URL for a track. Size: default, mqdefault, hqdefault, sddefault, maxresdefault */
 export function trackImageUrl(
 	mediaId: string,
