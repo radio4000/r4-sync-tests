@@ -385,6 +385,7 @@
 		flex: 1;
 		min-width: 0;
 		text-decoration: none;
+		transition: color var(--duration-1) var(--ease-out);
 		&:hover {
 			text-decoration: underline;
 			color: var(--accent-9);
