@@ -382,67 +382,64 @@
 
 						<DeckStrip />
 					</section>
-					{#if compactDeckIds.length}
-						<section
-							class="compact-decks"
-							aria-label={m.decks_compact_label()}
-							bind:this={compactDecksEl}
-						>
-							{#each compactLocalDeckIds as deckId (deckId)}
-								<div
-									class="compact-deck-item"
-									style:--deck-accent={deckAccent(allDeckIds, deckId)}
-									transition:fly={{y: 24, duration: 200, easing: cubicOut}}
+					<section
+						class={['compact-decks', compactDeckIds.length === 0 && 'empty']}
+						aria-label={m.decks_compact_label()}
+						bind:this={compactDecksEl}
+					>
+						{#each compactLocalDeckIds as deckId (deckId)}
+							<div
+								class="compact-deck-item"
+								style:--deck-accent={deckAccent(allDeckIds, deckId)}
+								transition:fly={{y: 24, duration: 200, easing: cubicOut}}
+							>
+								<DeckCompactBar {deckId} />
+							</div>
+						{/each}
+						{#if compactListeningDeckIds.length}
+							<div class="compact-listening-group">
+								<button
+									class="compact-group-edge left"
+									aria-label={m.broadcasts_leave()}
+									onclick={() => compactListeningDeckIds.forEach((id) => leaveBroadcast(id))}
 								>
-									<DeckCompactBar {deckId} />
+									<Icon icon="close" size={14} />
+								</button>
+								<div class="compact-listening-list">
+									{#each compactListeningDeckIds as deckId (deckId)}
+										<div
+											class="compact-deck-item"
+											style:--deck-accent={deckAccent(allDeckIds, deckId)}
+											transition:fly={{y: 24, duration: 200, easing: cubicOut}}
+										>
+											<DeckCompactBar {deckId} showEdgeControls={false} />
+										</div>
+									{/each}
 								</div>
-							{/each}
-							{#if compactListeningDeckIds.length}
-								<div class="compact-listening-group">
+								<div class="compact-group-actions">
 									<button
-										class="compact-group-edge left"
-										aria-label={m.broadcasts_leave()}
-										onclick={() => compactListeningDeckIds.forEach((id) => leaveBroadcast(id))}
+										class={['compact-group-sync', {active: compactListeningDecksSynced}]}
+										aria-label={compactListeningDecksSynced
+											? m.decks_compact_sync_live()
+											: m.decks_compact_sync_action()}
+										onclick={() => compactListeningDeckIds.forEach((id) => resyncBroadcastDeck(id))}
 									>
-										<Icon icon="close" size={14} />
+										{#if compactListenPresenceCount > 0}
+											<PresenceCount count={compactListenPresenceCount} corner />
+										{/if}
+										<Icon icon="signal" size={12} />
 									</button>
-									<div class="compact-listening-list">
-										{#each compactListeningDeckIds as deckId (deckId)}
-											<div
-												class="compact-deck-item"
-												style:--deck-accent={deckAccent(allDeckIds, deckId)}
-												transition:fly={{y: 24, duration: 200, easing: cubicOut}}
-											>
-												<DeckCompactBar {deckId} showEdgeControls={false} />
-											</div>
-										{/each}
-									</div>
-									<div class="compact-group-actions">
-										<button
-											class={['compact-group-sync', {active: compactListeningDecksSynced}]}
-											aria-label={compactListeningDecksSynced
-												? m.decks_compact_sync_live()
-												: m.decks_compact_sync_action()}
-											onclick={() =>
-												compactListeningDeckIds.forEach((id) => resyncBroadcastDeck(id))}
-										>
-											{#if compactListenPresenceCount > 0}
-												<PresenceCount count={compactListenPresenceCount} corner />
-											{/if}
-											<Icon icon="signal" size={12} />
-										</button>
-										<button
-											class="compact-group-toggle"
-											aria-label={m.player_compact_show_panel()}
-											onclick={() => toggleDeckCompact(compactListeningDeckIds[0])}
-										>
-											<Icon icon="deck-panel" expanded />
-										</button>
-									</div>
+									<button
+										class="compact-group-toggle"
+										aria-label={m.player_compact_show_panel()}
+										onclick={() => toggleDeckCompact(compactListeningDeckIds[0])}
+									>
+										<Icon icon="deck-panel" expanded />
+									</button>
 								</div>
-							{/if}
-						</section>
-					{/if}
+							</div>
+						{/if}
+					</section>
 				</div>
 
 				{#if chatPanelVisible}
@@ -563,6 +560,13 @@
 		position: sticky;
 		bottom: 0;
 		z-index: 30;
+	}
+
+	/* Stays mounted (rather than {#if}-removed) even with no compact decks —
+	   keeps the {#each} below already-mounted, so the first compact deck of a
+	   session gets its fly-in intro like every later one does. */
+	.compact-decks.empty {
+		display: none;
 	}
 
 	.compact-deck-item {
