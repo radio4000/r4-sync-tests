@@ -19,6 +19,8 @@
 	import {toggleDeckCompact} from '$lib/api'
 	import {isMobileViewport} from '$lib/utils'
 	import {onMount} from 'svelte'
+	import {fly} from 'svelte/transition'
+	import {cubicOut} from 'svelte/easing'
 	import {SvelteMap, MediaQuery} from 'svelte/reactivity'
 	import {beforeNavigate, afterNavigate, goto} from '$app/navigation'
 	import {page} from '$app/state'
@@ -364,7 +366,11 @@
 					{#if compactDeckIds.length}
 						<section class="compact-decks" aria-label={m.decks_compact_label()}>
 							{#each compactLocalDeckIds as deckId (deckId)}
-								<div class="compact-deck-item" style:--deck-accent={deckAccent(allDeckIds, deckId)}>
+								<div
+									class="compact-deck-item"
+									style:--deck-accent={deckAccent(allDeckIds, deckId)}
+									transition:fly={{y: 24, duration: 200, easing: cubicOut}}
+								>
 									<DeckCompactBar {deckId} />
 								</div>
 							{/each}
@@ -382,6 +388,7 @@
 											<div
 												class="compact-deck-item"
 												style:--deck-accent={deckAccent(allDeckIds, deckId)}
+												transition:fly={{y: 24, duration: 200, easing: cubicOut}}
 											>
 												<DeckCompactBar {deckId} showEdgeControls={false} />
 											</div>
@@ -522,7 +529,10 @@
 	}
 
 	/* Plain layout container — each stacked deck is its own floating card (see
-	   .compact-deck-item below), same principle as .content/.deck-strip. */
+	   .compact-deck-item below), same principle as .content/.deck-strip. Each
+	   item animates its own enter/exit (transition:fly in the markup), so the
+	   container itself doesn't need — and shouldn't also play — an entrance
+	   animation of its own (that only ever covered the very first deck). */
 	.compact-decks {
 		display: flex;
 		flex-direction: column;
@@ -530,14 +540,6 @@
 		position: sticky;
 		bottom: 0;
 		z-index: 30;
-		/* enter like a sheet; exits stay instant */
-		animation: compact-deck-in 0.5s cubic-bezier(0.32, 0.72, 0, 1);
-	}
-
-	@keyframes compact-deck-in {
-		from {
-			transform: translate3d(0, 100%, 0);
-		}
 	}
 
 	.compact-deck-item {
