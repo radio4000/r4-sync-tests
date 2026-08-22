@@ -373,6 +373,8 @@ export async function playTrackInNewDeck(trackId: string, slug?: string) {
 		await ensureTracksLoaded(slug)
 	}
 	await playTrack(deck.id, trackId, null, 'user_click_track')
+	// A newly opened extra deck loads paused — the user starts it explicitly.
+	setUserInitiatedPlay(deck.id, false)
 }
 
 /** Play a channel in a fresh deck rather than the active one (e.g. "open in new deck"). */
@@ -381,6 +383,8 @@ export async function playChannelInNewDeck(channel: ChannelRef) {
 	deck.compact = true
 	appState.active_deck_id = deck.id
 	await playChannel(deck.id, channel)
+	// A newly opened extra deck loads paused — the user starts it explicitly.
+	setUserInitiatedPlay(deck.id, false)
 }
 
 /** Play channel starting from random track with shuffle enabled */
