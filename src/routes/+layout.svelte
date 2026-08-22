@@ -87,29 +87,6 @@
 		return total
 	})
 
-	// .compact-decks growing/shrinking squeezes .content's share of their
-	// shared flex column — a squeeze CSS transitions can't reach on their
-	// own, since nothing on .content's own cascade changes. FLIP: lock the
-	// old height inline, force a reflow, then set the new height so the
-	// element's own `transition: height` (below) animates between them.
-	let compactDecksEl = $state(/** @type {HTMLElement | undefined} */ (undefined))
-	let compactDecksHeight = /** @type {number | undefined} */ (undefined)
-	$effect(() => {
-		void compactDeckIds.length
-		const el = compactDecksEl
-		if (!el) {
-			compactDecksHeight = undefined
-			return
-		}
-		const to = el.scrollHeight
-		if (compactDecksHeight !== undefined && compactDecksHeight !== to) {
-			el.style.height = `${compactDecksHeight}px`
-			el.getBoundingClientRect()
-			el.style.height = `${to}px`
-		}
-		compactDecksHeight = to
-	})
-
 	// Ensure first client render uses persisted locale before any message call runs.
 	if (typeof window !== 'undefined') {
 		const storedLocale = appState.language
@@ -389,7 +366,6 @@
 					<section
 						class={['compact-decks', compactDeckIds.length === 0 && 'empty']}
 						aria-label={m.decks_compact_label()}
-						bind:this={compactDecksEl}
 					>
 						{#each compactLocalDeckIds as deckId (deckId)}
 							<div
@@ -564,7 +540,6 @@
 		position: sticky;
 		bottom: 0;
 		z-index: 30;
-		transition: height 200ms ease-in-out;
 	}
 
 	/* Stays mounted (rather than {#if}-removed) even with no compact decks —
