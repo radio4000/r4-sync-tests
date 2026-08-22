@@ -238,6 +238,7 @@
 							channel={displayChannel}
 							{trackHref}
 							canEditTrack={canEditTrackChannel}
+							autoRadioAvailable={display.autoRadioAvailable}
 							closeMenu={() => deckMenu?.close()}
 						/>
 					</PopoverMenu>

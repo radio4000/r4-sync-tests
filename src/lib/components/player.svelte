@@ -503,7 +503,12 @@
 						{#snippet trigger()}
 							<Icon icon="options-horizontal" />
 						{/snippet}
-						<DeckMenu {deckId} {deckEl} closeMenu={() => deckMenu?.close()} />
+						<DeckMenu
+							{deckId}
+							{deckEl}
+							autoRadioAvailable={display.autoRadioAvailable}
+							closeMenu={() => deckMenu?.close()}
+						/>
 					</PopoverMenu>
 				{/if}
 				{#if showDeckActions && (hasMultipleDecks || !appState.embed_mode)}
