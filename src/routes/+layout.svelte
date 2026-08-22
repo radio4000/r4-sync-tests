@@ -88,22 +88,26 @@
 	})
 
 	// .compact-decks growing/shrinking squeezes .content's share of their
-	// shared flex column — a squeeze CSS transitions can't reach, since
-	// nothing on .content's own cascade changes. FLIP: measure before, let
-	// Svelte update the DOM, animate from the old height to the new one.
+	// shared flex column — a squeeze CSS transitions can't reach on their
+	// own, since nothing on .content's own cascade changes. FLIP: lock the
+	// old height inline, force a reflow, then set the new height so the
+	// element's own `transition: height` (below) animates between them.
 	let compactDecksEl = $state(/** @type {HTMLElement | undefined} */ (undefined))
 	let compactDecksHeight = /** @type {number | undefined} */ (undefined)
 	$effect(() => {
 		void compactDeckIds.length
 		const el = compactDecksEl
-		const from = compactDecksHeight
-		compactDecksHeight = el?.scrollHeight
-		if (el && from !== undefined && from !== compactDecksHeight) {
-			el.animate([{height: `${from}px`}, {height: `${compactDecksHeight}px`}], {
-				duration: 200,
-				easing: 'cubic-bezier(0.2, 0, 0, 1)'
-			})
+		if (!el) {
+			compactDecksHeight = undefined
+			return
 		}
+		const to = el.scrollHeight
+		if (compactDecksHeight !== undefined && compactDecksHeight !== to) {
+			el.style.height = `${compactDecksHeight}px`
+			el.getBoundingClientRect()
+			el.style.height = `${to}px`
+		}
+		compactDecksHeight = to
 	})
 
 	// Ensure first client render uses persisted locale before any message call runs.
@@ -560,6 +564,7 @@
 		position: sticky;
 		bottom: 0;
 		z-index: 30;
+		transition: height 200ms ease-in-out;
 	}
 
 	/* Stays mounted (rather than {#if}-removed) even with no compact decks —
