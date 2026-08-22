@@ -171,6 +171,45 @@
 		capture('$pageview')
 	})
 
+	// On mobile, an expanded deck fills the screen like a dialog — desktop keeps
+	// decks inline so none of this applies there. A plain app-state flag doesn't
+	// participate in browser history, so "back" would leave the deck open and
+	// navigate the route underneath it. Push a same-URL dummy history entry while
+	// expanded so back pops that entry first; closing the deck any other way
+	// (minimize button, ejecting it, Escape) pops the same entry itself so the
+	// back stack doesn't accumulate dead entries.
+	let deckHistoryPushed = false
+	let suppressPopstate = false
+
+	$effect(() => {
+		const expanded = anyDeckExpanded
+		if (typeof window === 'undefined' || !isMobileViewport()) return
+		if (expanded && !deckHistoryPushed) {
+			history.pushState({r4DeckExpanded: true}, '', location.href)
+			deckHistoryPushed = true
+		} else if (!expanded && deckHistoryPushed) {
+			deckHistoryPushed = false
+			suppressPopstate = true
+			history.back()
+		}
+	})
+
+	onMount(() => {
+		function onPopState() {
+			if (suppressPopstate) {
+				suppressPopstate = false
+				return
+			}
+			if (!deckHistoryPushed) return
+			deckHistoryPushed = false
+			for (const deck of Object.values(appState.decks)) {
+				if (deck.expanded) toggleDeckCompact(deck.id)
+			}
+		}
+		window.addEventListener('popstate', onPopState)
+		return () => window.removeEventListener('popstate', onPopState)
+	})
+
 	// Theme application
 	const prefersLight = new MediaQuery('(prefers-color-scheme: light)')
 	const theme = $derived(appState.theme ?? (prefersLight.current ? 'light' : 'dark'))
