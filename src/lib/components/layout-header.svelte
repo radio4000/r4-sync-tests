@@ -202,7 +202,9 @@
 		display: flex;
 		flex-flow: column nowrap;
 		gap: clamp(var(--space-2), calc(var(--app-nav-btn-size) * 0.35), 1.5rem);
-		padding: var(--space-3) var(--space-2);
+		/* Less room under the bottom nav than above the top one — the sticky
+		   settings row already reads as the sidebar's floor. */
+		padding: var(--space-3) var(--space-2) var(--space-2);
 		inline-size: clamp(min-content, var(--app-header-size), max-content);
 		min-inline-size: min-content;
 		max-inline-size: max-content;

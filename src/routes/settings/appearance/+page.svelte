@@ -8,14 +8,10 @@
 
 <Seo title={m.settings_appearance_title()} plain />
 
-<article>
-	<div class="focused constrained">
-		<header>
-			<BackLink href={resolve('/settings')} />
-			<h1>{m.theme_heading()}</h1>
-		</header>
-	</div>
-	<main>
-		<ThemeEditor />
-	</main>
+<article class="focused constrained">
+	<header>
+		<BackLink href={resolve('/settings')} />
+		<h1>{m.theme_heading()}</h1>
+	</header>
+	<ThemeEditor />
 </article>

@@ -79,6 +79,51 @@
 	}
 }
 
+/* Track rows carry their own border, so lists space them out a little — adjacent
+   borders would otherwise read as one merged 2px line. */
+.list > li:has(> .track-card),
+.virtual-item.track-item {
+	margin-bottom: 2px;
+}
+
+/* A track row paired with its channel (search, cross-channel lists). */
+.track-with-channel {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: var(--space-1);
+	padding-inline: 0.5rem;
+
+	> .track-card {
+		flex: 1;
+		min-width: 0;
+	}
+}
+
+/* Flush lists (floating UI off): track rows join into one list instead of
+   reading as separate cards — rows overlap by 1px so neighbours share a single
+   seam, and only the list's outer corners keep the theme's rounding. */
+html.no-floating-ui {
+	.track-card {
+		border-radius: 0;
+	}
+
+	.list > li:has(> .track-card),
+	.virtual-item.track-item {
+		margin-bottom: -1px;
+	}
+
+	.list > li:first-child > .track-card {
+		border-start-start-radius: var(--border-radius);
+		border-start-end-radius: var(--border-radius);
+	}
+
+	.list > li:last-child > .track-card {
+		border-end-start-radius: var(--border-radius);
+		border-end-end-radius: var(--border-radius);
+	}
+}
+
 .grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(clamp(170px, 20vw, 280px), 1fr));
@@ -152,7 +197,6 @@ menu.nav-vertical {
 	background: var(--color-interface-elevated);
 	border: 1px solid var(--color-interface-border);
 	border-radius: var(--border-radius);
-	box-shadow: var(--shadow-modal);
 
 	:where(a, button) {
 		display: flex;
@@ -200,7 +244,6 @@ menu.nav-options {
 		background: var(--color-interface-elevated);
 		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
-		box-shadow: var(--shadow-modal);
 
 		&:hover {
 			background: var(--accent-3);

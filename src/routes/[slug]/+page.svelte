@@ -399,9 +399,6 @@
 		border-radius: calc(var(--border-radius) * 999);
 		font-size: var(--font-6);
 		gap: var(--space-2);
-		box-shadow:
-			0 8px 24px -8px color-mix(in oklch, var(--accent-9) 55%, transparent),
-			0 1px 2px color-mix(in oklch, var(--accent-9) 40%, transparent);
 	}
 
 	.live-action {

@@ -169,7 +169,7 @@
 	}
 </script>
 
-<article class={{active, selected: selected && !active}}>
+<article class={{'track-card': true, active, selected: selected && !active}}>
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="card"

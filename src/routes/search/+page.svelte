@@ -370,23 +370,6 @@
 		margin: var(--space-2) 0.5rem 0.5rem;
 	}
 
-	.track-with-channel {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		gap: var(--space-1);
-		padding-inline: 0.5rem;
-	}
-
-	.track-with-channel :global(article) {
-		flex: 1;
-		min-width: 0;
-	}
-
-	.track-with-channel :global(.card) {
-		padding-inline-start: 0;
-	}
-
 	article {
 		display: flex;
 		flex-direction: column;

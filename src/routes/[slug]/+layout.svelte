@@ -408,9 +408,13 @@
 		min-width: 0;
 		align-items: center;
 		background: var(--gray-2);
-		border-bottom: 1px solid var(--color-interface-border);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		overflow: hidden;
+	}
+
+	.channel-nav {
+		border-inline: 1px solid var(--color-interface-border);
 	}
 
 	/* When a page-owned search/filter bar follows, it takes over the bottom edge
@@ -523,7 +527,7 @@
 		background: var(--gray-2);
 		border-bottom: 1px solid var(--color-interface-border);
 		border-radius: 0 0 var(--border-radius) var(--border-radius);
-		padding: var(--space-1) var(--space-3);
+		padding: var(--space-1);
 	}
 
 	.channel-nav-controls {
