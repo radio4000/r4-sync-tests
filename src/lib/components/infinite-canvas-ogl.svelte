@@ -6,6 +6,7 @@
 	import {getChannelSceneThemeConfig} from '$lib/3d/channel-scene-theme.js'
 	import Icon from '$lib/components/icon.svelte'
 	import Dialog from '$lib/components/dialog.svelte'
+	import * as m from '$lib/paraglide/messages'
 
 	/** @typedef {import('$lib/components/channel-ui-state.ts').MediaItem} MediaItem */
 
@@ -107,39 +108,46 @@
 <div class="canvas-wrapper">
 	<div class="canvas-container" bind:this={container}></div>
 
-	<button class="controls-info-btn" type="button" onclick={openControls} title="3D controls">
+	<button
+		class="controls-info-btn"
+		type="button"
+		onclick={openControls}
+		title={m.canvas_controls_button_title()}
+	>
 		<Icon icon="circle-info" />
 	</button>
 
 	<Dialog bind:showModal={showControlsModal}>
 		{#snippet header()}
-			<h2>3D Controls</h2>
+			<h2>{m.canvas_controls_heading()}</h2>
 		{/snippet}
 		<div class="controls-modal-content">
 			<div class="controls-row">
 				<Icon icon="hand-pointer" />
-				<div>Drag to pan · Tap/click cards to interact</div>
+				<div>{m.canvas_controls_drag_hint()}</div>
 			</div>
 			<div class="controls-row">
 				<Icon icon="mouse" />
-				<div><kbd>scroll</kbd> zoom</div>
+				<div><kbd>scroll</kbd> {m.canvas_controls_zoom_hint()}</div>
 			</div>
 			<div class="controls-row">
 				<Icon icon="keyboard" />
 				<div>
-					<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd
-					><kbd>→</kbd> move ·
-					<kbd>Q</kbd><kbd>E</kbd> up/down
+					<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+					{m.common_or()} <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
+					{m.canvas_controls_move()} ·
+					<kbd>Q</kbd><kbd>E</kbd>
+					{m.canvas_controls_updown_hint()}
 				</div>
 			</div>
 			<div class="controls-row">
 				<Icon icon="circle-info" />
 				<div>
-					Infinite mode based on a tutorial from
+					{m.canvas_credit_intro()}
 					<a
 						href="https://tympanus.net/codrops/2026/01/07/infinite-canvas-building-a-seamless-pan-anywhere-image-space/"
 						target="_blank"
-						rel="noopener noreferrer">Edoardo Lunardi on Codrops</a
+						rel="noopener noreferrer">{m.canvas_credit_link()}</a
 					>.
 				</div>
 			</div>

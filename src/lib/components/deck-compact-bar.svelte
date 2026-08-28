@@ -91,6 +91,20 @@
 	}}
 >
 	<div class="deck-inner" class:active-track-bg={Boolean(displayTrack)}>
+		{#if appState.show_track_range_control !== false && displayTrack}
+			<PlayerProgress
+				currentTime={deck?.media_current_time ?? 0}
+				mediaDuration={deck?.media_duration ?? NaN}
+				trackDuration={displayTrack?.duration}
+				isPlaying={Boolean(deck?.is_playing)}
+				disabled={Boolean(deck?.listening_to_channel_id)}
+				onseek={(val) => {
+					if (deck) deck.media_current_time = val
+					const mediaElement = getMediaPlayer(deckId)
+					if (mediaElement) mediaElement.currentTime = val
+				}}
+			/>
+		{/if}
 		<div class="deck-row">
 			<div class="deck-identity">
 				{#if displayTrack}
@@ -126,6 +140,9 @@
 					{/if}
 				</div>
 			</div>
+			{#if !deck?.listening_to_channel_id && !deck?.auto_radio}
+				<SpeedControl {deckId} {provider} />
+			{/if}
 			<menu class="deck-transport">
 				{#if !deck?.listening_to_channel_id && !deck?.auto_radio}
 					<button
@@ -158,6 +175,7 @@
 					>
 						<Icon icon="next-fill" />
 					</button>
+					<VolumeControl {deckId} />
 					{#if activeQueue.length > 2}
 						<button
 							onclick={() => toggleShuffle(deckId)}
@@ -173,8 +191,6 @@
 					{#if display.autoRadioAvailable}
 						<AutoRadioButton size={14} onclick={() => rejoinAutoRadio(deckId)} />
 					{/if}
-					<SpeedControl {deckId} {provider} />
-					<VolumeControl {deckId} />
 				{:else if deck?.auto_radio}
 					<button
 						class="play"
@@ -190,6 +206,7 @@
 					>
 						<Icon icon={deck?.is_playing ? 'pause' : 'play-fill'} />
 					</button>
+					<VolumeControl {deckId} />
 					<AutoRadioButton
 						live
 						drifted={!!deck?.auto_radio_drifted}
@@ -221,6 +238,7 @@
 							channel={displayChannel}
 							{trackHref}
 							canEditTrack={canEditTrackChannel}
+							autoRadioAvailable={display.autoRadioAvailable}
 							closeMenu={() => deckMenu?.close()}
 						/>
 					</PopoverMenu>
@@ -239,20 +257,6 @@
 				{/if}
 			</menu>
 		</div>
-		{#if appState.show_track_range_control !== false && displayTrack}
-			<PlayerProgress
-				currentTime={deck?.media_current_time ?? 0}
-				mediaDuration={deck?.media_duration ?? NaN}
-				trackDuration={displayTrack?.duration}
-				isPlaying={Boolean(deck?.is_playing)}
-				disabled={Boolean(deck?.listening_to_channel_id)}
-				onseek={(val) => {
-					if (deck) deck.media_current_time = val
-					const mediaElement = getMediaPlayer(deckId)
-					if (mediaElement) mediaElement.currentTime = val
-				}}
-			/>
-		{/if}
 	</div>
 </div>
 
@@ -300,6 +304,12 @@
 		gap: var(--space-2);
 		min-width: 0;
 		flex: 1 1 auto;
+	}
+
+	.deck-row > :global(.speed) {
+		flex: 0 1 7rem;
+		min-width: 0;
+		max-width: 9rem;
 	}
 
 	.channel-panel {
@@ -359,19 +369,12 @@
 		display: none;
 	}
 
-	.deck-transport :global(.speed),
 	.deck-transport :global(.volume) {
 		flex: 1 1 7rem;
 		min-width: 0;
-	}
-	.deck-transport :global(.volume) {
 		max-width: 10rem;
 	}
-	.deck-transport :global(.speed .speed-btn) {
-		min-width: 0;
-	}
 
-	.deck-transport :global(.speed .range),
 	.deck-transport :global(.volume .range),
 	.deck-transport :global(.volume media-mute-button),
 	.deck-transport :global(.volume .btn) {
@@ -388,10 +391,6 @@
 		height: 100%;
 		outline: 0;
 		outline-offset: 0;
-	}
-
-	.track-panel :global(article.active) {
-		background: transparent;
 	}
 
 	.track-panel :global(.card) {
@@ -426,6 +425,10 @@
 		.deck-transport > :global(*:not(.play)) {
 			display: none;
 		}
+
+		.deck-row > :global(.speed) {
+			display: none;
+		}
 	}
 
 	@media (min-width: 768px) {
@@ -433,7 +436,6 @@
 			overflow-x: visible;
 		}
 
-		.deck-transport :global(.speed),
 		.deck-transport :global(.volume) {
 			flex: 1 1 6.75rem;
 		}

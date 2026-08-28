@@ -10,10 +10,11 @@
 	} from '$lib/components/channels-view-shared.js'
 	import ChannelCard from './channel-card.svelte'
 	import ChannelsViewControls from './channels-view-controls.svelte'
+	import SpectrumScanner from './spectrum-scanner.svelte'
 
 	const channelActivity = $derived(getChannelActivity())
 
-	/** @type {{channels?: import('$lib/types').Channel[], order?: string, direction?: 'asc' | 'desc', display?: 'grid' | 'list' | 'map' | 'infinite', header?: import('svelte').Snippet, showToolbar?: boolean, syncToUrl?: boolean}} */
+	/** @type {{channels?: import('$lib/types').Channel[], order?: string, direction?: 'asc' | 'desc', display?: 'grid' | 'list' | 'map' | 'tuner' | 'infinite', header?: import('svelte').Snippet, showToolbar?: boolean, syncToUrl?: boolean}} */
 	let {
 		channels = [],
 		order = $bindable('updated'),
@@ -61,7 +62,7 @@
 		onCanvasClick(item, (id) => (selectedCanvasChannelId = id))
 	}
 
-	/** @param {'grid' | 'list' | 'map' | 'infinite'} value */
+	/** @param {'grid' | 'list' | 'map' | 'tuner' | 'infinite'} value */
 	function setDisplay(value) {
 		display = value
 		if (syncToUrl) {
@@ -87,8 +88,10 @@
 
 	{#if display === 'map'}
 		{#await import('./map-channels.svelte') then MapChannels}
-			<MapChannels.default channels={sortedChannels} {openSlug} zoom={1.5} />
+			<MapChannels.default channels={sortedChannels} {openSlug} zoom={1.5} globeMode={true} />
 		{/await}
+	{:else if display === 'tuner'}
+		<SpectrumScanner channels={sortedChannels} />
 	{:else if display === 'infinite'}
 		{@const InfiniteCanvas = (await import('./infinite-canvas-ogl.svelte')).default}
 		<InfiniteCanvas
@@ -119,6 +122,10 @@
 		flex-direction: column;
 		&.layout--infinite :global(.canvas-wrapper) {
 			flex: 1;
+		}
+		&.layout--tuner :global(.scanner) {
+			flex: 1;
+			min-height: 0;
 		}
 		&.layout--map .toolbar,
 		&.layout--infinite .toolbar {

@@ -72,7 +72,12 @@ export function parseSource(input: string): ViewSource {
 		}
 	}
 	if (channels.length) source.channels = [...new Set(channels)]
-	if (tags.length) source.tags = [...new Set(tags)]
+	// Multiple #tags typed together read as "tracks with all of these", not
+	// "any of these" — matches channelViewFromUrl's own tag-filter default.
+	if (tags.length) {
+		source.tags = [...new Set(tags)]
+		source.tagsMode = 'all'
+	}
 	const search = rest.join(' ')
 	if (search) source.search = search
 	return source

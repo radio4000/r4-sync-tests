@@ -107,11 +107,16 @@
 			{#if track.duration}{formatDuration(track.duration)}{/if}
 		</div>{/if}
 	{#if !hiddenColumns.includes('meta')}<div class="col-meta">
-			{#if track.youtube_data}<span class="meta-indicator yt" title="YouTube metadata">Y</span>{/if}
-			{#if track.musicbrainz_data}<span class="meta-indicator mb" title="MusicBrainz metadata"
-					>M</span
+			{#if track.youtube_data}<span class="meta-indicator yt" title={m.batch_edit_badge_youtube()}
+					>Y</span
 				>{/if}
-			{#if track.discogs_data}<span class="meta-indicator dc" title="Discogs metadata">D</span>{/if}
+			{#if track.musicbrainz_data}<span
+					class="meta-indicator mb"
+					title={m.batch_edit_badge_musicbrainz()}>M</span
+				>{/if}
+			{#if track.discogs_data}<span class="meta-indicator dc" title={m.batch_edit_badge_discogs()}
+					>D</span
+				>{/if}
 		</div>{/if}
 	{#if !hiddenColumns.includes('error')}<div
 			class="col-error"

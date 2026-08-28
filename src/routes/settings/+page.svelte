@@ -29,11 +29,11 @@
 		</a>
 		<a href={resolve('/settings/analytics')}>
 			<Icon icon="eye" />
-			Analytics
+			{m.settings_analytics_title()}
 		</a>
 		<a href={resolve('/settings/import')}>
 			<Icon icon="document-download" />
-			Import
+			{m.import_title()}
 		</a>
 	</menu>
 </article>

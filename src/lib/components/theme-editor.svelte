@@ -118,7 +118,7 @@
 	</fieldset>
 {/snippet}
 
-<div class="focused constrained">
+<div class="focused">
 	<section class="box">
 		<form class="form">
 			<fieldset>
@@ -251,6 +251,10 @@
 		display: flex;
 		flex-flow: column;
 		gap: var(--space-3);
+		/* Fill the page's constrained column — the inherited margin-inline: auto
+		   would otherwise shrink this to its content width. */
+		width: 100%;
+		margin-inline: 0;
 	}
 
 	.box {
@@ -258,10 +262,6 @@
 		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		padding: var(--space-2);
-		/* Elevated bg alone can be too close to the page bg for contrast (e.g. gray-2
-		   vs gray-1 in light mode) — a soft shadow keeps the block readable without
-		   depending on the border being on. */
-		box-shadow: var(--shadow-modal);
 	}
 
 	h2 {

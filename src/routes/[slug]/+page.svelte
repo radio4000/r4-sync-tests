@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {page} from '$app/state'
+	import {goto} from '$app/navigation'
 	import {appUrl} from '$lib/config'
 	import {resolve} from '$app/paths'
 	import {getChannelCtx, getTracksQueryCtx} from '$lib/contexts'
@@ -20,6 +21,8 @@
 	import Icon from '$lib/components/icon.svelte'
 	import ChannelAvatar from '$lib/components/channel-avatar.svelte'
 	import PresenceCount from '$lib/components/presence-count.svelte'
+	import SearchInput from '$lib/components/search-input.svelte'
+	import ChannelNavControlsPortal from '$lib/components/channel-nav-controls-portal.svelte'
 	import {tooltip} from '$lib/components/tooltip-attachment.svelte.js'
 	import {relativeDate} from '$lib/dates'
 	import {channelAvatarUrl} from '$lib/utils'
@@ -64,6 +67,14 @@
 			playLoading = false
 		}
 	}
+
+	// Prefills the channel's own tracks page — this page shows only a preview.
+	let searchInput = $state('')
+	$effect(() => {
+		const q = searchInput.trim()
+		if (!q) return
+		goto(`/${slug}/tracks?q=${encodeURIComponent(q)}`, {state: {focus: true}})
+	})
 
 	// Live/broadcast — same decision tree the header used to drive.
 	const channelBroadcastQuery = useLiveQuery((q) =>
@@ -175,7 +186,9 @@
 	)
 	let matchingSourceSlug = $derived(appState.channel?.slug ?? '')
 	let hasCoordinates = $derived(
-		Number.isFinite(Number(channel?.latitude)) && Number.isFinite(Number(channel?.longitude))
+		Number.isFinite(Number(channel?.latitude)) &&
+			Number.isFinite(Number(channel?.longitude)) &&
+			(Number(channel?.latitude) !== 0 || Number(channel?.longitude) !== 0)
 	)
 	let coordinatesLabel = $derived.by(() => {
 		if (!hasCoordinates) return ''
@@ -193,8 +206,40 @@
 	type="music.radio_station"
 />
 
+<ChannelNavControlsPortal controls={navControls} />
+
+{#snippet navControls()}
+	{#if allTracks.length > 0}
+		<SearchInput
+			bind:value={searchInput}
+			placeholder={m.channel_tracks_search_placeholder()}
+			debounce={300}
+		/>
+	{/if}
+{/snippet}
+
 {#if channel}
 	<article>
+		<div class="channel-meta">
+			{#if channel.url}
+				<small class="url"
+					><a href={channel.url} target="_blank" rel="noopener nofollow ugc">{channel.url}</a
+					></small
+				>
+			{/if}
+			{#if channel.description}
+				<p class="description"><LinkEntities slug={channel.slug} text={channel.description} /></p>
+			{/if}
+			<small class="dates">
+				{#if hasCoordinates}
+					<a href={resolve('/[slug]/map', {slug})} class="coords-link">{coordinatesLabel}</a>
+				{/if}
+				{m.channel_updated({
+					date: relativeDate(channel.latest_track_at ?? channel.updated_at)
+				})}
+			</small>
+		</div>
+
 		<div class="channel-hero">
 			<button
 				type="button"
@@ -240,26 +285,6 @@
 					{/if}
 				</button>
 			{/if}
-		</div>
-
-		<div class="channel-meta">
-			{#if channel.url}
-				<small class="url"
-					><a href={channel.url} target="_blank" rel="noopener nofollow ugc">{channel.url}</a
-					></small
-				>
-			{/if}
-			{#if channel.description}
-				<p class="description"><LinkEntities slug={channel.slug} text={channel.description} /></p>
-			{/if}
-			<small class="dates">
-				{#if hasCoordinates}
-					<a href={resolve('/[slug]/map', {slug})} class="coords-link">{coordinatesLabel}</a>
-				{/if}
-				{m.channel_updated({
-					date: relativeDate(channel.latest_track_at ?? channel.updated_at)
-				})}
-			</small>
 		</div>
 
 		{#if appState.user && !canEdit}
@@ -361,6 +386,8 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		justify-content: center;
+		flex-grow: 1;
 		gap: var(--space-2);
 		padding: var(--space-3) 0.5rem 1rem;
 	}
@@ -372,9 +399,6 @@
 		border-radius: calc(var(--border-radius) * 999);
 		font-size: var(--font-6);
 		gap: var(--space-2);
-		box-shadow:
-			0 8px 24px -8px color-mix(in oklch, var(--accent-9) 55%, transparent),
-			0 1px 2px color-mix(in oklch, var(--accent-9) 40%, transparent);
 	}
 
 	.live-action {
@@ -421,6 +445,7 @@
 		display: flex;
 		flex-flow: column;
 		padding-top: 0.5rem;
+		padding-inline: 0.5rem;
 		footer {
 			margin: 0;
 			padding: 0.5rem;

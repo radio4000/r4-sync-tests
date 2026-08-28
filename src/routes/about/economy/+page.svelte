@@ -82,8 +82,8 @@
 			return
 		}
 		searchLoading = true
-		searchChannelsCombined({query: q}).then((results) => {
-			searchResults = results.slice(0, 8)
+		searchChannelsCombined({query: q}).then(({channels}) => {
+			searchResults = channels.slice(0, 8)
 			searchLoading = false
 		})
 	})

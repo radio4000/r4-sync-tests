@@ -108,7 +108,7 @@
 	<menu class="about-actions-group constrained">
 		<a href={resolve('/create-channel')} class="btn primary">{m.channel_create_title()}</a>
 		<a href={resolve('/')} class="btn">{m.common_start_exploring()}</a>
-		<a href={resolve('/menu/community')} class="btn ghost">Community</a>
+		<a href={resolve('/menu/community')} class="btn ghost">{m.nav_community()}</a>
 	</menu>
 </footer>
 

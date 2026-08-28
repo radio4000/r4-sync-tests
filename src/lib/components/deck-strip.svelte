@@ -1,5 +1,7 @@
 <script>
 	import {page} from '$app/state'
+	import {scale} from 'svelte/transition'
+	import {cubicOut} from 'svelte/easing'
 	import {appState, deckAccent} from '$lib/app-state.svelte'
 	import {showPlayerParam, sortedDeckIds, sortedListeningDeckIds} from '$lib/deck'
 	import {captureEventsCollection} from '$lib/collections/capture-events'
@@ -94,7 +96,11 @@
 		{#if localDeckIds.length}
 			<section class="local">
 				{#each localDeckIds as deckId (deckId)}
-					<div class="deck-item" style:--deck-accent={deckAccent(deckIds, deckId)}>
+					<div
+						class="deck-item"
+						style:--deck-accent={deckAccent(deckIds, deckId)}
+						out:scale={{duration: 150, start: 0.96, opacity: 0, easing: cubicOut}}
+					>
 						<Deck {deckId} {hasHistory} />
 					</div>
 				{/each}
@@ -106,7 +112,11 @@
 				aria-label={m.decks_broadcast_listeners()}
 			>
 				{#each listeningDeckIds as deckId (deckId)}
-					<div class="deck-item" style:--deck-accent={deckAccent(deckIds, deckId)}>
+					<div
+						class="deck-item"
+						style:--deck-accent={deckAccent(deckIds, deckId)}
+						out:scale={{duration: 150, start: 0.96, opacity: 0, easing: cubicOut}}
+					>
 						<Deck {deckId} {hasHistory} />
 					</div>
 				{/each}
@@ -139,6 +149,15 @@
 
 		&:empty {
 			display: none;
+		}
+
+		/* Universal (applies under every breakpoint's own flex/width values
+		   below) — smoothly resizes as decks collapse to compact, expand to
+		   fullscreen, or make room for a sibling that does either. */
+		.deck-item {
+			transition:
+				flex var(--duration-2) var(--ease-out),
+				width var(--duration-2) var(--ease-out);
 		}
 
 		/* Flush mode: main | decks, then decks from each other (reuse --floating-border).

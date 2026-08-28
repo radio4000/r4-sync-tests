@@ -174,7 +174,7 @@
 		background: var(--color-interface-elevated);
 		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
-		padding: var(--space-1);
+		padding: 0;
 		user-select: none;
 		cursor: var(--interactive-cursor, pointer);
 		transition:
@@ -235,7 +235,9 @@
 
 	figure {
 		position: relative;
-		border-radius: var(--border-radius);
+		/* Flush against the card's top/left/right edges (only .body is padded),
+		   so round just the top corners to match the card's own radius. */
+		border-radius: var(--border-radius) var(--border-radius) 0 0;
 		background: var(--gray-2);
 		aspect-ratio: 1;
 		width: 100%;
@@ -245,6 +247,7 @@
 		:global(.list) & {
 			grid-column: 1;
 			align-self: center;
+			border-radius: var(--border-radius);
 		}
 
 		:global(button) {
@@ -293,12 +296,14 @@
 		flex-direction: column;
 		gap: var(--space-1);
 		flex: 1;
+		padding: 0 var(--space-1) var(--space-1);
 
 		:global(.list) & {
 			grid-column: 2 / -1;
 			flex-direction: row;
 			align-items: stretch;
 			flex-wrap: wrap;
+			padding: 0;
 		}
 	}
 
@@ -380,6 +385,7 @@
 		flex: 1;
 		min-width: 0;
 		text-decoration: none;
+		transition: color var(--duration-1) var(--ease-out);
 		&:hover {
 			text-decoration: underline;
 			color: var(--accent-9);

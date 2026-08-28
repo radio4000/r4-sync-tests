@@ -19,6 +19,8 @@
 	import {toggleDeckCompact} from '$lib/api'
 	import {isMobileViewport} from '$lib/utils'
 	import {onMount} from 'svelte'
+	import {fly} from 'svelte/transition'
+	import {cubicOut} from 'svelte/easing'
 	import {SvelteMap, MediaQuery} from 'svelte/reactivity'
 	import {beforeNavigate, afterNavigate, goto} from '$app/navigation'
 	import {page} from '$app/state'
@@ -174,6 +176,45 @@
 		capture('$pageview')
 	})
 
+	// On mobile, an expanded deck fills the screen like a dialog — desktop keeps
+	// decks inline so none of this applies there. A plain app-state flag doesn't
+	// participate in browser history, so "back" would leave the deck open and
+	// navigate the route underneath it. Push a same-URL dummy history entry while
+	// expanded so back pops that entry first; closing the deck any other way
+	// (minimize button, ejecting it, Escape) pops the same entry itself so the
+	// back stack doesn't accumulate dead entries.
+	let deckHistoryPushed = false
+	let suppressPopstate = false
+
+	$effect(() => {
+		const expanded = anyDeckExpanded
+		if (typeof window === 'undefined' || !isMobileViewport()) return
+		if (expanded && !deckHistoryPushed) {
+			history.pushState({r4DeckExpanded: true}, '', location.href)
+			deckHistoryPushed = true
+		} else if (!expanded && deckHistoryPushed) {
+			deckHistoryPushed = false
+			suppressPopstate = true
+			history.back()
+		}
+	})
+
+	onMount(() => {
+		function onPopState() {
+			if (suppressPopstate) {
+				suppressPopstate = false
+				return
+			}
+			if (!deckHistoryPushed) return
+			deckHistoryPushed = false
+			for (const deck of Object.values(appState.decks)) {
+				if (deck.expanded) toggleDeckCompact(deck.id)
+			}
+		}
+		window.addEventListener('popstate', onPopState)
+		return () => window.removeEventListener('popstate', onPopState)
+	})
+
 	// Theme application
 	const prefersLight = new MediaQuery('(prefers-color-scheme: light)')
 	const theme = $derived(appState.theme ?? (prefersLight.current ? 'light' : 'dark'))
@@ -325,56 +366,63 @@
 
 						<DeckStrip />
 					</section>
-					{#if compactDeckIds.length}
-						<section class="compact-decks" aria-label={m.decks_compact_label()}>
-							{#each compactLocalDeckIds as deckId (deckId)}
-								<div class="compact-deck-item" style:--deck-accent={deckAccent(allDeckIds, deckId)}>
-									<DeckCompactBar {deckId} />
+					<section
+						class={['compact-decks', compactDeckIds.length === 0 && 'empty']}
+						aria-label={m.decks_compact_label()}
+					>
+						{#each compactLocalDeckIds as deckId (deckId)}
+							<div
+								class="compact-deck-item"
+								style:--deck-accent={deckAccent(allDeckIds, deckId)}
+								transition:fly={{y: 24, duration: 200, easing: cubicOut}}
+							>
+								<DeckCompactBar {deckId} />
+							</div>
+						{/each}
+						{#if compactListeningDeckIds.length}
+							<div class="compact-listening-group">
+								<button
+									class="compact-group-edge left"
+									aria-label={m.broadcasts_leave()}
+									onclick={() => compactListeningDeckIds.forEach((id) => leaveBroadcast(id))}
+								>
+									<Icon icon="close" size={14} />
+								</button>
+								<div class="compact-listening-list">
+									{#each compactListeningDeckIds as deckId (deckId)}
+										<div
+											class="compact-deck-item"
+											style:--deck-accent={deckAccent(allDeckIds, deckId)}
+											transition:fly={{y: 24, duration: 200, easing: cubicOut}}
+										>
+											<DeckCompactBar {deckId} showEdgeControls={false} />
+										</div>
+									{/each}
 								</div>
-							{/each}
-							{#if compactListeningDeckIds.length}
-								<div class="compact-listening-group">
+								<div class="compact-group-actions">
 									<button
-										class="compact-group-edge left"
-										aria-label={m.broadcasts_leave()}
-										onclick={() => compactListeningDeckIds.forEach((id) => leaveBroadcast(id))}
+										class={['compact-group-sync', {active: compactListeningDecksSynced}]}
+										aria-label={compactListeningDecksSynced
+											? m.decks_compact_sync_live()
+											: m.decks_compact_sync_action()}
+										onclick={() => compactListeningDeckIds.forEach((id) => resyncBroadcastDeck(id))}
 									>
-										<Icon icon="close" size={14} />
+										{#if compactListenPresenceCount > 0}
+											<PresenceCount count={compactListenPresenceCount} corner />
+										{/if}
+										<Icon icon="signal" size={12} />
 									</button>
-									<div class="compact-listening-list">
-										{#each compactListeningDeckIds as deckId (deckId)}
-											<div
-												class="compact-deck-item"
-												style:--deck-accent={deckAccent(allDeckIds, deckId)}
-											>
-												<DeckCompactBar {deckId} showEdgeControls={false} />
-											</div>
-										{/each}
-									</div>
-									<div class="compact-group-actions">
-										<button
-											class={['compact-group-sync', {active: compactListeningDecksSynced}]}
-											aria-label={compactListeningDecksSynced ? 'Live' : 'Sync'}
-											onclick={() =>
-												compactListeningDeckIds.forEach((id) => resyncBroadcastDeck(id))}
-										>
-											{#if compactListenPresenceCount > 0}
-												<PresenceCount count={compactListenPresenceCount} corner />
-											{/if}
-											<Icon icon="signal" size={12} />
-										</button>
-										<button
-											class="compact-group-toggle"
-											aria-label={m.player_compact_show_panel()}
-											onclick={() => toggleDeckCompact(compactListeningDeckIds[0])}
-										>
-											<Icon icon="deck-panel" expanded />
-										</button>
-									</div>
+									<button
+										class="compact-group-toggle"
+										aria-label={m.player_compact_show_panel()}
+										onclick={() => toggleDeckCompact(compactListeningDeckIds[0])}
+									>
+										<Icon icon="deck-panel" expanded />
+									</button>
 								</div>
-							{/if}
-						</section>
-					{/if}
+							</div>
+						{/if}
+					</section>
 				</div>
 
 				{#if chatPanelVisible}
@@ -417,10 +465,6 @@
 		border-inline-end: var(--floating-border);
 	}
 
-	:global(html.no-floating-ui) .scroll-area {
-		border: none;
-	}
-
 	:global(html.no-floating-ui) .compact-deck-item :global(.deck-compact-bar) {
 		border: none;
 		border-block-start: var(--floating-border);
@@ -452,10 +496,9 @@
 		gap: var(--floating-gap);
 	}
 
-	/* Plain layout container — NOT bordered/backgrounded itself, so its border
-	   doesn't wrap the deck-strip too. Each of .scroll-area (the page) and each
-	   individual .deck card owns its own border, matching the rest of the
-	   floating-panel system. */
+	/* Plain layout container — not bordered/backgrounded itself, so it doesn't
+	   wrap the deck-strip. .scroll-area (the page) is borderless too — every
+	   card inside it already has its own border, an outer frame was redundant. */
 	.content {
 		display: flex;
 		flex: 1;
@@ -469,8 +512,6 @@
 		min-width: 0;
 		min-height: 0;
 		overflow-y: auto;
-		border-radius: var(--border-radius);
-		border: var(--floating-border);
 		scrollbar-width: thin;
 		overscroll-behavior: contain;
 		scrollbar-gutter: stable;
@@ -491,7 +532,10 @@
 	}
 
 	/* Plain layout container — each stacked deck is its own floating card (see
-	   .compact-deck-item below), same principle as .content/.deck-strip. */
+	   .compact-deck-item below), same principle as .content/.deck-strip. Each
+	   item animates its own enter/exit (transition:fly in the markup), so the
+	   container itself doesn't need — and shouldn't also play — an entrance
+	   animation of its own (that only ever covered the very first deck). */
 	.compact-decks {
 		display: flex;
 		flex-direction: column;
@@ -499,14 +543,13 @@
 		position: sticky;
 		bottom: 0;
 		z-index: 30;
-		/* enter like a sheet; exits stay instant */
-		animation: compact-deck-in 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 	}
 
-	@keyframes compact-deck-in {
-		from {
-			transform: translate3d(0, 100%, 0);
-		}
+	/* Stays mounted (rather than {#if}-removed) even with no compact decks —
+	   keeps the {#each} below already-mounted, so the first compact deck of a
+	   session gets its fly-in intro like every later one does. */
+	.compact-decks.empty {
+		display: none;
 	}
 
 	.compact-deck-item {

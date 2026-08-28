@@ -225,7 +225,7 @@
 	<fieldset>
 		<label for="{uid}-discogs_url">
 			{m.track_form_discogs_label()}
-			{#if mode === 'create' && discogsActionUrl}
+			{#if discogsActionUrl}
 				(
 				<a
 					{...{href: discogsActionUrl, target: '_blank', rel: 'noopener noreferrer'}}
@@ -246,7 +246,7 @@
 	{#if isValidDiscogsUrl}
 		<R4DiscogsResource
 			url={liveDiscogsUrl}
-			full={mode === 'create'}
+			full={true}
 			suggestions={true}
 			preselected={extractHashtags(initialDescription).map((t) => t.slice(1))}
 			onload={(all) => (allDiscogsSuggestions = all)}

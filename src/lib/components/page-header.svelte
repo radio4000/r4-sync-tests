@@ -18,7 +18,8 @@
 		padding-block: 0.5rem;
 		z-index: 20;
 		background: var(--gray-2);
-		border-bottom: 1px solid var(--color-interface-border);
+		border: 1px solid var(--color-interface-border);
+		border-radius: var(--border-radius);
 	}
 
 	.page-header--wrap {

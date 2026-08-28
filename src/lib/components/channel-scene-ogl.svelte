@@ -6,6 +6,7 @@
 	import {appState} from '$lib/app-state.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import Dialog from '$lib/components/dialog.svelte'
+	import * as m from '$lib/paraglide/messages'
 
 	/** @type {{media?: any[], activeId?: string, activeIds?: string[], selectedId?: string | null, hoveredId?: string | null, cardSize?: number, cardDepthScale?: number, cardSizeScale?: number, allowNavigation?: boolean, enableCardTilt?: boolean, singleSceneConstrainMovement?: boolean, singleSceneMaxXY?: number, singleSceneCardDragRotate?: boolean, singleSceneMouseDrift?: boolean, minCameraZ?: number, maxCameraZ?: number, backgroundColor?: string|null, showInfoButton?: boolean, showControlsModal?: boolean, onclick?: (item: any) => void, ondoubleclick?: (item: any) => void, onnavigate?: (href: string, item: any, kind: 'channel'|'tag'|'mention'|'tracks'|'rotate'|'favorite', token?: string | null) => void | Promise<void>}} */
 	let {
@@ -111,30 +112,37 @@
 	<div class="canvas-container" bind:this={container}></div>
 
 	{#if showInfoButton}
-		<button class="controls-info-btn" type="button" onclick={openControls} title="3D controls">
+		<button
+			class="controls-info-btn"
+			type="button"
+			onclick={openControls}
+			title={m.canvas_controls_button_title()}
+		>
 			<Icon icon="circle-info" />
 		</button>
 	{/if}
 
 	<Dialog bind:showModal={showControlsModal}>
 		{#snippet header()}
-			<h2>3D Controls</h2>
+			<h2>{m.canvas_controls_heading()}</h2>
 		{/snippet}
 		<div class="controls-modal-content">
 			<div class="controls-row">
 				<Icon icon="hand-pointer" />
-				<div>Drag to pan · Tap/click cards to interact</div>
+				<div>{m.canvas_controls_drag_hint()}</div>
 			</div>
 			<div class="controls-row">
 				<Icon icon="mouse" />
-				<div><kbd>scroll</kbd> zoom</div>
+				<div><kbd>scroll</kbd> {m.canvas_controls_zoom_hint()}</div>
 			</div>
 			<div class="controls-row">
 				<Icon icon="keyboard" />
 				<div>
-					<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd
-					><kbd>→</kbd> move ·
-					<kbd>Q</kbd><kbd>E</kbd> up/down
+					<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+					{m.common_or()} <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
+					{m.canvas_controls_move()} ·
+					<kbd>Q</kbd><kbd>E</kbd>
+					{m.canvas_controls_updown_hint()}
 				</div>
 			</div>
 		</div>

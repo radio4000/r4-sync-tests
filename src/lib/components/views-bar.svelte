@@ -47,17 +47,6 @@
 		mode = 'idle'
 	}
 
-	function splitList(s: string) {
-		return [
-			...new Set(
-				s
-					.split(',')
-					.map((x) => x.trim())
-					.filter(Boolean)
-			)
-		]
-	}
-
 	function updateSource(index: number, s: ViewSource) {
 		const sources = [...view.sources]
 		sources[index] = s
@@ -160,7 +149,7 @@
 			{/if}
 			<li>
 				<PopoverMenu closeOnClick={false} align="end">
-					{#snippet trigger()}{m.views_filters_label()}{/snippet}
+					{#snippet trigger()}<Icon icon="filter-alt" title={m.views_filters_label()} />{/snippet}
 					<form class="form" onsubmit={(e) => e.preventDefault()}>
 						{#each view.sources as s, i (i)}
 							<div class="query-group">
@@ -172,43 +161,6 @@
 										</button>
 									</header>
 								{/if}
-								<fieldset>
-									<label for="{uid}-channels-{i}">{m.views_channels_label()}</label>
-									<input
-										id="{uid}-channels-{i}"
-										type="text"
-										value={s.channels?.join(', ') || ''}
-										onchange={(e) =>
-											updateSource(i, {...s, channels: splitList(e.currentTarget.value)})}
-										placeholder={m.views_channels_placeholder()}
-									/>
-								</fieldset>
-								<fieldset>
-									<legend>{m.views_tags_label()}</legend>
-									<fieldset class="row">
-										<select
-											value={s.tagsMode || 'any'}
-											onchange={(e) =>
-												updateSource(i, {
-													...s,
-													tagsMode: e.currentTarget.value === 'all' ? 'all' : 'any'
-												})}
-										>
-											<option value="any">{m.views_tags_any()}</option>
-											<option value="all">{m.views_tags_all()}</option>
-										</select>
-										<input
-											type="text"
-											value={s.tags?.join(', ') || ''}
-											onchange={(e) =>
-												updateSource(i, {
-													...s,
-													tags: splitList(e.currentTarget.value.replaceAll('#', ''))
-												})}
-											placeholder={m.views_tags_placeholder()}
-										/>
-									</fieldset>
-								</fieldset>
 								<fieldset>
 									<label for="{uid}-search-{i}">{m.views_search_label()}</label>
 									<input
@@ -223,13 +175,18 @@
 							</div>
 							{#if i < view.sources.length - 1}<hr />{/if}
 						{/each}
-						<button type="button" onclick={addSource} data-no-close>+ Source</button>
+						<button type="button" onclick={addSource} data-no-close>{m.views_add_source()}</button>
 					</form>
 				</PopoverMenu>
 			</li>
 			<li>
 				<PopoverMenu closeOnClick={false} align="end">
-					{#snippet trigger()}{m.views_display_label()}{/snippet}
+					{#snippet trigger()}
+						<Icon
+							icon={r1Direction === 'asc' ? 'funnel-ascending' : 'funnel-descending'}
+							title={m.views_display_label()}
+						/>
+					{/snippet}
 					<form class="form" onsubmit={(e) => e.preventDefault()}>
 						<fieldset>
 							<legend>{m.views_sort_label()}</legend>

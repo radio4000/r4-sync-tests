@@ -39,7 +39,7 @@
 	import {parseUrl} from 'media-now/parse-url'
 	import {tracksCollection, updateTrack} from '$lib/collections/tracks'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {isDbId, extractHashtags, HASH_PREFIX_REGEX} from '$lib/utils'
+	import {isDbId, extractHashtags, HASH_PREFIX_REGEX, isMobileViewport} from '$lib/utils'
 	import PlayerProgress from '$lib/components/player-progress.svelte'
 	import Tag from '$lib/components/tag.svelte'
 	import TrackCard from '$lib/components/track-card.svelte'
@@ -460,7 +460,22 @@
 >
 	<!-- 1. Top bar: logo + player controls -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<header class="header" onclick={() => (appState.active_deck_id = deckId)}>
+	<header
+		class="header"
+		onclick={(e) => {
+			appState.active_deck_id = deckId
+			// Mobile: the expanded deck covers the whole screen, so navigating to the
+			// channel's route via this link would otherwise happen invisibly behind it.
+			// Collapse to the compact bar so the route change is actually visible.
+			if (
+				isMobileViewport() &&
+				e.target instanceof Element &&
+				e.target.closest('.channel-micro-card')
+			) {
+				toggleDeckCompact(deckId)
+			}
+		}}
+	>
 		<div class="header-top">
 			{#if hasMultipleDecks}
 				<div
@@ -488,7 +503,12 @@
 						{#snippet trigger()}
 							<Icon icon="options-horizontal" />
 						{/snippet}
-						<DeckMenu {deckId} {deckEl} closeMenu={() => deckMenu?.close()} />
+						<DeckMenu
+							{deckId}
+							{deckEl}
+							autoRadioAvailable={display.autoRadioAvailable}
+							closeMenu={() => deckMenu?.close()}
+						/>
 					</PopoverMenu>
 				{/if}
 				{#if showDeckActions && (hasMultipleDecks || !appState.embed_mode)}
@@ -578,6 +598,20 @@
 	{@render children?.()}
 
 	<section class="bottom-chrome">
+		{#if appState.show_track_range_control !== false && displayTrack}
+			<PlayerProgress
+				currentTime={mediaCurrentTime}
+				{mediaDuration}
+				trackDuration={track?.duration}
+				isPlaying={Boolean(deck?.is_playing)}
+				disabled={isListeningToBroadcast}
+				onseek={(val) => {
+					if (deck) deck.media_current_time = val
+					if (mediaElement) mediaElement.currentTime = val
+				}}
+			/>
+		{/if}
+
 		<!-- 4. Channel/track info + mode info -->
 		<footer
 			class="track-panel"
@@ -612,26 +646,16 @@
 			{/if}
 		</footer>
 
-		{#if appState.show_track_range_control !== false && displayTrack}
-			<PlayerProgress
-				currentTime={mediaCurrentTime}
-				{mediaDuration}
-				trackDuration={track?.duration}
-				isPlaying={Boolean(deck?.is_playing)}
-				disabled={isListeningToBroadcast}
-				onseek={(val) => {
-					if (deck) deck.media_current_time = val
-					if (mediaElement) mediaElement.currentTime = val
-				}}
-			/>
-		{/if}
-
 		{#if !isListeningToBroadcast || deck?.auto_radio}
+			{#if !isListeningToBroadcast && !deck?.auto_radio}
+				<SpeedControl {deckId} {provider} />
+			{/if}
 			<menu class="controls">
 				{#if !isListeningToBroadcast && !deck?.auto_radio}
 					{@render btnPrev()}
 					{@render btnPlay()}
 					{@render btnNext()}
+					<VolumeControl {deckId} />
 					{#if activeQueue.length > 2}
 						<button
 							onclick={() => toggleShuffle(deckId)}
@@ -647,10 +671,9 @@
 					{#if display.autoRadioAvailable}
 						<AutoRadioButton size={14} onclick={() => rejoinAutoRadio(deckId)} />
 					{/if}
-					<SpeedControl {deckId} {provider} />
-					<VolumeControl {deckId} />
 				{:else if deck?.auto_radio}
 					{@render btnPlay()}
+					<VolumeControl {deckId} />
 					<AutoRadioButton
 						live
 						drifted={!!deck?.auto_radio_drifted}
@@ -659,7 +682,6 @@
 						onclick={() =>
 							deck?.auto_radio_drifted ? resyncAutoRadio(deckId) : leaveAutoRadio(deckId)}
 					/>
-					<VolumeControl {deckId} />
 				{/if}
 			</menu>
 		{/if}
@@ -799,22 +821,19 @@
 		flex-shrink: 0;
 		padding: 0.5rem;
 
-		:global(.volume) {
-			margin-left: auto;
-		}
+		/* Volume's own flex-grow already fills whatever space prev/play/next
+		   don't need — that alone pushes shuffle/auto (following it) to the
+		   right, so it always grows and pushes the other buttons to the sides. */
 
-		/* Mobile: transport centered, speed/volume collapse to their buttons */
+		/* Mobile: transport centered; speed/volume shrink to content instead of
+		   growing to fill the row, but keep their sliders — DJing with multiple
+		   decks needs per-deck volume, same as it needs speed. */
 		@media (max-width: 768px) {
 			justify-content: center;
 
 			:global(.speed),
 			:global(.volume) {
 				flex: 0 0 auto;
-				margin-left: 0;
-			}
-
-			:global(.volume .range) {
-				display: none;
 			}
 		}
 	}
@@ -825,6 +844,20 @@
 		justify-content: center;
 		padding-inline: var(--space-1);
 		min-height: 1.35rem;
+	}
+
+	/* Speed lives above .controls as its own full-width row, snug under the
+	   track. Its own `flex: 1 1 6rem` is meant for sitting in a *row*
+	   (.controls) — as a direct child of .bottom-chrome's column layout, that
+	   basis applies to height instead of width, forcing a tall box. Reset it
+	   to size from content. */
+	.bottom-chrome > :global(.speed) {
+		flex: 0 0 auto;
+		padding: 0.25rem 0.5rem;
+	}
+
+	:global(.bottom-chrome > .speed + .controls) {
+		padding-top: 0;
 	}
 
 	.layout-controls {
@@ -846,6 +879,13 @@
 		width: 100%;
 		max-height: 25dvh;
 		background: black;
+		opacity: 1;
+		transition:
+			flex var(--duration-2) var(--ease-out),
+			max-height var(--duration-2) var(--ease-out),
+			width var(--duration-2) var(--ease-out),
+			height var(--duration-2) var(--ease-out),
+			opacity var(--duration-2) var(--ease-out);
 	}
 
 	.video:not(:has(.native-audio-player)) {
@@ -920,11 +960,6 @@
 
 		@media (max-width: 768px) {
 			margin-top: 0;
-
-			/* Progress bar moves below the controls */
-			> :global(.progress) {
-				order: 2;
-			}
 		}
 	}
 
@@ -942,9 +977,6 @@
 		:global(article) {
 			flex: 1 1 auto;
 			min-width: 0;
-		}
-		:global(article.active) {
-			background: transparent;
 		}
 	}
 

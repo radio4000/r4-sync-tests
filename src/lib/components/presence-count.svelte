@@ -1,4 +1,6 @@
 <script>
+	import * as m from '$lib/paraglide/messages'
+
 	/**
 	 * Listener-count badge. Dark number pill.
 	 * `corner` floats it into the top-right of a positioned parent (icon-only buttons);
@@ -9,8 +11,11 @@
 </script>
 
 {#if count > 0}
-	<span class={['presence-count', {corner}]} title="{count} listener{count === 1 ? '' : 's'}"
-		>{count}</span
+	<span
+		class={['presence-count', {corner}]}
+		title={count === 1
+			? m.presence_count_listener_one({count})
+			: m.presence_count_listener_other({count})}>{count}</span
 	>
 {/if}
 

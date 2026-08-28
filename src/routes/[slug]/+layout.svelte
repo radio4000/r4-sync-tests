@@ -280,7 +280,12 @@
 					{#if (appState.channels?.length ?? 0) > 0}
 						<ButtonFollow channel={displayChannel} />
 					{:else}
-						<a href={authHref} class="btn" {@attach tooltip({content: m.common_follow()})}>
+						<a
+							href={authHref}
+							class="btn"
+							rel="nofollow"
+							{@attach tooltip({content: m.common_follow()})}
+						>
 							<Icon icon="favorite" />
 						</a>
 					{/if}
@@ -307,7 +312,7 @@
 									class:active={page.route.id?.startsWith('/[slug]/backup')}
 								>
 									<Icon icon="document-download" />
-									Backup
+									{m.channel_backup_title()}
 								</a>
 								<hr />
 							{:else if isLocalChannel(channel?.id)}
@@ -403,9 +408,13 @@
 		min-width: 0;
 		align-items: center;
 		background: var(--gray-2);
-		border-bottom: 1px solid var(--color-interface-border);
+		border: 1px solid var(--color-interface-border);
 		border-radius: var(--border-radius);
 		overflow: hidden;
+	}
+
+	.channel-nav {
+		border-inline: 1px solid var(--color-interface-border);
 	}
 
 	/* When a page-owned search/filter bar follows, it takes over the bottom edge
@@ -518,7 +527,7 @@
 		background: var(--gray-2);
 		border-bottom: 1px solid var(--color-interface-border);
 		border-radius: 0 0 var(--border-radius) var(--border-radius);
-		padding: var(--space-1) var(--space-3);
+		padding: var(--space-1);
 	}
 
 	.channel-nav-controls {

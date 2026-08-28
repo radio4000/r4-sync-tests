@@ -46,6 +46,12 @@ export function listboxNav({onSelect, onChange, wrap = false, selectOnClick = fa
 		}
 
 		const handleKeydown = (/** @type {KeyboardEvent} */ e) => {
+			// A nested interactive element (e.g. a channel link inside a track row)
+			// owns its own Enter/Space/navigation — don't intercept and redirect it
+			// to the option it happens to sit in.
+			const target = /** @type {HTMLElement} */ (e.target)
+			if (target.closest('button, a, input, [role="button"]')) return
+
 			const items = getItems()
 			if (!items.length) return
 
@@ -79,6 +85,10 @@ export function listboxNav({onSelect, onChange, wrap = false, selectOnClick = fa
 
 		const handleClick = (/** @type {MouseEvent} */ e) => {
 			const target = /** @type {HTMLElement} */ (e.target)
+			// A nested interactive element (e.g. a channel link inside a track row)
+			// handles its own click — don't also activate/select the option it sits
+			// in, or the row visually "wins" the click meant for its child link.
+			if (target.closest('button, a, input, [role="button"]')) return
 			const option = target.closest('[role="option"]')
 			if (!option) return
 
@@ -86,10 +96,7 @@ export function listboxNav({onSelect, onChange, wrap = false, selectOnClick = fa
 			const index = items.indexOf(/** @type {HTMLElement} */ (option))
 			if (index >= 0) {
 				setActive(index, items)
-				// Don't trigger onSelect if clicking an interactive element inside the option
-				if (selectOnClick && !target.closest('button, a, input, [role="button"]')) {
-					onSelect?.(index, items[index])
-				}
+				if (selectOnClick) onSelect?.(index, items[index])
 			}
 		}
 

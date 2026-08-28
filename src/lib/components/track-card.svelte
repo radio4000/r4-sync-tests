@@ -30,6 +30,10 @@
 		canEdit?: boolean
 		showMenu?: boolean
 		onTagClick?: (tag: string) => void
+		/** Tags currently active in the page's own filter — highlights matching
+		 * #tags inside the description instead of leaving that to Tag's URL
+		 * fallback (which only understands the channel tracks page's ?tags=). */
+		selectedTags?: string[]
 		menuAlign?: 'left' | 'right' | 'end'
 		menuValign?: 'top' | 'bottom'
 		onLocate?: () => void
@@ -51,6 +55,7 @@
 		canEdit = false,
 		showMenu = true,
 		onTagClick,
+		selectedTags,
 		menuAlign,
 		menuValign,
 		onLocate,
@@ -164,7 +169,7 @@
 	}
 </script>
 
-<article class={{active, selected: selected && !active}}>
+<article class={{'track-card': true, active, selected: selected && !active}}>
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="card"
@@ -216,6 +221,7 @@
 						slug={track.slug}
 						text={track.description}
 						{onTagClick}
+						{selectedTags}
 						deckId={matchedDeckId}
 					/>
 				</p>

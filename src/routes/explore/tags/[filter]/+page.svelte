@@ -94,7 +94,7 @@
 						<a
 							href={tagSearchHref(tag)}
 							style="font-size: calc(0.75rem + {((count / maxCount) * 1.2).toFixed(2)}rem)"
-							title="{count} tracks"
+							title={m.tracks_total_count({count})}
 						>
 							{tag}
 						</a>

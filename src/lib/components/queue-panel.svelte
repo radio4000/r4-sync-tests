@@ -8,6 +8,7 @@
 	import {clearQueue, clearAllQueue} from '$lib/api'
 	import {getActiveQueue} from '$lib/player/queue'
 	import SearchInput from './search-input.svelte'
+	import FilterChips from './filter-chips.svelte'
 	import Icon from './icon.svelte'
 	import Tracklist from './tracklist.svelte'
 	import {tick} from 'svelte'
@@ -19,6 +20,8 @@
 	let deck = $derived(appState.decks[deckId])
 
 	let searchQuery = $state('')
+	/** @type {string[]} */
+	let selectedTags = $state([])
 	let selectedTrackId = $state(/** @type {string | null} */ (null))
 	/** @type {any} */
 	let tracklist = $state()
@@ -26,9 +29,13 @@
 	async function doScrollToActive() {
 		if (!deck?.playlist_track) return
 
-		// If the active track is filtered out, clear the search so it appears
-		if (searchQuery && !filteredQueueTracks.some((t) => t.id === deck?.playlist_track)) {
+		// If the active track is filtered out, clear the filters so it appears
+		if (
+			(searchQuery || selectedTags.length) &&
+			!filteredQueueTracks.some((t) => t.id === deck?.playlist_track)
+		) {
 			searchQuery = ''
+			selectedTags = []
 			await tick()
 		}
 
@@ -53,14 +60,20 @@
 		return trackIds.map((id) => state.get(id)).filter((t) => !!t)
 	})
 
-	let filteredQueueTracks = $derived(
+	let searchedQueueTracks = $derived(
 		fuzzySearch(searchQuery, queueTracks, ['title', 'tags', 'description'])
+	)
+	let filteredQueueTracks = $derived(
+		selectedTags.length
+			? searchedQueueTracks.filter((t) => selectedTags.every((tag) => t.tags?.includes(tag)))
+			: searchedQueueTracks
 	)
 
 	/** @param {string} tag */
 	function toggleTag(tag) {
-		const query = '#' + tag
-		searchQuery = searchQuery === query ? '' : query
+		selectedTags = selectedTags.includes(tag)
+			? selectedTags.filter((t) => t !== tag)
+			: [...selectedTags, tag]
 	}
 
 	/** @param {import('$lib/types').Track} track */
@@ -85,10 +98,13 @@
 			placeholder={`${m.search_placeholder()} (${queueTracks.length})`}
 			debounce={150}
 		/>
-		{#if searchQuery !== ''}
+		{#if searchQuery !== '' || selectedTags.length > 0}
 			<button
-				onclick={() => (searchQuery = '')}
-				{@attach tooltip({content: m.queue_clear_search()})}
+				onclick={() => {
+					searchQuery = ''
+					selectedTags = []
+				}}
+				{@attach tooltip({content: m.queue_clear_filters()})}
 			>
 				<Icon icon="close" />
 			</button>
@@ -104,6 +120,10 @@
 		{/if}
 	</div>
 
+	{#if selectedTags.length > 0}
+		<FilterChips tags={selectedTags} onRemoveTag={toggleTag} />
+	{/if}
+
 	<main class="scroll">
 		{#if filteredQueueTracks.length > 0}
 			<Tracklist
@@ -115,6 +135,7 @@
 				{canEditTrack}
 				onSelectTrack={(trackId) => (selectedTrackId = trackId)}
 				onTagClick={toggleTag}
+				{selectedTags}
 			/>
 		{:else if queueTracks.length === 0}
 			<div class="empty-state">
@@ -123,7 +144,9 @@
 		{:else}
 			<div class="empty-state">
 				<p>{m.queue_empty()}</p>
-				<p><small>{m.search_no_results()} "{searchQuery}"</small></p>
+				{#if searchQuery}
+					<p><small>{m.search_no_results()} "{searchQuery}"</small></p>
+				{/if}
 			</div>
 		{/if}
 	</main>
@@ -146,6 +169,13 @@
 		min-height: 0;
 		overflow-y: auto;
 		background: transparent;
+	}
+
+	/* Same fix as player.svelte/deck-compact-bar.svelte: TrackCard's .active
+	   is transparent by default (correct on a normal page), but this panel
+	   sits on the deck's --floating-bg, not the app's plain background. */
+	main :global(article.active) {
+		background: var(--color-interface);
 	}
 
 	.empty-state {
@@ -180,6 +210,11 @@
 
 	.search-container :global(.search-input input[type='search']) {
 		width: 100%;
+	}
+
+	:global(.queue-panel > .filter-chips) {
+		padding: 0 0.5rem 0.5rem;
+		border-bottom: 1px solid var(--color-interface-border);
 	}
 
 	main :global(.index) {

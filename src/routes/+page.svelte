@@ -6,17 +6,25 @@
 	import {broadcastsCollection} from '$lib/collections/broadcasts'
 	import {channelsCollection, fetchAppStats} from '$lib/collections/channels'
 	import {useLiveQuery} from '$lib/useLiveQuery.svelte'
-	import {getFollowedChannels} from '$lib/followed-channels.svelte'
-	import {getFeaturedPool} from '$lib/collections/featured'
+	import {getFollowedChannels, getChannelConnections} from '$lib/followed-channels.svelte'
+	import {getFeaturedPool, pickFeatured, dailySeed} from '$lib/collections/featured'
+	import {getFeaturedSuggestions} from '$lib/featured-suggestions.svelte'
 	import {tracksCollection, ensureTracksLoaded} from '$lib/collections/tracks'
-	import {getChannelTags, extractHashtags} from '$lib/utils'
-	import {loadDeckView, playTrack, sortByNewest} from '$lib/api'
+	import {
+		getChannelTags,
+		extractHashtags,
+		seededRandom,
+		shuffleArray,
+		shuffleSeed
+	} from '$lib/utils'
+	import {loadDeckView, playTrack, sortByNewest, toggleChannelPlay} from '$lib/api'
 	import {isBroadcasting} from '$lib/deck'
 	import {authStatus} from '$lib/app-state.svelte'
 	import {appPresence} from '$lib/presence.svelte'
 	import ChannelCard from '$lib/components/channel-card.svelte'
-	import FeaturedChannels from '$lib/components/featured-channels.svelte'
-	import HomeGlobe from '$lib/components/home-globe.svelte'
+	import ChannelsView from '$lib/components/channels-view.svelte'
+	import ChannelsViewControls from '$lib/components/channels-view-controls.svelte'
+	import Dialog from '$lib/components/dialog.svelte'
 	import {not, isNull, eq} from '@tanstack/db'
 	import Icon from '$lib/components/icon.svelte'
 	import PageHeader from '$lib/components/page-header.svelte'
@@ -40,6 +48,7 @@
 
 	const follows = getFollowedChannels()
 	const favoriteChannelIds = $derived(new Set(follows.followedIds))
+	const followerConn = getChannelConnections('followers', () => userChannel?.id, {hydrate: false})
 
 	// Todo checklist: show when channel exists but onboarding is incomplete
 	const showOnboarding = $derived(
@@ -55,6 +64,23 @@
 	let featuredLoaded = $state(false)
 
 	const featuredPickCount = $derived(!isSignedIn ? FEATURED_COUNT_LOGGEDOUT : FEATURED_COUNT)
+
+	// Popular tags as listening starting points (logged-out homepage) — cheap:
+	// tagsCollection is a pre-aggregated, hour-cached `tag, count` query, not a
+	// scan over tracks. Clicking one searches that tag across every channel.
+	// Same shape as pickFeatured() for channels: a tight quality window (tags
+	// are already sorted by count desc), shuffled for rotation, sliced to the
+	// pick count — narrow enough that it stays "most used", not the long tail.
+	const DISCOVERY_TAG_COUNT = 20
+	const DISCOVERY_TAG_WINDOW = 24
+	const tagSuggestions = getFeaturedSuggestions()
+	const tagSuggestionsSeed = shuffleSeed()
+	const discoveryTags = $derived(
+		shuffleArray(
+			tagSuggestions.tags.slice(0, DISCOVERY_TAG_WINDOW),
+			seededRandom(tagSuggestionsSeed)
+		).slice(0, DISCOVERY_TAG_COUNT)
+	)
 
 	$effect(() => {
 		if (featuredLoaded) return
@@ -141,14 +167,14 @@
 	}
 
 	const showFavoritesWidget = $derived(follows.followedChannels.length > 0)
+	const showFollowersWidget = $derived(followerConn.ids.length > 0)
 	const showFavoriteBroadcastWidget = $derived(favoriteBroadcastCount > 0)
 	const showBroadcastCountWidget = $derived(broadcastCount > 0 && !userChannelIsBroadcasting)
 
-	let homeMapVisible = $state(false)
-
-	// Globe channels — all synced channels with coordinates
+	// All synced channels with coordinates — only queried once map mode is actually
+	// selected, so switching display modes stays the only thing that loads it.
 	const globeChannelsQuery = useLiveQuery((q) =>
-		homeMapVisible
+		appState.channels_display === 'map'
 			? q.from({ch: channelsCollection}).where(({ch}) => not(isNull(ch.latitude)))
 			: null
 	)
@@ -159,10 +185,17 @@
 	const mapChannels = $derived(
 		isSignedIn && favoriteMapChannels.length > 0 ? favoriteMapChannels : globeChannels
 	)
-	const mapOverlayHref = $derived(
-		isSignedIn && favoriteMapChannels.length > 0
-			? resolve('/channels/favorites') + '?display=map'
-			: resolve('/channels/all') + '?display=map'
+
+	// Non-map modes keep the curated daily pick (favorites take priority when any
+	// exist); map mode wants geographic breadth instead, hence mapChannels above.
+	let featuredSeed = $state(dailySeed())
+	const homeChannels = $derived(
+		follows.followedChannels.length > 0
+			? follows.followedChannels
+			: pickFeatured(featuredPool, {count: featuredPickCount, seed: featuredSeed})
+	)
+	const homeSectionChannels = $derived(
+		appState.channels_display === 'map' ? mapChannels : homeChannels
 	)
 
 	// Stats for not-logged-in users
@@ -180,19 +213,24 @@
 <Seo title={m.home_title({appName})} plain />
 
 <div class="homepage" class:signed-in={isSignedIn}>
-	<PageHeader>
-		<SearchInput
-			bind:value={homeSearch}
-			debounce={300}
-			placeholder={m.header_search_placeholder()}
-		/>
-		{#if isSignedIn && authStatus.channelChecked && !userChannel}
-			<a href={resolve('/create-channel')} class="btn primary create-channel-action">
-				<Icon icon="add" />{m.home_create_channel()}
-			</a>
-		{/if}
-		{#if !isSignedIn}
-			{#if !appState.show_welcome_hint}
+	<PageHeader wrap>
+		<nav class="home-top-row">
+			<SearchInput
+				bind:value={homeSearch}
+				debounce={300}
+				placeholder={m.header_search_placeholder()}
+			/>
+			<ChannelsViewControls
+				bind:display={appState.channels_display}
+				bind:order={appState.channels_order}
+				bind:direction={appState.channels_order_direction}
+			/>
+			{#if isSignedIn && authStatus.channelChecked && !userChannel}
+				<a href={resolve('/create-channel')} class="btn primary create-channel-action">
+					<Icon icon="add" />{m.home_create_channel()}
+				</a>
+			{/if}
+			{#if !isSignedIn}
 				<button
 					class="btn"
 					style="margin-left: auto"
@@ -202,6 +240,68 @@
 					<Icon icon="circle-info" />
 				</button>
 			{/if}
+		</nav>
+		{#if isSignedIn && userChannel && (userChannelTopTags.length > 0 || tagsLoading)}
+			<nav class="home-tags-row">
+				<div class="dashboard-grid dashboard-grid--scroll">
+					<button
+						type="button"
+						class="dashboard-card dashboard-card--link dashboard-card--row dashboard-card--pill"
+						onclick={() => toggleChannelPlay(userChannel)}
+					>
+						<Icon icon="play-fill" size={16} />
+						<span class="chip-label">{m.home_play_all()}</span>
+					</button>
+					{#if tagsLoading}
+						<div
+							class="dashboard-card dashboard-card--row dashboard-card--pill loading-placeholder"
+						>
+							<small>…</small>
+						</div>
+					{/if}
+					{#each userChannelTopTags as { value, count } (value)}
+						<div class="dashboard-card dashboard-card--row dashboard-card--pill">
+							<button
+								class="btn ghost tag-pill-action"
+								onclick={() => playChannelTag(value)}
+								title={m.home_tag_play_title({value})}
+							>
+								<Icon icon="play-fill" />
+							</button>
+							<a
+								class="dashboard-label--tag"
+								href={resolve('/[slug]/tracks', {slug: userChannel.slug}) +
+									`?tags=${encodeURIComponent(value)}`}
+								>#{value} <span class="chip-count">{count}</span></a
+							>
+							<a
+								class="btn ghost tag-pill-action"
+								href={resolve('/search/tracks') + `?q=${encodeURIComponent('#' + value)}`}
+								title={m.home_tag_search_title({value})}
+							>
+								<Icon icon="search" />
+							</a>
+						</div>
+					{/each}
+				</div>
+			</nav>
+		{:else if !isSignedIn && (discoveryTags.length || showBroadcastCountWidget)}
+			<nav class="home-tags-row tabs">
+				{#if showBroadcastCountWidget}
+					<a class="btn chip active top-row-live" href={resolve('/channels/broadcasting')}>
+						<Icon icon="signal" size={16} />
+						<span class="chip-label">
+							{m.home_broadcasting()}
+							<strong class="chip-count">{broadcastCount.toLocaleString()}</strong>
+						</span>
+					</a>
+				{/if}
+				{#each discoveryTags as tag (tag)}
+					<a class="btn chip" href={resolve('/search') + `?q=${encodeURIComponent('#' + tag)}`}
+						>#{tag}</a
+					>
+				{/each}
+			</nav>
 		{/if}
 	</PageHeader>
 
@@ -209,7 +309,7 @@
 		<!-- Logged in with channel -->
 
 		<section class="section dashboard-section">
-			{#if showTrackWidget || showFavoritesWidget || showFavoriteBroadcastWidget}
+			{#if showTrackWidget || showFavoritesWidget || showFollowersWidget || showFavoriteBroadcastWidget}
 				<div class="dashboard-group">
 					<div class="dashboard-grid dashboard-grid--scroll">
 						{#if showTrackWidget}
@@ -238,6 +338,18 @@
 								</span>
 							</a>
 						{/if}
+						{#if showFollowersWidget}
+							<a
+								class="dashboard-card dashboard-card--link dashboard-card--row dashboard-card--pill"
+								href={resolve('/[slug]/followers', {slug: userChannel.slug})}
+							>
+								<Icon icon="users" size={16} />
+								<span class="chip-label">
+									{m.nav_followers()}
+									<strong class="chip-count">{followerConn.ids.length.toLocaleString()}</strong>
+								</span>
+							</a>
+						{/if}
 						{#if showFavoriteBroadcastWidget}
 							<a
 								class="dashboard-card dashboard-card--link dashboard-card--row dashboard-card--pill"
@@ -254,51 +366,13 @@
 				</div>
 			{/if}
 
-			{#if userChannelTopTags.length > 0 || tagsLoading}
-				<div class="dashboard-group">
-					<div class="dashboard-grid dashboard-grid--scroll">
-						{#if tagsLoading}
-							<div
-								class="dashboard-card dashboard-card--row dashboard-card--pill loading-placeholder"
-							>
-								<small>…</small>
-							</div>
-						{/if}
-						{#each userChannelTopTags as { value, count } (value)}
-							<div class="dashboard-card dashboard-card--row dashboard-card--pill">
-								<button
-									class="btn ghost tag-pill-action"
-									onclick={() => playChannelTag(value)}
-									title="Play #{value}"
-								>
-									<Icon icon="play-fill" />
-								</button>
-								<a
-									class="dashboard-label--tag"
-									href={resolve('/[slug]/tracks', {slug: userChannel.slug}) +
-										`?tags=${encodeURIComponent(value)}`}
-									>#{value} <span class="chip-count">{count}</span></a
-								>
-								<a
-									class="btn ghost tag-pill-action"
-									href={resolve('/search/tracks') + `?q=${encodeURIComponent('#' + value)}`}
-									title="Search #{value} globally"
-								>
-									<Icon icon="search" />
-								</a>
-							</div>
-						{/each}
-					</div>
-				</div>
-			{/if}
-
 			{#if showOnboarding}
 				{#if appState.show_onboarding_hint}
 					<section class="section onboarding-section dismissible">
 						<button
 							class="dismiss-btn"
 							onclick={() => (appState.show_onboarding_hint = false)}
-							aria-label="Close"
+							aria-label={m.home_onboarding_close()}
 						>
 							<Icon icon="close" />
 						</button>
@@ -326,7 +400,7 @@
 						<button
 							class="btn onboarding-toggle"
 							onclick={() => (appState.show_onboarding_hint = true)}
-							title="Show getting started"
+							title={m.home_onboarding_show()}
 						>
 							<Icon icon="circle-info" />
 						</button>
@@ -335,12 +409,13 @@
 			{/if}
 		</section>
 
-		<section class="section section--globe">
-			<HomeGlobe
-				channels={mapChannels}
-				zoom={1}
-				overlayHref={mapOverlayHref}
-				onvisible={() => (homeMapVisible = true)}
+		<section class="section section--channels">
+			<ChannelsView
+				channels={homeSectionChannels}
+				display={appState.channels_display}
+				order={appState.channels_order}
+				direction={appState.channels_order_direction}
+				showToolbar={false}
 			/>
 		</section>
 	{:else if isSignedIn && authStatus.channelChecked}
@@ -369,92 +444,62 @@
 			</section>
 		{/if}
 
-		<FeaturedChannels pool={featuredPool} pickCount={featuredPickCount} />
+		<section class="section section--channels">
+			<ChannelsView
+				channels={homeSectionChannels}
+				display={appState.channels_display}
+				order={appState.channels_order}
+				direction={appState.channels_order_direction}
+				showToolbar={false}
+			/>
+		</section>
 	{:else}
 		<!-- Not logged in -->
 
-		{#if appState.show_welcome_hint || showBroadcastCountWidget}
-			<div class="loggedout-top-row" class:modal-open={appState.show_welcome_hint}>
-				{#if appState.show_welcome_hint}
-					<section class="section welcome-section dismissible top-row-welcome">
-						<button
-							class="dismiss-btn"
-							onclick={() => (appState.show_welcome_hint = false)}
-							aria-label="Close"
-						>
-							<Icon icon="close" />
-						</button>
-						<h1>{m.welcome_title({appName})}</h1>
-						<p class="tagline">{m.welcome_tagline_channel()}</p>
-						<p class="tagline">{m.welcome_tagline_metadata()}</p>
-						<ul class="feature-list">
-							<li>{m.welcome_feature_archive()}</li>
-							<li>{m.welcome_feature_decks()}</li>
-							<li>{m.welcome_feature_follow()}</li>
-							<li>{m.welcome_feature_open()}</li>
-						</ul>
-						<menu class="welcome-menu">
-							<a
-								href={resolve('/auth/create-account') + '?redirect=' + resolve('/create-channel')}
-								class="btn primary">{m.header_start_your_radio()}</a
-							>
-							<a href={resolve('/auth/login')} class="btn">{m.nav_sign_in()}</a>
-							<a href={resolve('/about')} class="btn ghost">{m.nav_about()}</a>
-						</menu>
-					</section>
-				{/if}
+		<Dialog bind:showModal={appState.show_welcome_hint}>
+			{#snippet header()}
+				<h2>{m.welcome_title({appName})}</h2>
+			{/snippet}
+			<p class="tagline">{m.welcome_tagline_channel()}</p>
+			<p class="tagline">{m.welcome_tagline_metadata()}</p>
+			<ul class="feature-list">
+				<li>{m.welcome_feature_archive()}</li>
+				<li>{m.welcome_feature_decks()}</li>
+				<li>{m.welcome_feature_follow()}</li>
+				<li>{m.welcome_feature_open()}</li>
+			</ul>
+			<menu class="welcome-menu">
+				<a
+					href={resolve('/auth/create-account') + '?redirect=' + resolve('/create-channel')}
+					class="btn primary">{m.header_start_your_radio()}</a
+				>
+				<a href={resolve('/auth/login')} class="btn">{m.nav_sign_in()}</a>
+				<a href={resolve('/about')} class="btn ghost">{m.nav_about()}</a>
+			</menu>
+		</Dialog>
 
-				{#if showBroadcastCountWidget}
-					<section class="section top-row-live">
-						<h2 class="section-title">
-							<a class="btn chip" href={resolve('/channels/broadcasting')}
-								>{m.home_broadcasting()}</a
-							>
-						</h2>
-						<ol class="list">
-							{#each activeBroadcasts as broadcast (broadcast.channel_id)}
-								<li><ChannelCard channel={broadcast.channels} /></li>
-							{/each}
-						</ol>
-					</section>
-				{/if}
-			</div>
-		{/if}
-
-		<div class="loggedout-over-globe">
-			<div class="loggedout-grid">
-				<FeaturedChannels
-					pool={featuredPool}
-					pickCount={featuredPickCount}
-					titleHref={resolve('/channels/featured')}
-					skeleton
-					column
-				/>
-			</div>
-
-			{#if featuredLoaded && (channelCount || trackCount || appPresence.count)}
-				<footer class="stats footer-stats">
-					{#if channelCount}<a href={resolve('/channels/all')}
-							>{m.home_stats_channels({count: channelCount.toLocaleString()})}</a
-						>{/if}
-					{#if trackCount}<a href={resolve('/tracks/recent')}
-							>{m.home_stats_tracks({count: trackCount.toLocaleString()})}</a
-						>{/if}
-					{#if appPresence.count}<span>{m.home_stats_listeners({count: appPresence.count})}</span
-						>{/if}
-				</footer>
-			{/if}
-		</div>
-
-		<section class="section section--globe section--globe--loggedout">
-			<HomeGlobe
-				channels={globeChannels}
-				zoom={1.5}
-				overlayHref={resolve('/channels/all') + '?display=map'}
-				compact
-				onvisible={() => (homeMapVisible = true)}
+		<section class="section section--channels">
+			<ChannelsView
+				channels={homeSectionChannels}
+				display={appState.channels_display}
+				order={appState.channels_order}
+				direction={appState.channels_order_direction}
+				showToolbar={false}
 			/>
 		</section>
+
+		{#if featuredLoaded && (channelCount || trackCount || appPresence.count)}
+			<footer class="stats footer-stats">
+				{#if channelCount}<a href={resolve('/channels/all')}
+						>{m.home_stats_channels({count: channelCount.toLocaleString()})}</a
+					>{/if}
+				{#if trackCount}<a href={resolve('/tracks/recent')}
+						>{m.home_stats_tracks({count: trackCount.toLocaleString()})}</a
+					>{/if}
+				{#if appPresence.count}<span>{m.home_stats_listeners({count: appPresence.count})}</span
+					>{/if}
+			</footer>
+		{/if}
 	{/if}
 </div>
 
@@ -487,92 +532,43 @@
 		margin-bottom: 0;
 	}
 
-	/* :global() on .section — it's also rendered by FeaturedChannels, which doesn't share this scope */
-	.homepage > :global(.section):not(.section--globe) {
+	.homepage > :global(.section) {
 		position: relative;
 		z-index: 6;
 		background: var(--color-interface);
 	}
 
-	.homepage.signed-in > :global(.section):not(.section--globe):not(.dashboard-section) {
+	.homepage.signed-in > :global(.section):not(.dashboard-section) {
 		position: relative;
 		z-index: 6;
 		background: var(--color-interface);
 	}
 
-	.section--globe {
+	.section--channels {
 		display: flex;
 		flex-direction: column;
-		min-height: 0;
-		margin-bottom: 0;
-		position: relative;
-		z-index: 0;
-	}
-
-	.homepage.signed-in .section--globe:not(.section--globe--loggedout) {
 		flex: 1;
 		min-height: 40dvh;
-	}
-
-	.homepage:not(.signed-in) .section--globe--loggedout {
-		position: relative;
-		z-index: 0;
-	}
-
-	.homepage:not(.signed-in) .loggedout-over-globe,
-	.homepage:not(.signed-in) .loggedout-top-row,
-	.homepage:not(.signed-in) .welcome-section {
-		position: relative;
-		z-index: 5;
-	}
-
-	.loggedout-top-row {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: var(--space-2);
-		padding: var(--space-2) 0.5rem 0;
-	}
-
-	@media (min-width: 1024px) {
-		.loggedout-top-row.modal-open {
-			grid-template-columns: minmax(24rem, 1.2fr) minmax(20rem, 1fr);
-			align-items: start;
-		}
-
-		.loggedout-top-row.modal-open .top-row-live {
-			order: 0;
-		}
-
-		.loggedout-top-row.modal-open .top-row-welcome {
-			order: 1;
-		}
-	}
-
-	.loggedout-over-globe {
-		position: relative;
-		z-index: 6;
-		background: var(--color-interface);
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		min-height: 0;
-		padding: 0 0.5rem 0.5rem;
+		margin-bottom: 0;
+		padding: var(--space-2) 0.5rem 0.5rem;
 		gap: 0.5rem;
+
+		/* ChannelsView's own root is `.fill-height` (flex:1; height:100%) — this
+		   section is what gives that height something real to fill. */
+		& > :global(.layout) {
+			flex: 1;
+			min-height: 0;
+		}
 	}
 
-	.loggedout-grid {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: 0.5rem;
-		flex: 1;
-		min-height: 0;
-		overflow: hidden;
+	.home-top-row,
+	.home-tags-row {
+		width: 100%;
+	}
 
-		/* :global() — the section here comes from FeaturedChannels, not this scope */
-		& > :global(section) {
-			min-width: 0;
-			overflow: hidden;
-		}
+	.home-top-row {
+		gap: 0.5rem;
+		align-items: center;
 	}
 
 	.dashboard-section {
@@ -728,31 +724,17 @@
 		right: 0.5rem;
 	}
 
-	.welcome-section {
-		max-width: 56rem;
-		margin-inline: auto;
-		padding: 1.5rem;
-		border-radius: var(--border-radius);
-		background: var(--accent-2);
-		margin-bottom: var(--space-3);
+	.tagline {
+		font-size: var(--font-6);
+	}
 
-		h1 {
-			font-size: var(--font-8);
-			margin-bottom: 1rem;
-		}
+	.feature-list {
+		margin-block: 1rem;
+		font-size: var(--font-5);
+		padding-left: 1.25rem;
 
-		.tagline {
-			font-size: var(--font-6);
-		}
-
-		.feature-list {
-			margin-block: 1rem;
-			font-size: var(--font-5);
-			padding-left: 1.25rem;
-
-			li {
-				margin-block: var(--space-1);
-			}
+		li {
+			margin-block: var(--space-1);
 		}
 	}
 

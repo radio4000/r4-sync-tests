@@ -1,5 +1,7 @@
 <script>
 	import {page} from '$app/state'
+	import {scale} from 'svelte/transition'
+	import {cubicOut} from 'svelte/easing'
 	import {appState} from '$lib/app-state.svelte'
 	import {showPlayerParam, sortedListeningDeckIds} from '$lib/deck'
 	import Player from '$lib/components/player.svelte'
@@ -24,6 +26,27 @@
 
 	// Deck 1 hides when empty; additional decks are always visible
 	let visible = $derived(showPlayer && deck && (deckId !== 1 || hasContent))
+
+	// `mounted` lags `visible` by one frame on the way in (not the way out).
+	// When a deck's *component instance* is freshly created by deck-strip's
+	// {#each} — deck 1 doesn't exist in appState.decks at all until it first
+	// gets content — `visible` can already be true on this component's very
+	// first render. Svelte only plays an intro transition on a genuine
+	// false→true edge of an already-mounted block, not a block that starts
+	// true, so without this every real play action (which sets deck fields
+	// in one batch) skipped the entrance animation entirely.
+	let mounted = $state(false)
+	$effect(() => {
+		if (!visible) {
+			mounted = false
+			return
+		}
+		if (mounted) return
+		const id = requestAnimationFrame(() => {
+			mounted = true
+		})
+		return () => cancelAnimationFrame(id)
+	})
 
 	// Inline deck width from stored value
 	let videoMixOpacity = $derived.by(() => {
@@ -84,7 +107,7 @@
 	}
 </script>
 
-{#if visible}
+{#if mounted}
 	<section
 		class={{
 			deck: true,
@@ -101,6 +124,7 @@
 		data-deck={deckId}
 		style={deckStyle}
 		bind:this={deckEl}
+		transition:scale={{duration: 150, start: 0.96, opacity: 0, easing: cubicOut}}
 	>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="resize-handle" onpointerdown={onResizeStart}></div>
@@ -134,8 +158,22 @@
 		border: none;
 	}
 
+	/* Smoothly resize across compact/normal/expanded instead of snapping —
+	   this is the deck's own box; deck-item's flex/width (deck-strip.svelte)
+	   transitions in step so the outer wrapper doesn't clip it short. */
+	.deck {
+		transition:
+			width var(--duration-2) var(--ease-out),
+			height var(--duration-2) var(--ease-out),
+			opacity var(--duration-2) var(--ease-out);
+	}
+
 	.deck:not(.expanded) {
-		transition: border-color var(--duration-2) var(--ease-out);
+		transition:
+			width var(--duration-2) var(--ease-out),
+			height var(--duration-2) var(--ease-out),
+			opacity var(--duration-2) var(--ease-out),
+			border-color var(--duration-2) var(--ease-out);
 	}
 
 	.resize-handle {
@@ -217,8 +255,6 @@
 		max-width: none;
 		height: 100%;
 		min-height: 0;
-		border: 0;
-		border-radius: 0;
 	}
 
 	.deck.expanded .resize-handle {
@@ -238,12 +274,14 @@
 	}
 
 	/* Compact: collapse to zero width, stay in DOM for audio playback.
-	   The DeckCompactBar at the bottom of the layout provides the compact UI. */
+	   The DeckCompactBar at the bottom of the layout provides the compact UI.
+	   Fades out first so the content doesn't visibly cram as the box shrinks. */
 	.deck.compact {
 		width: 0;
 		min-width: 0;
 		overflow: hidden;
 		border: none;
+		opacity: 0;
 		pointer-events: none;
 	}
 
@@ -258,12 +296,30 @@
 		border-radius: var(--border-radius) var(--border-radius) 0 0;
 	}
 
-	/* Hide queue panel via CSS — keeps it in the DOM */
-	.deck.hide-queue :global(.queue-panel) {
-		display: none;
+	/* Hide queue panel via CSS — keeps it in the DOM. Fades + collapses
+	   instead of an instant display:none, via the same allow-discrete +
+	   @starting-style pattern dialog.svelte uses. */
+	.deck :global(.queue-panel) {
+		opacity: 1;
+		transition:
+			opacity var(--duration-2) var(--ease-out),
+			display var(--duration-2) allow-discrete;
 	}
 
-	/* When queue is hidden, let video fill available space but not overflow */
+	.deck.hide-queue :global(.queue-panel) {
+		display: none;
+		opacity: 0;
+	}
+
+	@starting-style {
+		.deck:not(.hide-queue) :global(.queue-panel) {
+			opacity: 0;
+		}
+	}
+
+	/* When queue is hidden, let video fill available space but not overflow —
+	   transitions in step with the queue panel's own fade (player.svelte's
+	   .video carries the width/height/flex/opacity transition). */
 	.deck.hide-queue :global(.video) {
 		max-height: none;
 		flex: 1;
@@ -280,12 +336,14 @@
 		flex: 1;
 	}
 
-	/* Hide video via CSS — keeps media element in the DOM for audio playback */
+	/* Hide video via CSS — keeps media element in the DOM for audio playback.
+	   Fades out first, same reasoning as the compact deck's width collapse. */
 	.deck.hide-video :global(media-controller.video) {
 		position: absolute;
 		width: 0;
 		height: 0;
 		overflow: hidden;
+		opacity: 0;
 		pointer-events: none;
 	}
 

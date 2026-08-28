@@ -1,6 +1,7 @@
 <script>
 	import {page} from '$app/state'
 	import {resolve} from '$app/paths'
+	import {conceptIcons} from '$lib/config'
 	import * as m from '$lib/paraglide/messages'
 	import PageHeader from './page-header.svelte'
 	import SectionMenu from './section-menu.svelte'
@@ -28,11 +29,22 @@
 	const exploreItems = $derived([
 		{
 			href: resolve('/explore/channels/featured'),
+			icon: conceptIcons.channels,
 			label: m.explore_tab_channels(),
 			active: isChannels
 		},
-		{href: resolve('/explore/tracks/recent'), label: m.explore_tab_tracks(), active: isTracks},
-		{href: resolve('/explore/tags/featured'), label: m.explore_tab_tags(), active: isTags}
+		{
+			href: resolve('/explore/tracks/recent'),
+			icon: conceptIcons.tracks,
+			label: m.explore_tab_tracks(),
+			active: isTracks
+		},
+		{
+			href: resolve('/explore/tags/featured'),
+			icon: conceptIcons.tags,
+			label: m.explore_tab_tags(),
+			active: isTags
+		}
 	])
 </script>
 
@@ -72,26 +84,15 @@
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: thin;
-		padding-bottom: var(--space-2);
+		scroll-snap-type: x proximity;
 	}
 
-	@media (max-width: 768px) {
-		.explore-nav-row {
-			flex-wrap: wrap;
-			overflow-x: visible;
-		}
-
-		.explore-filter-chips {
-			flex-basis: 100%;
-			border-left: none;
-			margin-left: 0;
-			padding-left: 0;
-			overflow-x: auto;
-			scrollbar-width: none;
-		}
+	.explore-nav-row > :global(.section-menu) {
+		scroll-snap-align: start;
 	}
 
 	.explore-filter-chips :global(.btn.chip) {
 		flex: 0 0 auto;
+		scroll-snap-align: start;
 	}
 </style>

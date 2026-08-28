@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte'
 	import {useOnline} from '$lib/online.svelte'
+	import * as m from '$lib/paraglide/messages'
 
 	const {href}: {href?: string} = $props()
 	const {online} = useOnline()
@@ -8,7 +9,7 @@
 
 {#if !online}
 	{#if href}
-		<a {href} class="offline-indicator" aria-label="Offline">
+		<a {href} class="offline-indicator" aria-label={m.status_offline()}>
 			<Icon icon="wifi-off" />
 		</a>
 	{:else}

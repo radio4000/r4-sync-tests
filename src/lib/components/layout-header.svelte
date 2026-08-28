@@ -146,8 +146,6 @@
 					<ChannelAvatar id={userChannel.image} alt={userChannel.name} />
 					<span class="btn-label channel-slug-label">@{userChannel.slug}</span>
 				</a>
-				<AddTrackDialog class="nav-btn" label={m.track_add_title()} />
-				<BroadcastToggle channel={userChannel} class="nav-btn" />
 			{:else if isSignedIn}
 				<a
 					href={resolve('/create-channel')}
@@ -159,6 +157,10 @@
 					<Icon icon="user" />
 					<span class="btn-label">{m.nav_channels()}</span>
 				</a>
+			{/if}
+			<AddTrackDialog class="nav-btn" label={m.track_add_title()} />
+			{#if userChannel}
+				<BroadcastToggle channel={userChannel} class="nav-btn" />
 			{/if}
 			{#if !isSignedIn}
 				<a
@@ -180,11 +182,11 @@
 			href={resolve('/menu')}
 			class="btn settings-link nav-btn"
 			class:active={page.route.id?.startsWith('/menu') || page.route.id?.startsWith('/settings')}
-			aria-label="Menu"
-			{@attach tooltip({content: 'Menu'})}
+			aria-label={m.nav_menu()}
+			{@attach tooltip({content: m.nav_menu()})}
 		>
 			<Icon icon="menu" />
-			<span class="btn-label">Menu</span>
+			<span class="btn-label">{m.nav_menu()}</span>
 		</a>
 		<InternetIndicator href={resolve('/import')} />
 	</nav>
@@ -200,7 +202,9 @@
 		display: flex;
 		flex-flow: column nowrap;
 		gap: clamp(var(--space-2), calc(var(--app-nav-btn-size) * 0.35), 1.5rem);
-		padding: var(--space-3) var(--space-2);
+		/* Less room under the bottom nav than above the top one — the sticky
+		   settings row already reads as the sidebar's floor. */
+		padding: var(--space-3) var(--space-2) var(--space-2);
 		inline-size: clamp(min-content, var(--app-header-size), max-content);
 		min-inline-size: min-content;
 		max-inline-size: max-content;

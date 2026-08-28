@@ -15,7 +15,7 @@
 
 <div class="broadcast-page">
 	<div class="broadcast-bar">
-		<a href={resolve('/')} class="btn ghost home-btn" aria-label="Home">
+		<a href={resolve('/')} class="btn ghost home-btn" aria-label={m.nav_home()}>
 			<IconR4 />
 		</a>
 		{#if userChannel}
@@ -31,7 +31,7 @@
 		{:else}
 			<span class="idle">{m.broadcasts_none()}</span>
 		{/if}
-		<a href={resolve('/')} class="btn ghost exit-btn" aria-label="Exit broadcast view">
+		<a href={resolve('/')} class="btn ghost exit-btn" aria-label={m.broadcast_exit_aria()}>
 			<Icon icon="close" />
 		</a>
 	</div>

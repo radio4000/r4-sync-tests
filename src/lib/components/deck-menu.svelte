@@ -2,14 +2,20 @@
 	import {goto} from '$app/navigation'
 	import {resolve} from '$app/paths'
 	import {appState, removeDeck} from '$lib/app-state.svelte'
-	import {toggleVideo, toggleQueuePanel, clearUserInitiatedPlay, leaveAutoRadio} from '$lib/api'
+	import {
+		toggleVideo,
+		toggleQueuePanel,
+		clearUserInitiatedPlay,
+		leaveAutoRadio,
+		rejoinAutoRadio
+	} from '$lib/api'
 	import {getBroadcastingChannelId, notifyBroadcastState, leaveBroadcast} from '$lib/broadcast.js'
 	import {isGroupControlDeck, sortedListeningDeckIds} from '$lib/deck'
 	import {trackAddSearchParams} from '$lib/track-add'
 	import Icon from '$lib/components/icon.svelte'
 	import * as m from '$lib/paraglide/messages'
 
-	/** @type {{deckId: number, compact?: boolean, closeMenu?: () => void, deckEl?: HTMLElement | undefined, track?: import('$lib/types').Track, channel?: import('$lib/types').Channel, trackHref?: string, canEditTrack?: boolean}} */
+	/** @type {{deckId: number, compact?: boolean, closeMenu?: () => void, deckEl?: HTMLElement | undefined, track?: import('$lib/types').Track, channel?: import('$lib/types').Channel, trackHref?: string, canEditTrack?: boolean, autoRadioAvailable?: boolean}} */
 	let {
 		deckId,
 		compact = false,
@@ -18,7 +24,8 @@
 		track,
 		channel,
 		trackHref,
-		canEditTrack = false
+		canEditTrack = false,
+		autoRadioAvailable = false
 	} = $props()
 
 	let deck = $derived(appState.decks[deckId])
@@ -148,7 +155,7 @@
 	{#if isListeningToBroadcast && hasListeningMultiDeck}
 		<button onclick={toggleListeningVideoMix} class:active={listeningVideoMixActive} data-no-close>
 			<Icon icon="gradient" />
-			Video mix
+			{m.deck_menu_video_mix()}
 		</button>
 	{/if}
 
@@ -175,6 +182,16 @@
 		>
 			<Icon icon="infinite" />
 			{m.auto_radio_leave()}
+		</button>
+	{:else if autoRadioAvailable && !isListeningToBroadcast}
+		<button
+			onclick={() => {
+				rejoinAutoRadio(deckId)
+				closeMenu?.()
+			}}
+		>
+			<Icon icon="infinite" />
+			{m.auto_radio_join()}
 		</button>
 	{/if}
 
