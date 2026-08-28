@@ -27,7 +27,7 @@ export type WebMcpTool = {
 }
 
 type ModelContext = {
-	registerTool(tool: WebMcpTool, options?: {signal?: AbortSignal}): Promise<void>
+	registerTool(tool: WebMcpTool, options?: {signal?: AbortSignal}): void | Promise<void>
 }
 
 type WebMcpDependencies = {
@@ -165,9 +165,13 @@ export function registerWebMcpTools(modelContext: ModelContext | undefined = doc
 		controlPlayer
 	})
 	for (const tool of tools) {
-		void modelContext
-			.registerTool(tool, {signal: controller.signal})
-			.catch((error) => log.warn('register_tool_failed', {tool: tool.name, error}))
+		try {
+			void Promise.resolve(modelContext.registerTool(tool, {signal: controller.signal})).catch(
+				(error) => log.warn('register_tool_failed', {tool: tool.name, error})
+			)
+		} catch (error) {
+			log.warn('register_tool_failed', {tool: tool.name, error})
+		}
 	}
 	return () => controller.abort()
 }

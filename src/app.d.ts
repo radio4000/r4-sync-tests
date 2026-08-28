@@ -6,7 +6,7 @@ declare global {
 			registerTool(
 				tool: import('$lib/webmcp').WebMcpTool,
 				options?: {signal?: AbortSignal}
-			): Promise<void>
+			): void | Promise<void>
 		}
 	}
 

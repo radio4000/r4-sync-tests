@@ -1,6 +1,7 @@
 import {describe, expect, test, vi} from 'vitest'
 
-import {createWebMcpTools} from '$lib/webmcp'
+import {createWebMcpTools, registerWebMcpTools} from '$lib/webmcp'
+import type {WebMcpTool} from '$lib/webmcp'
 
 const channels = [
 	{
@@ -26,6 +27,24 @@ function setup() {
 }
 
 describe('WebMCP tools', () => {
+	test('registers every tool when Chrome returns undefined', () => {
+		const registerTool = vi.fn(
+			(_tool: WebMcpTool, _options?: {signal?: AbortSignal}) => undefined
+		)
+		const cleanup = registerWebMcpTools({registerTool})
+
+		expect(registerTool.mock.calls.map(([tool]) => tool.name)).toEqual([
+			'search_channels',
+			'play_channel',
+			'get_player_state',
+			'control_player'
+		])
+		const signal = registerTool.mock.calls[0]?.[1]?.signal
+		expect(signal?.aborted).toBe(false)
+		cleanup?.()
+		expect(signal?.aborted).toBe(true)
+	})
+
 	test('exposes a small discovery and playback surface', () => {
 		const {tools} = setup()
 		expect(tools.map((tool) => tool.name)).toEqual([
