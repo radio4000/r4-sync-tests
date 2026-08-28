@@ -41,6 +41,7 @@
 	import {channelPresence} from '$lib/presence.svelte'
 	import Icon from '$lib/components/icon.svelte'
 	import PresenceCount from '$lib/components/presence-count.svelte'
+	import {registerWebMcpTools} from '$lib/webmcp'
 
 	const log = logger.ns('layout').seal()
 
@@ -145,6 +146,8 @@
 			appState.language = currentLocale
 		}
 	})
+
+	onMount(registerWebMcpTools)
 
 	const scrollPositions = new SvelteMap()
 
